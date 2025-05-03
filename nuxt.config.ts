@@ -25,4 +25,5 @@ export default defineNuxtConfig({
     '/': { prerender: true },
     '/dashboard': { prerender: true },
   },
+  compatibilityDate: '2025-05-03',
 });
