@@ -2,11 +2,7 @@
 import { defineNuxtConfig } from 'nuxt/config'
 
 export default defineNuxtConfig({
-  modules: [
-    '@nuxtjs/tailwindcss',
-    '@nuxtjs/color-mode',
-    '@pinia/nuxt',
-  ],
+  modules: ['@nuxtjs/tailwindcss', '@nuxtjs/color-mode', '@pinia/nuxt', 'nuxt-headlessui'],
 
   tailwindcss: {
     cssPath: '~/assets/css/tailwind.css',
@@ -20,7 +16,13 @@ export default defineNuxtConfig({
     fallback: 'light',
   },
 
-  devtools: { enabled: true },
+  devtools: {
+    enabled: true,
+
+    timeline: {
+      enabled: true
+    }
+  },
   typescript: { strict: true, typeCheck: false },
   postcss: {
     plugins: { 'tailwindcss/nesting': {}, tailwindcss: {}, autoprefixer: {} }
