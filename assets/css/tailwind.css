@@ -1,40 +1,40 @@
 /* ~/assets/css/tailwind.css */
 
-@import "tailwindcss";
-@import "@nuxt/ui";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@theme {
+:root {
   /* Theme colors from tailwind.config.ts */
-  --color-primary-50: #f0f9ff;
-  --color-primary-100: #e0f2fe;
-  --color-primary-200: #bae6fd;
-  --color-primary-300: #7dd3fc;
-  --color-primary-400: #38bdf8;
-  --color-primary-500: #0ea5e9;
-  --color-primary-600: #0284c7;
-  --color-primary-700: #0369a1;
-  --color-primary-800: #075985;
-  --color-primary-900: #0c4a6e;
-  --color-primary-950: #082f49;
+  --color-primary-50: 240 249 255; /* #f0f9ff */
+  --color-primary-100: 224 242 254; /* #e0f2fe */
+  --color-primary-200: 186 230 253; /* #bae6fd */
+  --color-primary-300: 125 211 252; /* #7dd3fc */
+  --color-primary-400: 56 189 248; /* #38bdf8 */
+  --color-primary-500: 14 165 233; /* #0ea5e9 */
+  --color-primary-600: 2 132 199; /* #0284c7 */
+  --color-primary-700: 3 105 161; /* #0369a1 */
+  --color-primary-800: 7 89 133; /* #075985 */
+  --color-primary-900: 12 74 110; /* #0c4a6e */
+  --color-primary-950: 8 47 73; /* #082f49 */
   
   /* Dark mode colors */
-  --color-dark-primary-50: #172554;
-  --color-dark-primary-100: #1e3a8a;
-  --color-dark-primary-200: #1e40af;
-  --color-dark-primary-300: #1d4ed8;
-  --color-dark-primary-400: #2563eb;
-  --color-dark-primary-500: #3b82f6;
-  --color-dark-primary-600: #60a5fa;
-  --color-dark-primary-700: #93c5fd;
-  --color-dark-primary-800: #bfdbfe;
-  --color-dark-primary-900: #dbeafe;
-  --color-dark-primary-950: #eff6ff;
-  
-  --color-dark-background: #0f172a;
-  --color-dark-surface: #1e293b;
-  --color-dark-text: #f8fafc;
+  --color-dark-background: 15 23 42; /* #0f172a */
+  --color-dark-surface: 30 41 59; /* #1e293b */
+  --color-dark-text: 248 250 252; /* #f8fafc */
 }
 
-/* No plugins were defined in the original tailwind.config.ts */
-
-/* You can add your own custom CSS or @layer rules below these lines if needed */
+.dark {
+  /* Dark mode primary colors (only necessary if they differ from light mode) */
+  --color-primary-50: 23 37 84; /* #172554 */
+  --color-primary-100: 30 58 138; /* #1e3a8a */
+  --color-primary-200: 30 64 175; /* #1e40af */
+  --color-primary-300: 29 78 216; /* #1d4ed8 */
+  --color-primary-400: 37 99 235; /* #2563eb */
+  --color-primary-500: 59 130 246; /* #3b82f6 */
+  --color-primary-600: 96 165 250; /* #60a5fa */
+  --color-primary-700: 147 197 253; /* #93c5fd */
+  --color-primary-800: 191 219 254; /* #bfdbfe */
+  --color-primary-900: 219 234 254; /* #dbeafe */
+  --color-primary-950: 239 246 255; /* #eff6ff */
+}

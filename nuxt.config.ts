@@ -1,29 +1,31 @@
-// ~/nuxt.config.ts
-// https://nuxt.com/docs/api/configuration/nuxt-config
+// nuxt.config.ts
+import { defineNuxtConfig } from 'nuxt/config'
 
 export default defineNuxtConfig({
-  // Ensure these modules are listed
   modules: [
-    '@pinia/nuxt',
+    '@nuxtjs/tailwindcss',
     '@nuxtjs/color-mode',
-    '@nuxt/ui' // Handles Tailwind integration
+    '@pinia/nuxt',
   ],
 
-  // Ensure this line correctly points to your Tailwind CSS file
-  css: [
-    '~/assets/css/tailwind.css'
-  ],
+  tailwindcss: {
+    cssPath: '~/assets/css/tailwind.css',
+    exposeConfig: true,
+    viewer: true
+  },
 
-  // Your other configurations remain...
   colorMode: {
-    classSuffix: ''
+    classSuffix: '',
+    preference: 'system',
+    fallback: 'light',
   },
-  devtools: {
-    enabled: true
+
+  devtools: { enabled: true },
+  typescript: { strict: true, typeCheck: false },
+  postcss: {
+    plugins: { 'tailwindcss/nesting': {}, tailwindcss: {}, autoprefixer: {} }
   },
-  routeRules: {
-    '/': { prerender: true },
-    '/dashboard': { prerender: true },
-  },
-  compatibilityDate: '2025-05-03',
-});
+  nitro: { 
+    compatibilityDate: '2025-05-04' 
+  }
+})

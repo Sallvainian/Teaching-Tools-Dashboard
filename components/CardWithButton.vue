@@ -1,63 +1,61 @@
 <template>
-  <UCard 
-    :ui="{ ring: '', body: { base: 'p-4' } }" 
-    class="h-full hover:shadow-lg transition-shadow duration-300"
+  <div 
+    class="h-full rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden"
   >
-    <div class="flex flex-col h-full">
-      <div class="flex items-center mb-4">
-        <div 
-          class="w-12 h-12 flex items-center justify-center rounded-full bg-primary-100 dark:bg-dark-surface text-primary-700 dark:text-primary-300 mr-3"
+    <!-- card layout -->
+    <div class="flex h-full flex-col gap-4 p-6">
+      <!-- icon + title -->
+      <div class="flex items-center gap-3">
+        <div
+          class="flex h-12 w-12 items-center justify-center rounded-full
+                 bg-primary-100 dark:bg-gray-700
+                 text-primary-700 dark:text-primary-300"
         >
-          <UIcon :name="icon" class="text-2xl" />
+          <NuxtIcon :name="icon" class="text-2xl" />
         </div>
-        <h3 class="text-xl font-semibold text-gray-800 dark:text-white">{{ title }}</h3>
+
+        <h3 class="text-xl font-semibold text-gray-800 dark:text-white">
+          {{ title }}
+        </h3>
       </div>
-      
-      <p v-if="description" class="text-gray-600 dark:text-gray-300 mb-4 flex-grow">{{ description }}</p>
-      
-      <div class="mt-auto pt-4">
-        <UButton
-          :to="route"
-          :color="color"
-          :variant="variant"
-          block
-          @click="handleClick"
-        >
-          {{ buttonText || 'Open' }}
-        </UButton>
-      </div>
+
+      <!-- description -->
+      <p v-if="description" class="flex-grow text-gray-600 dark:text-gray-300">
+        {{ description }}
+      </p>
+
+      <!-- action button -->
+      <NuxtLink 
+        :to="route" 
+        class="w-full mt-auto text-center py-2 px-4 rounded-md bg-primary-600 hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600 text-white transition-colors"
+        @click="handleClick"
+      >
+        {{ buttonText }}
+      </NuxtLink>
     </div>
-  </UCard>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { useDashboardStore } from '~/stores/dashboard';
-
-// Props definition with TypeScript
 interface Props {
-  id: string;
-  title: string;
-  description?: string;
-  icon?: string;
-  route: string;
-  buttonText?: string;
-  color?: string;
-  variant?: string;
+  id: string
+  title: string
+  description?: string
+  icon?: string
+  route: string
+  buttonText?: string
+  color?: string
+  variant?: string
 }
 
+// Use defineProps with defaults
 const props = withDefaults(defineProps<Props>(), {
-  icon: 'i-heroicons-cube',
+  icon: 'heroicons:cube',  // Updated icon format
   buttonText: 'Open',
   color: 'primary',
-  variant: 'solid',
-});
+  variant: 'solid'
+})
 
-// Get the dashboard store
-const dashboardStore = useDashboardStore();
-
-// Update last used tool when clicked
-const handleClick = () => {
-  dashboardStore.setLastUsedTool(props.id);
-};
+const dashboardStore = useDashboardStore()
+const handleClick = () => dashboardStore.setLastUsedTool(props.id)
 </script>
-
