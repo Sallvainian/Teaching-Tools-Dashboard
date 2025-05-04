@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "nuxt.config.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "buildCommand": "pnpm run build",
+  "installCommand": "pnpm install",
+  "outputDirectory": ".output",
+  "framework": "nuxt",
+  "github": {
+    "enabled": true
+  }
+}
+
