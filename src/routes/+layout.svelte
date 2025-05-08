@@ -35,18 +35,18 @@
 		<div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
 			<div class="flex items-center gap-3">
 				<div class="h-8 w-8 bg-dark-highlight rounded-md flex items-center justify-center">
-					<span class="text-dark-purple font-bold text-lg">E</span>
+					<span class="text-dark-purple font-bold text-lg">T</span>
 				</div>
-				<h1 class="text-xl font-bold tracking-wide text-white">Edu<span class="text-dark-lavender">.Link</span></h1>
+				<h1 class="text-xl font-bold tracking-wide text-white">Teacher <span class="text-dark-lavender">Dashboard</span></h1>
 			</div>
 			
 			<div class="flex items-center gap-8">
 				<div class="flex gap-6">
 					<a href="/dashboard" class="text-gray-300 hover:text-dark-highlight transition font-medium">Dashboard</a>
 					<a href="/gradebook" class="text-gray-300 hover:text-dark-highlight transition font-medium">Gradebook</a>
+					<a href="/jeopardy" class="text-gray-300 hover:text-dark-highlight transition font-medium">Jeopardy</a>
 					<a href="/lesson-planner" class="text-gray-300 hover:text-dark-highlight transition font-medium">Planner</a>
 					<a href="/class-dojo-remake" class="text-gray-300 hover:text-dark-highlight transition font-medium">Dojo</a>
-					<a href="/test" class="text-gray-300 hover:text-dark-highlight transition font-medium">Settings</a>
 				</div>
 				
 				<div class="flex items-center gap-3">
@@ -72,11 +72,17 @@
 							</svg>
 							<span>Dashboard</span>
 						</a>
-						<a href="/gradebook" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-dark-accent text-white">
+						<a href="/gradebook" class="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white">
 							<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
 							</svg>
 							<span>Gradebook</span>
+						</a>
+						<a href="/jeopardy" class="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white">
+							<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+							</svg>
+							<span>Jeopardy</span>
 						</a>
 						<a href="/lesson-planner" class="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white">
 							<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -137,6 +143,6 @@
 	</div>
 
 	<footer class="bg-dark-surface text-center text-dark-muted text-xs py-4 border-t border-dark-border px-6">
-		&copy; {new Date().getFullYear()} Edu.Link. All rights reserved.
+		Teacher Dashboard • {new Date().getFullYear()}
 	</footer>
 </div>

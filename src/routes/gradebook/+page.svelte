@@ -9,6 +9,8 @@
 	let inputMap: Record<string, string> = {};
 	let newStudentName = '';
 
+	// We'll use a simpler approach since AG Grid is causing compatibility issues
+
 	// Access the store
 	const { 
 		categories,
@@ -30,12 +32,198 @@
 	$: categoryAssignments = $getAssignmentsForSelectedCategory;
 	$: allStudents = $getGlobalStudents;
 
+	// Since we had compatibility issues with AG Grid, I'll create a simpler solution for multi-select, copy/paste
+	
+	// State for enhanced copy/paste functionality
+	let selectedCells: [string, string][] = []; // [studentId, assignmentId]
+	let selectionStart: [string, string] | null = null;
+	
+	// Function to handle cell selection
+	function selectCell(e: MouseEvent, studentId: string, assignmentId: string) {
+		if (e.shiftKey && selectionStart) {
+			// Range selection with shift
+			const students = categoryStudents.map(s => s.id);
+			const assignments = categoryAssignments.map(a => a.id);
+			
+			const startStudentIndex = students.indexOf(selectionStart[0]);
+			const endStudentIndex = students.indexOf(studentId);
+			const startAssignmentIndex = assignments.indexOf(selectionStart[1]);
+			const endAssignmentIndex = assignments.indexOf(assignmentId);
+			
+			// Get range bounds
+			const minStudentIndex = Math.min(startStudentIndex, endStudentIndex);
+			const maxStudentIndex = Math.max(startStudentIndex, endStudentIndex);
+			const minAssignmentIndex = Math.min(startAssignmentIndex, endAssignmentIndex);
+			const maxAssignmentIndex = Math.max(startAssignmentIndex, endAssignmentIndex);
+			
+			// Create range selection
+			selectedCells = [];
+			for (let i = minStudentIndex; i <= maxStudentIndex; i++) {
+				for (let j = minAssignmentIndex; j <= maxAssignmentIndex; j++) {
+					selectedCells.push([students[i], assignments[j]]);
+				}
+			}
+		} else if (e.ctrlKey) {
+			// Add to selection with Ctrl
+			const cellKey = `${studentId}-${assignmentId}`;
+			const exists = selectedCells.some(([s, a]) => `${s}-${a}` === cellKey);
+			
+			if (exists) {
+				// Remove if already selected
+				selectedCells = selectedCells.filter(([s, a]) => `${s}-${a}` !== cellKey);
+			} else {
+				// Add to selection
+				selectedCells = [...selectedCells, [studentId, assignmentId]];
+			}
+		} else {
+			// Simple selection (replaces current selection)
+			selectedCells = [[studentId, assignmentId]];
+			selectionStart = [studentId, assignmentId];
+		}
+	}
+	
+	// Function to check if a cell is selected
+	function isCellSelected(studentId: string, assignmentId: string): boolean {
+		return selectedCells.some(([s, a]) => s === studentId && a === assignmentId);
+	}
+	
+	// Function to copy selected cell values
+	function copySelectedCells() {
+		if (!selectedCells.length) return;
+		
+		// Group selected cells by student (row)
+		const cellsByStudent = selectedCells.reduce((acc, [studentId, assignmentId]) => {
+			if (!acc[studentId]) {
+				acc[studentId] = [];
+			}
+			acc[studentId].push(assignmentId);
+			return acc;
+		}, {} as Record<string, string[]>);
+		
+		// Get all unique student IDs and sort them by their order in categoryStudents
+		const studentIdsByIndex = Object.keys(cellsByStudent).sort((a, b) => {
+			const indexA = categoryStudents.findIndex(s => s.id === a);
+			const indexB = categoryStudents.findIndex(s => s.id === b);
+			return indexA - indexB;
+		});
+		
+		// For each student, get their selected assignment values
+		const rows: string[] = [];
+		studentIdsByIndex.forEach(studentId => {
+			const assignmentIds = cellsByStudent[studentId].sort((a, b) => {
+				const indexA = categoryAssignments.findIndex(asmt => asmt.id === a);
+				const indexB = categoryAssignments.findIndex(asmt => asmt.id === b);
+				return indexA - indexB;
+			});
+			
+			const rowData: string[] = assignmentIds.map(assignmentId => {
+				return inputMap[`${studentId}-${assignmentId}`] || '';
+			});
+			
+			rows.push(rowData.join('\t'));
+		});
+		
+		// Create TSV content
+		const tsvContent = rows.join('\n');
+		
+		// Copy to clipboard
+		navigator.clipboard.writeText(tsvContent)
+			.then(() => {
+				console.log('Copied to clipboard');
+			})
+			.catch(err => {
+				console.error('Error copying to clipboard:', err);
+			});
+	}
+	
+	// Function to handle keyboard shortcuts
+	function handleKeyDown(e: KeyboardEvent) {
+		// Only handle events when focus is in the grade table
+		if (!e.target || !(e.target as HTMLElement).closest('.grade-table')) return;
+		
+		// Copy with Ctrl+C
+		if (e.ctrlKey && e.key === 'c') {
+			e.preventDefault();
+			copySelectedCells();
+		}
+		
+		// Select all with Ctrl+A
+		if (e.ctrlKey && e.key === 'a') {
+			e.preventDefault();
+			selectAllCells();
+		}
+	}
+	
+	// Function to select all cells
+	function selectAllCells() {
+		selectedCells = [];
+		categoryStudents.forEach(student => {
+			categoryAssignments.forEach(assignment => {
+				selectedCells.push([student.id, assignment.id]);
+			});
+		});
+	}
+	
+	// Function to paste from clipboard
+	async function handlePaste(e: ClipboardEvent) {
+		// Only handle paste events when focus is in the grade table
+		if (!e.target || !(e.target as HTMLElement).closest('.grade-table')) return;
+		
+		e.preventDefault();
+		
+		// Get clipboard text
+		let text = '';
+		if (e.clipboardData) {
+			text = e.clipboardData.getData('text/plain');
+		}
+		
+		if (!text || !selectedCells.length) return;
+		
+		// Parse clipboard text into rows and cells
+		const rows = text.split(/\r?\n/);
+		const data = rows.map(row => row.split('\t'));
+		
+		// Get starting cell
+		const [startStudentId, startAssignmentId] = selectedCells[0];
+		
+		// Get starting indexes
+		const startStudentIndex = categoryStudents.findIndex(s => s.id === startStudentId);
+		const startAssignmentIndex = categoryAssignments.findIndex(a => a.id === startAssignmentId);
+		
+		// Paste data
+		data.forEach((rowData, rowOffset) => {
+			rowData.forEach((cellValue, colOffset) => {
+				const targetStudentIndex = startStudentIndex + rowOffset;
+				const targetAssignmentIndex = startAssignmentIndex + colOffset;
+				
+				// Ensure we don't go out of bounds
+				if (targetStudentIndex < categoryStudents.length && targetAssignmentIndex < categoryAssignments.length) {
+					const studentId = categoryStudents[targetStudentIndex].id;
+					const assignmentId = categoryAssignments[targetAssignmentIndex].id;
+					
+					// Update grade
+					handleGradeInput(studentId, assignmentId, cellValue);
+				}
+			});
+		});
+	}
+	
+	// Add event listeners
 	onMount(() => {
 		const cats = get(categories);
 		if (cats.length > 0 && !categoryId) {
 			categoryId = cats[0].id;
 			gradebookStore.selectCategory(categoryId);
 		}
+		
+		// Add event listeners for keyboard shortcuts
+		document.addEventListener('keydown', handleKeyDown);
+		document.addEventListener('paste', handlePaste);
+		
+		return () => {
+			document.removeEventListener('keydown', handleKeyDown);
+			document.removeEventListener('paste', handlePaste);
+		};
 	});
 
 	function handleAddAssignment() {
@@ -67,6 +255,8 @@
 	function getStudentById(id: string) {
 		return allStudents.find(s => s.id === id);
 	}
+
+	// The spreadsheet-like functionality is now handled by AG Grid
 </script>
 
 <!-- Page header with controls -->
@@ -227,13 +417,16 @@
 	</div>
 </div>
 
-<!-- Grade Table -->
+<!-- Enhanced Grade Table with Copy/Paste -->
 {#if selectedCategory}
 	<div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden shadow-dark-card mb-4">
 		<div class="p-4 border-b border-dark-border bg-dark-surface">
 			<h3 class="font-medium text-white">{selectedCategory.name} - Grades</h3>
+			<p class="text-dark-muted text-xs mt-1">
+				Spreadsheet features: Click a cell, then use Shift+Click for range selection, Ctrl+C to copy, and Ctrl+V to paste.
+			</p>
 		</div>
-		<div class="overflow-x-auto">
+		<div class="overflow-x-auto grade-table">
 			<table class="w-full text-left">
 				<thead>
 					<tr class="bg-dark-surface text-dark-muted text-xs uppercase tracking-wider">
@@ -253,9 +446,10 @@
 									<input
 										type="number"
 										min="0"
-										class="w-16 px-3 py-1 rounded-lg bg-dark-surface text-white border border-dark-border focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"
+										class="w-16 px-3 py-1 rounded-lg bg-dark-surface text-white border border-dark-border focus:ring-2 focus:ring-dark-purple focus:border-dark-purple grade-cell {isCellSelected(student.id, a.id) ? 'cell-selected' : ''}"
 										bind:value={inputMap[`${student.id}-${a.id}`]}
 										on:input={(e) => handleGradeInput(student.id, a.id, (e.target as HTMLInputElement).value)}
+										on:mousedown={(e) => selectCell(e, student.id, a.id)}
 									/>
 								</td>
 							{/each}
@@ -285,3 +479,17 @@
 		<p class="text-dark-muted">Please select a class or create a new one to view grades.</p>
 	</div>
 {/if}
+
+<style>
+	/* Cell selection styles */
+	.cell-selected {
+		outline: 2px solid #8B5CF6;
+		outline-offset: -2px;
+		z-index: 10;
+	}
+	
+	/* Make the grade table a focus target */
+	.grade-table {
+		position: relative;
+	}
+</style>

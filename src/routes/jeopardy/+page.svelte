@@ -594,8 +594,9 @@
             
             <div class="space-y-4">
               <div>
-                <label class="block text-sm text-dark-lavender font-medium mb-2">Question Text</label>
+                <label for="question-text" class="block text-sm text-dark-lavender font-medium mb-2">Question Text</label>
                 <textarea
+                  id="question-text"
                   bind:value={editingQuestion.text}
                   rows="3"
                   class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-3 focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"
@@ -604,8 +605,9 @@
               </div>
               
               <div>
-                <label class="block text-sm text-dark-lavender font-medium mb-2">Answer</label>
+                <label for="answer-text" class="block text-sm text-dark-lavender font-medium mb-2">Answer</label>
                 <input
+                  id="answer-text"
                   type="text"
                   bind:value={editingQuestion.answer}
                   class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-3 focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"
@@ -614,8 +616,9 @@
               </div>
               
               <div>
-                <label class="block text-sm text-dark-lavender font-medium mb-2">Point Value</label>
+                <label for="point-value" class="block text-sm text-dark-lavender font-medium mb-2">Point Value</label>
                 <select
+                  id="point-value"
                   bind:value={editingQuestion.pointValue}
                   class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-3 focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"
                 >
