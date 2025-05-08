@@ -1,4 +1,4 @@
-import vercel from '@sveltejs/adapter-vercel';
+import adapter from '@sveltejs/adapter-auto';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import type { Config } from '@sveltejs/kit';
 
@@ -10,11 +10,8 @@ const config: Config = {
 	}),
 
 	kit: {
-		// Using the Vercel adapter for deployment
-		adapter: vercel({
-			// Using Serverless (default)
-			runtime: 'nodejs18.x'
-		})
+		// Using the auto adapter which should work with Vercel
+		adapter: adapter()
 	}
 };
 

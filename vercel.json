@@ -1,6 +1,10 @@
 {
   "buildCommand": "pnpm build",
   "devCommand": "pnpm dev",
-  "installCommand": "pnpm install",
-  "framework": "sveltekit"
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "outputDirectory": ".svelte-kit/output/client",
+  "framework": "sveltekit",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
