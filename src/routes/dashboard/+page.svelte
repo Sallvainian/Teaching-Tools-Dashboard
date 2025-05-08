@@ -10,6 +10,12 @@
 			icon: AcademicCap
 		},
 		{
+			name: 'Jeopardy',
+			path: '/jeopardy',
+			description: 'Create and play Jeopardy-style quiz games with student teams.',
+			icon: ClipboardDocument
+		},
+		{
 			name: 'Lesson Planner',
 			path: '/lesson-planner',
 			description: 'Create, organize, and schedule classroom lesson plans.',
@@ -146,7 +152,7 @@
 				</svg>
 			</div>
 			<div>
-				<p class="text-white">Updated grades for <span class="text-dark-highlight">Math 101</span></p>
+				<p class="text-white">Created a new Jeopardy game: <span class="text-dark-highlight">Science Quiz</span></p>
 				<p class="text-xs text-dark-muted">Yesterday, 3:15 PM</p>
 			</div>
 		</div>

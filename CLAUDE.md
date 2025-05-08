@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is a "Teacher Dashboard" web application built with SvelteKit 5. It provides various tools for educators including:
 
 - A gradebook for tracking student assignments and grades
+- A Jeopardy game maker for creating interactive classroom review games
 - A lesson planner for organizing teaching materials
 - A ClassDojo remake for classroom behavior management
 - A dashboard overview for quick access to important information
@@ -77,10 +78,16 @@ The application uses Svelte 5 stores for state management. Core stores include:
   - Assignments
   - Grades
 
-The gradebook store provides:
+- **jeopardyStore**: Manages Jeopardy game data with these main entities:
+  - Games (collection of categories and questions)
+  - Categories (groups of related questions)
+  - Questions (with text, answer, and point value)
+  - Teams (with names, scores, and custom colors)
+
+The stores provide:
 - CRUD operations for all entities
 - Derived stores for calculated/filtered data
-- Methods for calculating student grades
+- Methods for calculating student grades and game scores
 - localStorage persistence
 
 ### Routing Structure
@@ -88,6 +95,7 @@ The gradebook store provides:
 - `/` - Home page with login/welcome screen
 - `/dashboard` - Overview dashboard with stats and module access
 - `/gradebook` - Grade management interface
+- `/jeopardy` - Game creation and play interface
 - `/lesson-planner` - Lesson planning tools
 - `/class-dojo-remake` - Classroom behavior management
 - `/test` - Development testing page
@@ -311,36 +319,48 @@ Runes are special functions prefixed with `$` that control reactivity in Svelte 
 
 ### Recent Updates
 
-1. **Dark Theme Implementation**: 
+1. **Jeopardy Game Feature**:
+   - Added a complete Jeopardy game creation and play system
+   - Created a game board UI with categories and questions
+   - Implemented team management with customizable colors and scoring
+   - Added game state persistence with localStorage
+   - Designed a dual-mode interface for editing and playing games
+
+2. **Dark Theme Implementation**: 
    - Added a custom dark theme inspired by Edu.Link Gradebook design
    - Created a cohesive color scheme with dark backgrounds and accents
    - Added hover effects and visual hierarchy
 
-2. **Icon System Improvements**:
+3. **Icon System Improvements**:
    - Updated from direct icon usage to the Icon component pattern
    - Using `@steeze-ui/svelte-icon` for rendering icons from `@steeze-ui/heroicons`
 
-3. **Accessibility Enhancements**:
+4. **Accessibility Enhancements**:
    - Fixed anchor href attributes to use proper navigation or javascript:void(0)
    - Added ARIA labels to icon-only buttons
    - Associated form labels with their respective inputs
 
-4. **Data Persistence**:
-   - Implemented localStorage for gradebook data
+5. **Data Persistence**:
+   - Implemented localStorage for all module data
    - Added functionality to save/load data automatically
-   - Created a reset option for clearing all data
+   - Created reset options for clearing module data
 
 ## Folder Structure (Key Files)
 
 ```
 src/
 ├── lib/
-│   ├── stores/gradebook.ts
-│   └── types/gradebook.ts
+│   ├── stores/
+│   │   ├── gradebook.ts
+│   │   └── jeopardy.ts
+│   └── types/
+│       ├── gradebook.ts
+│       └── jeopardy.ts
 ├── routes/
 │   ├── +layout.svelte
 │   ├── dashboard/+page.svelte
 │   ├── gradebook/+page.svelte
+│   ├── jeopardy/+page.svelte
 │   ├── lesson-planner/+page.svelte
 │   ├── class-dojo-remake/+page.svelte
 │   └── test/+page.svelte
@@ -348,16 +368,18 @@ src/
 
 ## Current Focus Areas
 
-1. **Build Optimization**: Ensuring the application builds correctly with all dependencies
-2. **Accessibility**: Improving screen reader support and keyboard navigation
-3. **Visual Design**: Refining the dark theme UI for a professional educational application
-4. **Code Quality**: Adhering to TypeScript best practices and enhancing maintainability
+1. **Build Optimization**: Ensuring the application builds correctly with Vercel deployment
+2. **Feature Development**: Completing and enhancing educational modules like Jeopardy
+3. **Accessibility**: Improving screen reader support and keyboard navigation
+4. **Visual Design**: Refining the dark theme UI for a professional educational application
+5. **Code Quality**: Adhering to TypeScript best practices and enhancing maintainability
 
 ## Known Issues and Solutions
 
-1. **Icon Import Error**: Fixed by using the proper Icon component from @steeze-ui/svelte-icon
-2. **HREF Warnings**: Resolved by replacing "#" with "javascript:void(0)" for non-navigation links
-3. **Form Label Issues**: Being addressed by adding proper for/id attributes to form elements
+1. **Vercel Deployment**: Resolved by adding proper adapter-vercel and configuration
+2. **Icon Import Error**: Fixed by using the proper Icon component from @steeze-ui/svelte-icon
+3. **HREF Warnings**: Resolved by replacing "#" with "javascript:void(0)" for non-navigation links
+4. **Form Label Issues**: Being addressed by adding proper for/id attributes to form elements
 
 ## Documentation References
 
