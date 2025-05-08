@@ -4,12 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a "Teacher Dashboard" web application built with SvelteKit. It provides various tools for educators including:
+This is a "Teacher Dashboard" web application built with SvelteKit 5. It provides various tools for educators including:
 
 - A gradebook for tracking student assignments and grades
 - A lesson planner for organizing teaching materials
 - A ClassDojo remake for classroom behavior management
 - A dashboard overview for quick access to important information
+
+The application features a modern, dark-themed UI inspired by the Edu.Link Gradebook design, with responsive components and persistent storage.
 
 ## Command Reference
 
@@ -61,12 +63,13 @@ pnpm check:watch
 
 - **SvelteKit 5**: Modern framework with file-based routing
 - **TypeScript**: For type safety
-- **TailwindCSS**: For utility-based styling
-- **Dark/Light Theme Support**: Theme toggle with local storage persistence
+- **TailwindCSS**: For utility-based styling with custom dark theme
+- **@steeze-ui/heroicons**: Icon library with @steeze-ui/svelte-icon for rendering
+- **localStorage**: For client-side data persistence
 
 ### State Management
 
-The application uses Svelte stores for state management. Core stores include:
+The application uses Svelte 5 stores for state management. Core stores include:
 
 - **gradebookStore**: Manages gradebook data with these main entities:
   - Students (global roster)
@@ -78,11 +81,12 @@ The gradebook store provides:
 - CRUD operations for all entities
 - Derived stores for calculated/filtered data
 - Methods for calculating student grades
+- localStorage persistence
 
 ### Routing Structure
 
-- `/` - Home page with student roster management
-- `/dashboard` - Overview dashboard
+- `/` - Home page with login/welcome screen
+- `/dashboard` - Overview dashboard with stats and module access
 - `/gradebook` - Grade management interface
 - `/lesson-planner` - Lesson planning tools
 - `/class-dojo-remake` - Classroom behavior management
@@ -302,130 +306,31 @@ Runes are special functions prefixed with `$` that control reactivity in Svelte 
 4. **Use snippet patterns** to reduce duplicated template code
 5. **Keep components focused** on a single responsibility
 6. **Leverage TypeScript** for better type safety and editor support
+7. **Always use proper ARIA attributes** for accessibility
+8. **Add IDs to form elements** and associate them with their labels
 
-### Common Gotchas
+### Recent Updates
 
-1. Destructuring reactive state breaks reactivity
-2. Don't mutate other components' state
-3. Async code in effects requires special handling
-4. Props reassignment is temporary and will be reset by parent updates
-5. Snippets are lexically scoped like functions
+1. **Dark Theme Implementation**: 
+   - Added a custom dark theme inspired by Edu.Link Gradebook design
+   - Created a cohesive color scheme with dark backgrounds and accents
+   - Added hover effects and visual hierarchy
 
-# General Overview/Extra Context
-# 🚀 SvelteKit Gradebook Migration – Project Overview
+2. **Icon System Improvements**:
+   - Updated from direct icon usage to the Icon component pattern
+   - Using `@steeze-ui/svelte-icon` for rendering icons from `@steeze-ui/heroicons`
 
-## 🧩 Project Objective
+3. **Accessibility Enhancements**:
+   - Fixed anchor href attributes to use proper navigation or javascript:void(0)
+   - Added ARIA labels to icon-only buttons
+   - Associated form labels with their respective inputs
 
-Migrate an existing Nuxt/Vue-based “Dashboard Master Module” into a fully modern, desktop-only **[SvelteKit](https://kit.svelte.dev/)** web application using **[TypeScript](https://www.typescriptlang.org/)**, **[TailwindCSS](https://tailwindcss.com/)**, and **[Svelte Stores](https://svelte.dev/docs/svelte-store)**, while retaining original functionality and improving UI/UX with dark mode and modular architecture.
+4. **Data Persistence**:
+   - Implemented localStorage for gradebook data
+   - Added functionality to save/load data automatically
+   - Created a reset option for clearing all data
 
----
-
-## ✅ Work Completed
-
-### 🛠️ 1. Project Initialization
-
-- Scaffolded new SvelteKit app:
-  ```bash
-  pnpm create svelte@latest . -- --template minimal --typescript
-  ```
-- Installed and configured:
-  - **TailwindCSS** (`darkMode: 'class'`)
-  - **[Prettier](https://prettier.io/)** for formatting
-  - **[ESLint](https://eslint.org/)** for code quality
-
----
-
-### 🗂️ 2. File Structure & Routing Migration
-
-- Converted Nuxt pages into SvelteKit routes using `src/routes/`:
-  - `/dashboard` → Central navigation hub
-  - `/gradebook` → Fully implemented
-  - `/lesson-planner`, `/class-dojo-remake`, `/test` → Placeholder routes
-- All pages follow the `+page.svelte` routing convention.
-
----
-
-### 🌌 3. Global Layout & Theming
-
-- Implemented `src/routes/+layout.svelte`:
-  - Top nav bar with links to modules
-  - Footer and page container
-  - **Dark mode toggle** using `class="dark"` on `<html>`
-- Dark mode:
-  - Toggle button (☀️ / 🌙)
-  - Style saved in `localStorage`
-  - Tailwind dark mode variants via `dark:` prefix
-
----
-
-### 🧭 4. Dashboard Page
-
-- Modern UI built using Tailwind grid layout
-- Cards link to:
-  - Gradebook
-  - Lesson Planner
-  - Class Dojo Remake
-  - Test Module
-- Icons added via **[@steeze-ui/heroicons](https://www.npmjs.com/package/@steeze-ui/heroicons)** (based on [Heroicons](https://heroicons.com/))
-- Fully responsive and styled for dark mode
-
----
-
-### 📚 5. Gradebook Store & Types
-
-- Store: `src/lib/stores/gradebook.ts`
-  - Built using `writable`, `derived`, `get`, and `nanoid`
-- Types: `src/lib/types/gradebook.ts`
-  - `Student`, `Category`, `Assignment`, `Grade`
-- Store supports:
-  - Global student list
-  - Category creation
-  - Student-category assignments
-  - Assignment creation
-  - Grade recording
-  - Average grade calculation
-
----
-
-### 🧮 6. Gradebook UI (PowerSchool-Inspired)
-
-- Implemented in `/gradebook/+page.svelte`
-- Features:
-  - Dropdown for selecting category
-  - Form for adding assignment (name + max points)
-  - Dynamic table:
-    - Rows = students
-    - Columns = assignments
-    - Inline grade inputs
-    - Real-time average calculation
-- All logic wired directly into the store
-
----
-
-### 🌙 7. Dark Mode Toggle
-
-- Global theme toggle added to layout nav
-- Tailwind `dark:` class applied
-- Setting persisted using `localStorage`
-- Automatically applies on mount
-
----
-
-## 🔜 Next Steps
-
-1. **Add gradebook state persistence** via `localStorage`
-2. **Port remaining Vue pages**:
-   - Lesson Planner
-   - Class Dojo Remake
-   - Test Module
-3. Optional:
-   - Print/export functionality
-   - Unit/E2E tests via [Vitest](https://vitest.dev/) or [Playwright](https://playwright.dev/)
-   - Better validation and form feedback
-
----
-
-## 📁 Folder Structure (Key Files)
+## Folder Structure (Key Files)
 
 ```
 src/
@@ -441,25 +346,24 @@ src/
 │   └── test/+page.svelte
 ```
 
----
+## Current Focus Areas
 
-## 🔗 Documentation References
+1. **Build Optimization**: Ensuring the application builds correctly with all dependencies
+2. **Accessibility**: Improving screen reader support and keyboard navigation
+3. **Visual Design**: Refining the dark theme UI for a professional educational application
+4. **Code Quality**: Adhering to TypeScript best practices and enhancing maintainability
+
+## Known Issues and Solutions
+
+1. **Icon Import Error**: Fixed by using the proper Icon component from @steeze-ui/svelte-icon
+2. **HREF Warnings**: Resolved by replacing "#" with "javascript:void(0)" for non-navigation links
+3. **Form Label Issues**: Being addressed by adding proper for/id attributes to form elements
+
+## Documentation References
 
 - [SvelteKit](https://kit.svelte.dev/docs)
-- [Svelte Stores](https://svelte.dev/docs/svelte-store)
+- [Svelte 5 Documentation](https://svelte-5-preview.vercel.app/)
 - [TailwindCSS](https://tailwindcss.com/docs)
 - [TypeScript](https://www.typescriptlang.org/docs/)
-- [ESLint](https://eslint.org/docs/latest/)
-- [Prettier](https://prettier.io/docs/en/index.html)
 - [Heroicons](https://heroicons.com/)
-- [Vitest](https://vitest.dev/)
-- [Playwright](https://playwright.dev/)
-
----
-
-## 👤 Developer Notes
-
-- This app is intended for **internal desktop use only**
-- Emphasis on modularity, performance, and clean dark UI
-
-
+- [@steeze-ui/svelte-icon](https://github.com/steeze-ui/icons)

@@ -8,17 +8,17 @@ const config: Config = {
 	theme: {
 		extend: {
 			colors: {
-				// Custom dark theme inspired by Edu.Link design
-				'dark-bg': '#030206',
-				'dark-card': '#16141C',
-				'dark-accent': '#4B3A49',
-				'dark-purple': '#5D4A6D',
-				'dark-lavender': '#B0A6CB',
-				'dark-highlight': '#E7D4FF',
-				'dark-muted': '#6E6A7C',
-				'dark-border': '#2B2830',
-				'dark-surface': '#1E1B24',
-				'slate-750': '#283A4E',
+				// Custom dark monochrome theme inspired by the Dribbble design
+				'dark-bg': '#121212', // Main content area - dark but not pure black
+				'dark-card': '#1E1E1E', // Card backgrounds - slightly lighter than bg
+				'dark-accent': '#2A2A2A', // Hover/accent background
+				'dark-purple': '#404040', // Button/accent elements
+				'dark-lavender': '#A0A0A0', // Secondary text
+				'dark-highlight': '#E0E0E0', // Primary text/highlights
+				'dark-muted': '#6E6E6E', // Muted text
+				'dark-border': '#333333', // Border color
+				'dark-surface': '#0A0A0A', // Sidebar background - very dark
+				'slate-750': '#282828', // Additional dark accent
 			},
 			borderRadius: {
 				'xl': '1rem',

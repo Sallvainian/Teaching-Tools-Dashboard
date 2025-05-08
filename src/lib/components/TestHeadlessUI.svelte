@@ -26,21 +26,21 @@
     >
       <div class="py-1" role="menu" aria-orientation="vertical">
         <a 
-          href="#" 
+          href="javascript:void(0)" 
           class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white" 
           role="menuitem"
         >
           Account settings
         </a>
         <a 
-          href="#" 
+          href="javascript:void(0)" 
           class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white" 
           role="menuitem"
         >
           Support
         </a>
         <a 
-          href="#" 
+          href="javascript:void(0)" 
           class="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white" 
           role="menuitem"
         >

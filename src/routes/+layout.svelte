@@ -1,6 +1,28 @@
 <script lang="ts">
 	import '../app.css';
 	import { onMount } from 'svelte';
+	import { gradebookStore } from '$lib/stores/gradebook';
+
+	// Access the store
+	const { 
+		getCategories,
+		selectCategory,
+		addCategory
+	} = gradebookStore;
+
+	let newClassName = '';
+
+	function handleAddClass() {
+		if (newClassName.trim()) {
+			addCategory(newClassName);
+			newClassName = '';
+		}
+	}
+
+	function handleSelectClass(categoryId: string) {
+		selectCategory(categoryId);
+		window.location.href = '/gradebook';
+	}
 
 	// Always use dark mode
 	onMount(() => {
@@ -74,18 +96,35 @@
 				<div>
 					<h3 class="text-dark-muted uppercase text-xs font-semibold mb-3 px-3">Classes</h3>
 					<div class="space-y-1">
-						<a href="#" class="flex items-center justify-between px-3 py-2 rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white">
-							<span>Math 101</span>
-							<span class="bg-dark-purple text-white text-xs rounded-full px-2 py-1">32</span>
-						</a>
-						<a href="#" class="flex items-center justify-between px-3 py-2 rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white">
-							<span>Science 8A</span>
-							<span class="bg-dark-purple text-white text-xs rounded-full px-2 py-1">28</span>
-						</a>
-						<a href="#" class="flex items-center justify-between px-3 py-2 rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white">
-							<span>English 5</span>
-							<span class="bg-dark-purple text-white text-xs rounded-full px-2 py-1">24</span>
-						</a>
+						{#each $getCategories as category}
+							<button 
+								on:click={() => handleSelectClass(category.id)}
+								class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white text-left"
+							>
+								<span>{category.name}</span>
+								<span class="bg-dark-purple text-white text-xs rounded-full px-2 py-1">{category.studentIds.length}</span>
+							</button>
+						{:else}
+							<p class="text-dark-muted text-sm px-3">No classes added yet</p>
+						{/each}
+						
+						<div class="mt-3 pt-3 border-t border-dark-border">
+							<div class="flex items-center px-3 gap-2">
+								<input 
+									type="text" 
+									bind:value={newClassName}
+									placeholder="New class name"
+									class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-2 text-sm focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"
+								/>
+								<button 
+									on:click={handleAddClass}
+									class="bg-dark-purple text-white p-2 rounded-lg text-sm"
+									aria-label="Add new class"
+								>
+									+
+								</button>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>

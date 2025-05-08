@@ -11,6 +11,9 @@ importers:
       '@steeze-ui/heroicons':
         specifier: ^2.4.2
         version: 2.4.2
+      '@steeze-ui/svelte-icon':
+        specifier: ^1.6.2
+        version: 1.6.2(svelte@5.28.2)
       nanoid:
         specifier: ^5.1.5
         version: 5.1.5
@@ -511,6 +514,11 @@ packages:
 
   '@steeze-ui/heroicons@2.4.2':
     resolution: {integrity: sha512-66luL+uaxyC6mcZigewH4phfDxNWj4sH+n6qK2VnY3zcgpMmNAgVQbMGfZYfKhLqrUo13BlqpmhWuHqAUpehlA==}
+
+  '@steeze-ui/svelte-icon@1.6.2':
+    resolution: {integrity: sha512-Q2WP/RkM1JhMueX0FJogSj4J1bncSHaAiiPCqjcseRcHKqfpjYFPJa8bA50I+4KbyOVJ9fdUvTQ3ww9X0ITRxQ==}
+    peerDependencies:
+      svelte: ^5.0.0
 
   '@sveltejs/acorn-typescript@1.0.5':
     resolution: {integrity: sha512-IwQk4yfwLdibDlrXVE04jTZYlLnwsTT2PIOQQGNLWfjavGifnk1JD1LcZjZaBTRcxZu2FfPfNLOE04DSu9lqtQ==}
@@ -2510,6 +2518,10 @@ snapshots:
     optional: true
 
   '@steeze-ui/heroicons@2.4.2': {}
+
+  '@steeze-ui/svelte-icon@1.6.2(svelte@5.28.2)':
+    dependencies:
+      svelte: 5.28.2
 
   '@sveltejs/acorn-typescript@1.0.5(acorn@8.14.1)':
     dependencies:

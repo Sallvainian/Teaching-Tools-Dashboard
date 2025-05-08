@@ -7,6 +7,7 @@
 	let assignmentName = '';
 	let maxPoints: number = 100;
 	let inputMap: Record<string, string> = {};
+	let newStudentName = '';
 
 	// Access the store
 	const { 
@@ -18,7 +19,9 @@
 		getAssignmentsForSelectedCategory,
 		studentAverageInCategory,
 		addAssignmentToCategory,
-		recordGrade
+		recordGrade,
+		addGlobalStudent,
+		assignStudentToCategory
 	} = gradebookStore;
 
 	// Derived values
@@ -40,6 +43,16 @@
 			addAssignmentToCategory(assignmentName.trim(), maxPoints, categoryId);
 			assignmentName = '';
 			maxPoints = 100;
+		}
+	}
+
+	function handleAddStudent() {
+		if (newStudentName.trim() && categoryId) {
+			const studentId = addGlobalStudent(newStudentName.trim());
+			if (studentId) {
+				assignStudentToCategory(studentId, categoryId);
+				newStudentName = '';
+			}
 		}
 	}
 
@@ -93,7 +106,7 @@
 	<!-- Filter controls -->
 	<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
 		<div class="bg-dark-card p-4 rounded-xl border border-dark-border">
-			<label for="category" class="block text-sm text-dark-lavender font-medium mb-2">Class/Category</label>
+			<label for="category" class="block text-sm text-dark-lavender font-medium mb-2">Class</label>
 			<select 
 				id="category" 
 				bind:value={categoryId} 
@@ -107,8 +120,8 @@
 		</div>
 		
 		<div class="bg-dark-card p-4 rounded-xl border border-dark-border">
-			<label class="block text-sm text-dark-lavender font-medium mb-2">Grading Period</label>
-			<select class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-2 focus:ring-2 focus:ring-dark-purple focus:border-dark-purple">
+			<label for="gradingPeriod" class="block text-sm text-dark-lavender font-medium mb-2">Grading Period</label>
+			<select id="gradingPeriod" class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-2 focus:ring-2 focus:ring-dark-purple focus:border-dark-purple">
 				<option>All Periods</option>
 				<option>Quarter 1</option>
 				<option>Quarter 2</option>
@@ -118,8 +131,8 @@
 		</div>
 		
 		<div class="bg-dark-card p-4 rounded-xl border border-dark-border">
-			<label class="block text-sm text-dark-lavender font-medium mb-2">Assignment Type</label>
-			<select class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-2 focus:ring-2 focus:ring-dark-purple focus:border-dark-purple">
+			<label for="assignmentType" class="block text-sm text-dark-lavender font-medium mb-2">Assignment Type</label>
+			<select id="assignmentType" class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-2 focus:ring-2 focus:ring-dark-purple focus:border-dark-purple">
 				<option>All Types</option>
 				<option>Homework</option>
 				<option>Quiz</option>
@@ -129,8 +142,8 @@
 		</div>
 		
 		<div class="bg-dark-card p-4 rounded-xl border border-dark-border">
-			<label class="block text-sm text-dark-lavender font-medium mb-2">View</label>
-			<select class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-2 focus:ring-2 focus:ring-dark-purple focus:border-dark-purple">
+			<label for="viewType" class="block text-sm text-dark-lavender font-medium mb-2">View</label>
+			<select id="viewType" class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-2 focus:ring-2 focus:ring-dark-purple focus:border-dark-purple">
 				<option>Grade Table</option>
 				<option>Student Report</option>
 				<option>Assignment Report</option>
@@ -139,11 +152,43 @@
 	</div>
 </div>
 
+<!-- Add Student Card -->
+<div class="bg-dark-card border border-dark-border p-6 rounded-xl mb-8 shadow-dark-card">
+	<div class="flex items-center justify-between mb-6">
+		<h2 class="text-lg font-semibold text-white">Add New Student</h2>
+		<button class="text-dark-lavender hover:text-dark-highlight" aria-label="Student information">
+			<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+			</svg>
+		</button>
+	</div>
+	<div class="flex gap-4">
+		<div class="flex-grow">
+			<label for="newStudentName" class="block text-sm text-dark-lavender font-medium mb-2">Student Name</label>
+			<input
+				id="newStudentName"
+				type="text"
+				placeholder="Enter student name"
+				bind:value={newStudentName}
+				class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-3 focus:ring-2 focus:ring-dark-purple focus:border-dark-purple placeholder:text-dark-muted"
+			/>
+		</div>
+		<div class="self-end">
+			<button 
+				on:click={handleAddStudent} 
+				class="w-full px-4 py-3 bg-dark-highlight text-dark-purple font-medium rounded-lg hover:bg-dark-lavender transition focus:ring-2 focus:ring-offset-2 focus:ring-dark-purple"
+			>
+				Add Student
+			</button>
+		</div>
+	</div>
+</div>
+
 <!-- Add Assignment Card -->
 <div class="bg-dark-card border border-dark-border p-6 rounded-xl mb-8 shadow-dark-card">
 	<div class="flex items-center justify-between mb-6">
 		<h2 class="text-lg font-semibold text-white">Add New Assignment</h2>
-		<button class="text-dark-lavender hover:text-dark-highlight">
+		<button class="text-dark-lavender hover:text-dark-highlight" aria-label="Assignment information">
 			<svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
 			</svg>
@@ -151,8 +196,9 @@
 	</div>
 	<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 		<div>
-			<label class="block text-sm text-dark-lavender font-medium mb-2">Assignment Name</label>
+			<label for="assignmentName" class="block text-sm text-dark-lavender font-medium mb-2">Assignment Name</label>
 			<input
+				id="assignmentName"
 				type="text"
 				placeholder="Enter assignment name"
 				bind:value={assignmentName}
@@ -160,8 +206,9 @@
 			/>
 		</div>
 		<div>
-			<label class="block text-sm text-dark-lavender font-medium mb-2">Maximum Points</label>
+			<label for="maxPoints" class="block text-sm text-dark-lavender font-medium mb-2">Maximum Points</label>
 			<input
+				id="maxPoints"
 				type="number"
 				min="0"
 				placeholder="Points"
@@ -218,6 +265,12 @@
 								</span>
 							</td>
 						</tr>
+					{:else}
+						<tr>
+							<td colspan={categoryAssignments.length + 2} class="px-6 py-4 text-center text-dark-muted">
+								No students in this class yet. Add some students above!
+							</td>
+						</tr>
 					{/each}
 				</tbody>
 			</table>
@@ -228,7 +281,7 @@
 		<svg class="w-16 h-16 mx-auto text-dark-muted mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
 			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
 		</svg>
-		<h3 class="text-lg font-medium text-white mb-2">No Category Selected</h3>
-		<p class="text-dark-muted">Please select a class or category to view grades.</p>
+		<h3 class="text-lg font-medium text-white mb-2">No Class Selected</h3>
+		<p class="text-dark-muted">Please select a class or create a new one to view grades.</p>
 	</div>
 {/if}

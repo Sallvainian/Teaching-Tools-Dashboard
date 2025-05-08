@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { AcademicCap, ClipboardList, Users, Beaker } from '@steeze-ui/heroicons';
+	import { AcademicCap, ClipboardDocument, Users, Beaker } from '@steeze-ui/heroicons';
+	import { Icon } from '@steeze-ui/svelte-icon';
 
 	const modules = [
 		{
@@ -12,7 +13,7 @@
 			name: 'Lesson Planner',
 			path: '/lesson-planner',
 			description: 'Create, organize, and schedule classroom lesson plans.',
-			icon: ClipboardList
+			icon: ClipboardDocument
 		},
 		{
 			name: 'Class Dojo Remake',
@@ -106,7 +107,7 @@
 				<div class="absolute top-0 left-0 w-1 h-full bg-dark-highlight transform scale-y-0 group-hover:scale-y-100 transition-transform origin-top"></div>
 				<div class="flex items-start gap-4">
 					<div class="w-12 h-12 rounded-lg bg-dark-purple bg-opacity-20 flex items-center justify-center text-dark-highlight mb-4">
-						<mod.icon class="w-6 h-6" />
+						<Icon src={mod.icon} class="w-6 h-6" />
 					</div>
 				</div>
 				<h2 class="text-lg font-semibold text-white mb-2">{mod.name}</h2>
