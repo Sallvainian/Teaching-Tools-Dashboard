@@ -1,8 +1,28 @@
 {
-	"buildCommand": "npm run build",
-	"devCommand": "npm run dev",
-	"installCommand": "npm install",
-	"outputDirectory": ".svelte-kit/output/client",
+	"version": 2,
+	"buildCommand": "pnpm run build",
+	"devCommand": "pnpm run dev",
+	"installCommand": "pnpm install --no-frozen-lockfile",
 	"framework": "sveltekit",
-	"rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+	"regions": ["iad1"],
+	"builds": [
+		{
+			"src": "package.json",
+			"use": "@vercel/node",
+			"config": {
+				"nodeVersion": "18.x"
+			}
+		}
+	],
+	"headers": [
+		{
+			"source": "/(.*)",
+			"headers": [
+				{
+					"key": "Cache-Control",
+					"value": "public, max-age=0, must-revalidate"
+				}
+			]
+		}
+	]
 }

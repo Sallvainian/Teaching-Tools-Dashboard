@@ -3,6 +3,10 @@
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
+	"engines": {
+		"node": ">=18.x",
+		"pnpm": ">=10.x"
+	},
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
