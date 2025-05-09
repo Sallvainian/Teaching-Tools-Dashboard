@@ -1,22 +1,18 @@
-# sv
+# Teacher Dashboard - Svelte 5 Version
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+A modern, dark-themed teacher dashboard with gradebook, jeopardy, lesson planner and more.
 
-## Creating a project
+## Features
 
-If you're seeing this, you've probably already done this step. Congrats!
-
-```bash
-# create a new project in the current directory
-npx sv create
-
-# create a new project in my-app
-npx sv create my-app
-```
+- **Gradebook**: Track student assignments and grades
+- **Jeopardy Game**: Create and play interactive review games
+- **Lesson Planner**: Organize teaching materials
+- **ClassDojo Remake**: Classroom behavior management
+- **Dashboard**: Quick access to important information
 
 ## Developing
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+Once you've installed dependencies with `npm install`, start a development server:
 
 ```bash
 npm run dev
@@ -35,4 +31,4 @@ npm run build
 
 You can preview the production build with `npm run preview`.
 
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+> To deploy your app, you'll need to install the [Vercel adapter](https://kit.svelte.dev/docs/adapters) (already configured).

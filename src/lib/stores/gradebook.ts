@@ -6,7 +6,7 @@ import type { Student, Category, Assignment, Grade } from '$lib/types/gradebook'
 // Function to load data from localStorage
 function loadFromStorage<T>(key: string, defaultValue: T): T {
 	if (typeof window === 'undefined') return defaultValue;
-	
+
 	try {
 		const stored = localStorage.getItem(`gradebook_${key}`);
 		return stored ? JSON.parse(stored) : defaultValue;
@@ -19,7 +19,7 @@ function loadFromStorage<T>(key: string, defaultValue: T): T {
 // Function to save data to localStorage
 function saveToStorage<T>(key: string, value: T): void {
 	if (typeof window === 'undefined') return;
-	
+
 	try {
 		localStorage.setItem(`gradebook_${key}`, JSON.stringify(value));
 	} catch (e) {
@@ -141,7 +141,7 @@ function createGradebookStore() {
 		selectedCategoryId.set(null);
 		assignments.set([]);
 		grades.set([]);
-		
+
 		// Clear localStorage
 		if (typeof window !== 'undefined') {
 			localStorage.removeItem('gradebook_students');
