@@ -5,6 +5,9 @@ export interface Question {
 	answer: string;
 	pointValue: number;
 	isAnswered: boolean;
+	isDoubleJeopardy?: boolean;
+	wager?: number;
+	timeLimit?: number; // Time limit in seconds
 }
 
 export interface Category {
@@ -27,4 +30,26 @@ export interface JeopardyGame {
 	teams: Team[];
 	dateCreated: string;
 	lastModified: string;
+	settings?: GameSettings;
+}
+
+export interface GameSettings {
+	defaultTimeLimit?: number; // Default time limit in seconds for questions
+	useTimer?: boolean; // Whether to use timer by default
+	allowWagers?: boolean; // Whether to allow wagers for double jeopardy
+}
+
+export interface GameTemplate {
+	id: string;
+	name: string;
+	description: string;
+	categories: {
+		name: string;
+		questions: {
+			text: string;
+			answer: string;
+			pointValue: number;
+			isDoubleJeopardy?: boolean;
+		}[];
+	}[];
 }
