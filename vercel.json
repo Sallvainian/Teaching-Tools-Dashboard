@@ -3,7 +3,7 @@
 	"buildCommand": "pnpm run build",
 	"devCommand": "pnpm run dev",
 	"installCommand": "pnpm install --no-frozen-lockfile",
-	"framework": "svelte-kit",
+	"framework": "sveltekit",
 	"regions": ["iad1"],
 	"headers": [
 		{
