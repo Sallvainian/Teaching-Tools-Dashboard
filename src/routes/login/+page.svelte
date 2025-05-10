@@ -1,9 +1,11 @@
-<!-- Placeholder for future login page implementation -->
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  
-  // Redirect to dashboard immediately since we don't have authentication
-  goto('/dashboard');
+
+  onMount(() => {
+    // This only runs in the browser
+    goto('/dashboard');
+  });
 </script>
 
 <div class="flex min-h-screen items-center justify-center bg-dark-surface px-4 py-12 sm:px-6 lg:px-8">
