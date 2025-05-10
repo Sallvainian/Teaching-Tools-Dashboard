@@ -2,18 +2,9 @@
 	"version": 2,
 	"buildCommand": "pnpm run build",
 	"devCommand": "pnpm run dev",
-	"installCommand": "pnpm install --no-frozen-lockfile",
+	"installCommand": "pnpm install",
 	"framework": "sveltekit",
 	"regions": ["iad1"],
-	"builds": [
-		{
-			"src": "package.json",
-			"use": "@vercel/node",
-			"config": {
-				"nodeVersion": "18.x"
-			}
-		}
-	],
 	"headers": [
 		{
 			"source": "/(.*)",
