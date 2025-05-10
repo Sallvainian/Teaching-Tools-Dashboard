@@ -470,6 +470,17 @@ This project uses [ag-grid-svelte5](https://github.com/JohnMaher1/ag-grid-svelte
   };
   ```
 
+## Code Replacement Preferences
+
+```
+CODE_REPLACEMENT_PREFERENCES:
+1. When replacing properties, search for the property name followed by colon (e.g., "suppressCellFlash:")
+2. Replace the entire property including its value while preserving the original indentation
+3. Always verify the replacement by showing a diff of the changes before applying
+4. For deprecation warnings, only replace the exact deprecated property, not similar named properties
+5. If multiple matches are found, show all occurrences and ask for confirmation before replacing
+```
+
 ## Documentation References
 
 - [SvelteKit](https://kit.svelte.dev/docs)
@@ -479,4 +490,10 @@ This project uses [ag-grid-svelte5](https://github.com/JohnMaher1/ag-grid-svelte
 - [Heroicons](https://heroicons.com/)
 - [@steeze-ui/svelte-icon](https://github.com/steeze-ui/icons)
 - [AG Grid](https://www.ag-grid.com/javascript-data-grid/)
+- [AG Grid Modules](https://www.ag-grid.com/javascript-data-grid/modules/)
+- [AG Grid Styling](https://www.ag-grid.com/javascript-data-grid/global-style-customisation-variables/)
+- [AG Grid Column Definitions](https://www.ag-grid.com/javascript-data-grid/column-definitions/)
 - [ag-grid-svelte5](https://github.com/JohnMaher1/ag-grid-svelte5)
+- [Vitest](https://vitest.dev/guide/)
+- [nanoid](https://github.com/ai/nanoid)
+- [localStorage API](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage)

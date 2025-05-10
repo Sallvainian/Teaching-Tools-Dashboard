@@ -1,7 +1,7 @@
 // src/lib/stores/jeopardy.ts
 import { writable, derived, get } from 'svelte/store';
 import { nanoid } from 'nanoid';
-import type { JeopardyGame, Category, Question, Team } from '$lib/types/jeopardy';
+import type { JeopardyGame, Category, Question, Team, GameSettings, GameTemplate } from '$lib/types/jeopardy';
 
 // Function to load data from localStorage
 function loadFromStorage<T>(key: string, defaultValue: T): T {
@@ -33,6 +33,9 @@ function createJeopardyStore() {
 	const activeGameId = writable<string | null>(loadFromStorage('activeGameId', null));
 	const activeQuestionId = writable<string | null>(null);
 	const editMode = writable<boolean>(true);
+	const timerActive = writable<boolean>(false);
+	const timerSeconds = writable<number>(30);
+	const wagerAmount = writable<number>(0);
 
 	// Store for temporary holding of new game being created
 	const draftGame = writable<JeopardyGame | null>(null);
@@ -70,7 +73,12 @@ function createJeopardyStore() {
 			categories: [],
 			teams: [],
 			dateCreated: new Date().toISOString(),
-			lastModified: new Date().toISOString()
+			lastModified: new Date().toISOString(),
+			settings: {
+				defaultTimeLimit: 30,
+				useTimer: false,
+				allowWagers: true
+			}
 		};
 
 		games.update((games) => [...games, newGame]);
@@ -80,6 +88,24 @@ function createJeopardyStore() {
 	function updateGame(game: JeopardyGame): void {
 		game.lastModified = new Date().toISOString();
 		games.update((games) => games.map((g) => (g.id === game.id ? game : g)));
+	}
+
+	function updateGameSettings(gameId: string, settings: Partial<GameSettings>): void {
+		games.update((games) => {
+			return games.map((game) => {
+				if (game.id === gameId) {
+					return {
+						...game,
+						settings: {
+							...game.settings,
+							...settings
+						},
+						lastModified: new Date().toISOString()
+					};
+				}
+				return game;
+			});
+		});
 	}
 
 	function deleteGame(gameId: string): void {
@@ -161,17 +187,21 @@ function createJeopardyStore() {
 	function addQuestion(
 		gameId: string,
 		categoryId: string,
-		question: string,
+		questionText: string,
 		answer: string,
-		pointValue: number
+		pointValue: number,
+		isDoubleJeopardy: boolean = false,
+		timeLimit?: number
 	): string {
 		const questionId = nanoid();
 		const newQuestion: Question = {
 			id: questionId,
-			text: question,
+			text: questionText,
 			answer,
 			pointValue,
-			isAnswered: false
+			isAnswered: false,
+			isDoubleJeopardy,
+			timeLimit
 		};
 
 		games.update((games) => {
@@ -260,6 +290,25 @@ function createJeopardyStore() {
 
 	function setActiveQuestion(questionId: string | null): void {
 		activeQuestionId.set(questionId);
+		// Reset timer and wager when changing questions
+		if (questionId === null) {
+			timerActive.set(false);
+			wagerAmount.set(0);
+		}
+	}
+
+	// Timer functions
+	function startTimer(seconds: number): void {
+		timerSeconds.set(seconds);
+		timerActive.set(true);
+	}
+
+	function stopTimer(): void {
+		timerActive.set(false);
+	}
+
+	function setWagerAmount(amount: number): void {
+		wagerAmount.set(amount);
 	}
 
 	// Team functions
@@ -364,7 +413,8 @@ function createJeopardyStore() {
 							...cat,
 							questions: cat.questions.map((q) => ({
 								...q,
-								isAnswered: false
+								isAnswered: false,
+								wager: undefined
 							}))
 						})),
 						lastModified: new Date().toISOString()
@@ -438,7 +488,9 @@ function createJeopardyStore() {
 						text: q.text,
 						answer: q.answer,
 						pointValue: q.pointValue,
-						isAnswered: false
+						isAnswered: false,
+						isDoubleJeopardy: q.isDoubleJeopardy || false,
+						timeLimit: q.timeLimit
 					};
 				});
 
@@ -470,11 +522,197 @@ function createJeopardyStore() {
 		}
 	}
 
+	// Export game data to JSON
+	function exportGameData(gameId: string): string {
+		const game = get(games).find((g) => g.id === gameId);
+		if (!game) return '';
+
+		const exportData = {
+			name: game.name,
+			categories: game.categories.map((cat) => ({
+				name: cat.name,
+				questions: cat.questions.map((q) => ({
+					text: q.text,
+					answer: q.answer,
+					pointValue: q.pointValue,
+					isDoubleJeopardy: q.isDoubleJeopardy,
+					timeLimit: q.timeLimit
+				}))
+			}))
+		};
+
+		return JSON.stringify(exportData, null, 2);
+	}
+
+	// Game template functions
+	const templates: GameTemplate[] = [
+		{
+			id: 'math',
+			name: 'Math',
+			description: 'Basic math questions for elementary students',
+			categories: [
+				{
+					name: 'Addition',
+					questions: [
+						{
+							text: 'What is 5 + 7?',
+							answer: '12',
+							pointValue: 100
+						},
+						{
+							text: 'What is 14 + 19?',
+							answer: '33',
+							pointValue: 200
+						},
+						{
+							text: 'What is 25 + 36?',
+							answer: '61',
+							pointValue: 300
+						},
+						{
+							text: 'What is 123 + 456?',
+							answer: '579',
+							pointValue: 400,
+							isDoubleJeopardy: true
+						}
+					]
+				},
+				{
+					name: 'Subtraction',
+					questions: [
+						{
+							text: 'What is 10 - 3?',
+							answer: '7',
+							pointValue: 100
+						},
+						{
+							text: 'What is 25 - 13?',
+							answer: '12',
+							pointValue: 200
+						},
+						{
+							text: 'What is 50 - 26?',
+							answer: '24',
+							pointValue: 300
+						},
+						{
+							text: 'What is 100 - 64?',
+							answer: '36',
+							pointValue: 400
+						}
+					]
+				},
+				{
+					name: 'Multiplication',
+					questions: [
+						{
+							text: 'What is 3 × 4?',
+							answer: '12',
+							pointValue: 100
+						},
+						{
+							text: 'What is 7 × 8?',
+							answer: '56',
+							pointValue: 200
+						},
+						{
+							text: 'What is 12 × 5?',
+							answer: '60',
+							pointValue: 300
+						},
+						{
+							text: 'What is 14 × 9?',
+							answer: '126',
+							pointValue: 400,
+							isDoubleJeopardy: true
+						}
+					]
+				}
+			]
+		},
+		{
+			id: 'science',
+			name: 'Science',
+			description: 'Basic science facts for elementary students',
+			categories: [
+				{
+					name: 'Animals',
+					questions: [
+						{
+							text: 'What animal is known as the king of the jungle?',
+							answer: 'Lion',
+							pointValue: 100
+						},
+						{
+							text: 'What is the largest animal on Earth?',
+							answer: 'Blue Whale',
+							pointValue: 200
+						},
+						{
+							text: 'What type of animal is a komodo dragon?',
+							answer: 'Lizard/Reptile',
+							pointValue: 300
+						},
+						{
+							text: 'Which bird is known for its ability to mimic human speech?',
+							answer: 'Parrot',
+							pointValue: 400
+						}
+					]
+				},
+				{
+					name: 'The Solar System',
+					questions: [
+						{
+							text: 'What is the closest planet to the Sun?',
+							answer: 'Mercury',
+							pointValue: 100
+						},
+						{
+							text: 'What planet is known for its rings?',
+							answer: 'Saturn',
+							pointValue: 200
+						},
+						{
+							text: 'What is the largest planet in our solar system?',
+							answer: 'Jupiter',
+							pointValue: 300
+						},
+						{
+							text: 'What is the name of the galaxy we live in?',
+							answer: 'Milky Way',
+							pointValue: 400,
+							isDoubleJeopardy: true
+						}
+					]
+				}
+			]
+		}
+	];
+
+	function getGameTemplates(): GameTemplate[] {
+		return templates;
+	}
+
+	function applyGameTemplate(gameId: string, templateId: string): boolean {
+		const template = templates.find(t => t.id === templateId);
+		if (!template) return false;
+
+		const templateData = {
+			categories: template.categories
+		};
+
+		return importGameData(gameId, templateData);
+	}
+
 	return {
 		games,
 		activeGameId,
 		activeQuestionId,
 		editMode,
+		timerActive,
+		timerSeconds,
+		wagerAmount,
 		draftGame,
 		getGames,
 		getActiveGame,
@@ -482,6 +720,7 @@ function createJeopardyStore() {
 		getLeadingTeam,
 		createGame,
 		updateGame,
+		updateGameSettings,
 		deleteGame,
 		setActiveGame,
 		setEditMode,
@@ -493,6 +732,9 @@ function createJeopardyStore() {
 		deleteQuestion,
 		markQuestionAnswered,
 		setActiveQuestion,
+		startTimer,
+		stopTimer,
+		setWagerAmount,
 		addTeam,
 		updateTeam,
 		deleteTeam,
@@ -500,7 +742,10 @@ function createJeopardyStore() {
 		resetAllScores,
 		resetGameBoard,
 		clearAllData,
-		importGameData
+		importGameData,
+		exportGameData,
+		getGameTemplates,
+		applyGameTemplate
 	};
 }
 

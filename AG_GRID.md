@@ -9,12 +9,13 @@ There are three main libraries for integrating AG Grid with Svelte 5:
 1. **ag-grid-svelte5** by JohnMaher1
    - Original wrapper for AG Grid with Svelte 5
    - More basic implementation
-   - Less actively maintained
+   - Default export: `import AgGridSvelte from 'ag-grid-svelte5';`
 
 2. **ag-grid-svelte5-extended** by bn-l
    - Built on top of ag-grid-svelte5
    - Adds support for Svelte components as cell renderers
    - Better reactive data updates
+   - Named export: `import { AgGrid } from 'ag-grid-svelte5-extended';`
    - Current version: 0.0.13
 
 3. **@opliko/ag-grid-svelte5-extended** by oplik0
@@ -23,7 +24,7 @@ There are three main libraries for integrating AG Grid with Svelte 5:
    - More recent updates
    - Current version: 0.0.14
 
-**Our project uses: ag-grid-svelte5-extended**
+**Our project now uses: ag-grid-svelte5**
 
 ## Project Setup
 
@@ -34,7 +35,8 @@ There are three main libraries for integrating AG Grid with Svelte 5:
   "@ag-grid-community/client-side-row-model": "^32.3.5",
   "@ag-grid-community/styles": "^32.3.5",
   "@ag-grid-community/core": "^32.3.5",
-  "ag-grid-svelte5-extended": "^0.0.13"
+  "@ag-grid-community/theming": "^32.3.5",
+  "ag-grid-svelte5": "^1.0.3"
 }
 ```
 
@@ -56,17 +58,22 @@ ModuleRegistry.registerModules([ClientSideRowModelModule]);
 
 ### CSS Import
 
-We import the required CSS in our layout file:
+We import the required CSS in our app.css file:
+
+```css
+/* AG Grid CSS imports - must be at the very top */
+@import '@ag-grid-community/styles/ag-grid.css';
+@import '@ag-grid-community/styles/ag-theme-alpine.css';
+```
+
+And in the layout component, we register modules and set theme mode:
 
 ```svelte
 <!-- src/routes/+layout.svelte -->
 <script>
   // Import AG Grid modules (registers modules globally)
   import '$lib/ag-grid-modules';
-  
-  // Import AG Grid CSS early - must come before any grid renders
-  import '@ag-grid-community/styles/ag-grid.css';
-  import '@ag-grid-community/styles/ag-theme-material.css';
+  import { onMount } from 'svelte';
   
   // Set AG Grid dark mode attribute
   onMount(() => {
@@ -76,77 +83,118 @@ We import the required CSS in our layout file:
 </script>
 ```
 
-### Grid Component Export
+## Theming System
 
-We simplify imports by exporting the grid from our lib index:
+AG Grid provides a robust theming system with built-in themes and color schemes. Prefer using these over custom CSS when possible.
 
-```typescript
-// src/lib/index.ts
-import { AgGrid } from 'ag-grid-svelte5-extended';
-export { AgGrid as Grid };
+### Available Themes
+
+AG Grid offers several built-in themes:
+
+- **Alpine** (`ag-theme-alpine`) - Modern, clean look (recommended)
+- **Balham** (`ag-theme-balham`) - Business-like appearance
+- **Material** (`ag-theme-material`) - Google Material design
+- **Quartz** (`ag-theme-quartz`) - Latest theme with a modern appearance (v32+)
+
+### Color Schemes
+
+Each theme comes with light and dark variants, plus additional color schemes:
+
+- **Alpine**: light, dark
+- **Balham**: light, dark
+- **Material**: light, dark
+- **Quartz**: light, dark, plus additional schemes:
+  - Fresh (light or dark)
+  - Warm (light or dark)
+  - Cool (light or dark)
+  - Strong (light or dark)
+
+### Setting Theme and Color Scheme
+
+There are three ways to set the theme and color scheme:
+
+#### 1. Using Grid Class and Attribute
+
+```html
+<div class="ag-theme-alpine" data-ag-theme-mode="dark">
+  <AgGridSvelte {...props} />
+</div>
 ```
 
-## Dark Theme Implementation
+#### 2. Using the `theme` Property
 
-Our application uses a custom dark theme for AG Grid with three layers of styling:
+```javascript
+import { themeAlpine } from '@ag-grid-community/theming';
 
-### 1. Global CSS Variables in app.css
+const darkTheme = themeAlpine.withParams({
+  colorScheme: 'dark'
+});
 
-```css
-/* AG Grid Dark Theme - Applied globally to all instances */
-.ag-theme-material {
-  /* Override the white background */
-  --ag-background-color: #121212 !important;
-  --ag-header-background-color: #1e1e1e !important;
-  --ag-odd-row-background-color: #0a0a0a !important;
-  --ag-foreground-color: #e0e0e0 !important;
-  /* Other theme variables... */
-}
-
-/* Force dark backgrounds on all grid elements */
-.ag-theme-material .ag-root-wrapper,
-.ag-theme-material .ag-root,
-/* Other selectors... */ {
-  background-color: #121212 !important;
-}
+// Then in your component:
+<AgGridSvelte theme={darkTheme} {...props} />
 ```
 
-### 2. Component-Level Styling
+#### 3. Using Specific Color Schemes
 
-Each component that uses a grid can include component-specific styling:
+```javascript
+import { themeAlpine, colorSchemeDarkWarm } from '@ag-grid-community/theming';
 
-```svelte
-<style>
-/* Component-specific AG Grid overrides */
-:global(.ag-theme-material .ag-cell.editable-cell) {
-  background-color: rgba(139, 92, 246, 0.05) !important;
-}
-</style>
+const customTheme = themeAlpine.withParams({
+  colorScheme: colorSchemeDarkWarm
+});
+
+// Then in your component:
+<AgGridSvelte theme={customTheme} {...props} />
 ```
 
-### 3. Inline Style Props
+### Theme Overrides
 
-For fine-grained control, inline styles can be passed to the grid:
+For specific customizations, you can override theme parameters:
 
-```svelte
-<script>
-// Custom styles to override the built-in styles
-const customStyles = {
-  "--ag-background-color": "#121212",
-  "--ag-header-background-color": "#1e1e1e",
-  "--ag-odd-row-background-color": "#0a0a0a",
-  "--ag-foreground-color": "#e0e0e0",
-  "--ag-header-foreground-color": "#ffffff",
-  "--ag-border-color": "#333333",
-  "--ag-row-hover-color": "#2a2a2a"
-};
-</script>
+```javascript
+import { themeAlpine } from '@ag-grid-community/theming';
 
-<AgGrid
-  gridClass="ag-theme-material w-full h-full"
-  style={customStyles}
-  /* Other props... */
-/>
+const customTheme = themeAlpine.withParams({
+  colorScheme: 'dark',
+  accentColor: '#8b5cf6', // Purple accent
+  backgroundColor: '#121212', // Darker background
+  headerFontSize: 14,
+  borders: true
+});
+
+// Then in your component:
+<AgGridSvelte theme={customTheme} {...props} />
+```
+
+## Recommended Implementation
+
+For Teacher Dashboard, we recommend using the **Alpine** theme with the **DarkWarm** color scheme:
+
+```javascript
+import AgGridSvelte from 'ag-grid-svelte5';
+import { themeAlpine, colorSchemeDarkWarm } from '@ag-grid-community/theming';
+import { ClientSideRowModelModule } from '@ag-grid-community/client-side-row-model';
+
+// Create custom theme
+const darkTheme = themeAlpine.withParams({
+  colorScheme: colorSchemeDarkWarm,
+  // Optional overrides
+  accentColor: '#8b5cf6', // Purple accent to match our UI
+  headerFontSize: 14
+});
+
+// Define modules
+const modules = [ClientSideRowModelModule];
+
+// Then in your component:
+<div class="h-[500px]">
+  <AgGridSvelte
+    {gridOptions}
+    {rowData}
+    theme={darkTheme}
+    {modules}
+  />
+</div>
 ```
 
 ## Example Implementation: Gradebook
@@ -157,92 +205,53 @@ Here's how we implement the Gradebook grid:
 
 ```svelte
 <script>
+// Import the correct component
+import AgGridSvelte from 'ag-grid-svelte5';
+import { themeAlpine, colorSchemeDarkWarm } from '@ag-grid-community/theming';
+import { ClientSideRowModelModule } from '@ag-grid-community/client-side-row-model';
+import type { GridOptions } from '@ag-grid-community/core';
+
+// Create theme
+const darkTheme = themeAlpine.withParams({
+  colorScheme: colorSchemeDarkWarm,
+  accentColor: '#8b5cf6', // Purple accent
+  headerFontSize: 14,
+  borders: true
+});
+
 // Data for grid
 let rowData = $state(createRowData());
 
 // Basic column definitions
 let columnDefs = $state(createColumnDefs());
 
+// Define modules
+const modules = [ClientSideRowModelModule];
+
 // Update data when dependencies change
 $effect(() => {
-  console.log('Effect trigger: students or assignments changed');
-  rowData = createRowData();
+  if (categoryStudents) {
+    const newRowData = createRowData();
+    console.log(`Updated rowData, students: ${categoryStudents.length}, assignments: ${categoryAssignments.length}`);
+    rowData = newRowData;
+  }
 });
 
 // Create row data from store values
 function createRowData() {
-  return categoryStudents.map((student) => {
-    const row = {
-      studentId: student.id,
-      student: student.name
-    };
-
-    categoryAssignments.forEach((assignment) => {
-      const grades = get(gradebookStore.grades);
-      const grade = grades.find(
-        (g) => g.studentId === student.id && g.assignmentId === assignment.id
-      );
-      row[assignment.id] = grade ? grade.points : null;
-    });
-
-    row['average'] = studentAverageInCategory(student.id, categoryId || '');
-    return row;
-  });
-}
-
-// Create column definitions
-function createColumnDefs() {
-  const colDefs = [
-    {
-      headerName: 'Student',
-      field: 'student',
-      editable: false,
-      pinned: 'left',
-      minWidth: 180,
-      cellStyle: { fontWeight: 'bold' },
-      resizable: true,
-      lockPosition: true,
-      suppressMovable: true
-    }
-  ];
-
-  // Dynamic column generation based on assignments
-  const validAssignments = categoryAssignments.filter((a) => a?.name && a?.id);
-  validAssignments.forEach((assignment) => {
-    colDefs.push({
-      headerName: assignment.name.trim(),
-      field: assignment.id.trim(),
-      editable: true,
-      type: 'numericColumn',
-      width: 120,
-      cellClass: 'editable-cell',
-      headerTooltip: `Max Points: ${assignment.maxPoints}`,
-      // Column-specific formatting options...
-    });
-  });
-
-  // Average column
-  colDefs.push({
-    headerName: 'Average',
-    field: 'average',
-    editable: false,
-    type: 'numericColumn',
-    pinned: 'right',
-    lockPosition: true,
-    suppressMovable: true,
-    valueFormatter: (params) => {
-      return params.value ? `${params.value.toFixed(1)}%` : '–';
-    },
-    cellStyle: {
-      color: '#f3e8ff',
-      fontWeight: 'bold',
-      backgroundColor: 'rgba(99, 102, 241, 0.2)'
-    }
-  });
-
-  return colDefs;
+  // Function implementation...
 }
 </script>
+
+<!-- Component usage -->
+<div class="h-[500px]">
+  <AgGridSvelte
+    {gridOptions}
+    {rowData}
+    theme={darkTheme}
+    {modules}
+  />
+</div>
 ```
 
 ### Grid Options Configuration
@@ -250,122 +259,64 @@ function createColumnDefs() {
 ```svelte
 <script>
 // Grid options
-const gridOptions = {
+const gridOptions: GridOptions<GradeRow> = {
+  columnDefs: createColumnDefs(),
+  getRowId: (params) => params.data.studentId,
   defaultColDef: {
     sortable: true,
     filter: true,
     resizable: true,
     editable: false,
-    cellEditor: 'agTextCellEditor',
-    cellEditorParams: {
-      useFormatter: false
-    },
-    enableCellChangeFlash: true
+    suppressHeaderMenuButton: true,
+    wrapHeaderText: true,
+    autoHeaderHeight: true,
+    minWidth: 120
   },
-  rowSelection: 'multiple',
+  // Using object format for rowSelection as per recent versions
+  rowSelection: { type: 'multiple' },
   undoRedoCellEditing: true,
   enableCellTextSelection: true,
-  ensureDomOrder: true,
-  enterNavigatesVertically: true,
-  enterNavigatesVerticallyAfterEdit: true,
-  copyHeadersToClipboard: true,
-  clipboardDelimiter: '\t',
-  onCellValueChanged,
-  // Important for reducing dom updates and improving performance
-  getRowId: (params) => params.data.studentId
-};
-
-// Cell value changed handler
-function onCellValueChanged(params) {
-  const { data, colDef, newValue } = params;
-  if (colDef.field !== 'student' && colDef.field !== 'average') {
-    const studentId = data.studentId;
-    const assignmentId = colDef.field;
-    const value =
-      newValue === null || newValue === undefined || newValue === ''
-        ? null
-        : parseFloat(newValue);
-    if (value === null || !isNaN(value)) {
-      recordGrade(studentId, assignmentId, value);
-    }
+  stopEditingWhenCellsLoseFocus: true,
+  onCellValueChanged: params => {
+    // Handler implementation...
   }
-}
+};
 </script>
-```
-
-### Grid Component Usage
-
-```svelte
-<div class="h-[500px] w-full" style="--ag-background-color: #121212; --ag-header-background-color: #1e1e1e; --ag-odd-row-background-color: #0a0a0a; --ag-foreground-color: #e0e0e0;">
-  <AgGrid
-    gridClass="ag-theme-material w-full h-full"
-    {gridOptions}
-    {rowData}
-    {columnDefs}
-    {modules}
-    style={customStyles}
-  />
-</div>
-```
-
-## Test Page Implementation
-
-We've created a test page at `/routes/test/+page.svelte` that demonstrates both ways to use AG Grid:
-
-1. With our Grid component wrapper
-2. Direct implementation with ag-grid-svelte5-extended
-
-This page is useful for testing new grid features and for providing examples of proper implementation.
-
-## Debugging Tips
-
-For debugging data flow issues, add console logs in key functions:
-
-```typescript
-// Update data when dependencies change
-$effect(() => {
-  console.log('Effect trigger: categoryStudents or assignments changed');
-  console.log('Current category:', categoryId);
-  console.log('Students in category:', categoryStudents.length);
-  console.log('Assignments in category:', categoryAssignments.length);
-  
-  // Update row data
-  rowData = createRowData();
-  console.log('Row data updated:', rowData);
-});
-
-// Create row data from store values
-function createRowData() {
-  // Debug current state
-  console.log('Creating row data from:', categoryStudents.length, 'students');
-  
-  // Map students to rows...
-  
-  console.log('Generated row data:', rows);
-  return rows;
-}
 ```
 
 ## Common Issues and Solutions
 
 ### White Background in Dark Mode
 
-If grid still has a white background despite dark mode settings:
+If the grid still has a white background, try these approaches:
 
-1. Make sure the grid has the right CSS classes:
-```html
-<AgGrid gridClass="ag-theme-material w-full h-full" ... />
-```
+1. **Preferred Approach**: Use the theme and colorScheme properties:
+   ```javascript
+   import { themeAlpine, colorSchemeDarkWarm } from '@ag-grid-community/theming';
+   
+   const darkTheme = themeAlpine.withParams({
+     colorScheme: colorSchemeDarkWarm
+   });
+   
+   <AgGridSvelte theme={darkTheme} {...props} />
+   ```
 
-2. Ensure dark mode attribute is set:
-```typescript
-document.documentElement.setAttribute('data-ag-theme-mode', "dark");
-```
+2. **Alternative Approach**: Use the correct CSS class and attribute:
+   ```html
+   <div class="ag-theme-alpine" data-ag-theme-mode="dark">
+     <AgGridSvelte {...props} />
+   </div>
+   ```
 
-3. Apply all three layers of styling:
-   - Global CSS in app.css
-   - Component-specific styles
-   - Inline style props
+3. **Last Resort**: Use the CSS Variables approach only if the above methods don't work:
+   ```css
+   .ag-theme-alpine {
+     --ag-background-color: #121212;
+     --ag-header-background-color: #1e1e1e;
+     --ag-odd-row-background-color: #0a0a0a;
+     /* Other variables */
+   }
+   ```
 
 ### No Data Appearing
 
@@ -378,72 +329,50 @@ If no data appears in the grid:
 5. Check that store values are being loaded properly
 6. Add sample data generation to verify grid rendering
 
-### Sample Data Generation
-
-For testing, we added sample data generation:
-
-```typescript
-// Create sample data if none exists
-$effect(() => {
-  if (categoryId) {
-    // Check if we need to create sample data
-    if (categoryStudents.length === 0) {
-      console.log('Adding sample students for demo');
-      // Create and add sample students...
-    }
-
-    if (categoryAssignments.length === 0) {
-      console.log('Adding sample assignments for demo');
-      // Create sample assignments...
-      
-      // Add sample grades...
-    }
-  }
-});
-```
-
 ## Performance Optimization
 
 For better performance:
 
 1. Use `getRowId` to provide stable row IDs:
-```typescript
-getRowId: (params) => params.data.studentId
-```
+   ```typescript
+   getRowId: (params) => params.data.studentId
+   ```
 
-2. Keep grid size reasonable (500px height is good):
-```html
-<div class="h-[500px] w-full">
-  <AgGrid ... />
-</div>
-```
+2. Use separate effects for row data and column definitions to prevent unnecessary updates
 
-3. Update only when needed (using effects to detect changes)
+3. Get data from stores once outside of loops to avoid triggering reactivity:
+   ```typescript
+   // Get grades once outside the loop
+   const allGrades = get(gradebookStore.grades);
+   
+   // Use the retrieved data inside the loop
+   studentData.forEach(student => {
+     const grade = allGrades.find(g => g.studentId === student.id);
+     // ...
+   });
+   ```
 
-4. Use `enableCellChangeFlash: true` in `defaultColDef` to show changes visually
-
-## Adding New Grids to the Project
-
-When adding a new grid to the project:
-
-1. Import the Grid or AgGrid component
-2. Define data and column structure
-3. Configure grid options with proper event handlers
-4. Apply consistent dark styling using the three-layer approach
-5. Use Svelte 5 reactivity with effects to update the grid
+4. Use setTimeout in onMount to defer initial data loading and prevent infinite loops:
+   ```typescript
+   onMount(() => {
+     setTimeout(() => {
+       // Load initial data
+     }, 0);
+   });
+   ```
 
 ## Best Practices
 
-1. **Reactive data updates**: Use `$state` and `$effect` to manage grid data
-2. **Dynamic columns**: Generate columns dynamically based on data
-3. **Excel-like features**: Enable features that improve usability  
-4. **Performance optimization**: Use `getRowId` and minimize rerenders
-5. **Consistent styling**: Apply dark theme consistently
-6. **Debugging**: Add console logs for troubleshooting
-7. **Sample data**: Generate sample data for demonstration and testing
+1. **Preferred Theme Approach**: Use `themeAlpine.withParams({colorScheme: colorSchemeDarkWarm})` rather than CSS variables
+2. **Reactive data updates**: Use `$state` and `$effect` with careful dependency tracking
+3. **Dynamic columns**: Generate columns dynamically based on data
+4. **Modern Grid Options**: Use object notation for properties like rowSelection: `{ type: 'multiple' }`
+5. **Performance optimization**: Use `getRowId` and minimize reactivity triggers
+6. **Debugging**: Add console logs in effect blocks to trace reactivity flow
 
 ## Extra Resources
 
-- [AG Grid Documentation](https://www.ag-grid.com/documentation)
-- [ag-grid-svelte5-extended Documentation](https://github.com/JohnMaher1/ag-grid-svelte5)
-- [Demo Grid in Test Page](src/routes/test/+page.svelte)
+- [AG Grid Documentation](https://www.ag-grid.com/javascript-data-grid/)
+- [AG Grid Theming Overview](https://www.ag-grid.com/javascript-data-grid/theming/)
+- [AG Grid Color Schemes](https://www.ag-grid.com/javascript-data-grid/theming-colors/#color-schemes)
+- [AG Grid Theme Customization](https://www.ag-grid.com/javascript-data-grid/themes-customizing/)

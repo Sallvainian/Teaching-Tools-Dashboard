@@ -32,8 +32,9 @@
 		window.location.href = '/gradebook';
 	}
 
-	// Always use dark mode
+	// Set dark mode on mount
 	onMount(() => {
+		// Set dark mode
 		document.documentElement.classList.add('dark');
 		// Set AG Grid dark mode attribute
 		document.documentElement.setAttribute('data-ag-theme-mode', 'dark');

@@ -2,17 +2,47 @@
 	import { gradebookStore } from '$lib/stores/gradebook';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
-	import { AgGrid } from 'ag-grid-svelte5-extended';
-	import { ClientSideRowModelModule } from '@ag-grid-community/client-side-row-model';
 
+	// Import AG Grid components with correct name
+	import AgGridSvelte from 'ag-grid-svelte5';
+
+	// Import AG Grid core modules
+	import { ClientSideRowModelModule } from '@ag-grid-community/client-side-row-model';
+	import type { GridOptions, ICellRendererParams } from '@ag-grid-community/core';
+
+	// Define our model types for better type safety
+	interface Student {
+		id: string;
+		name: string;
+	}
+
+	interface Assignment {
+		id: string;
+		name: string;
+		maxPoints: number;
+		categoryId: string;
+	}
+
+	interface Grade {
+		studentId: string;
+		assignmentId: string;
+		points: number;
+	}
+
+	interface GradeRow {
+		studentId: string;
+		student: string;
+		average: number;
+		[key: string]: any; // For dynamic assignment columns
+	}
+
+	// State variables
 	let categoryId = $state('');
 	let assignmentName = $state('');
 	let maxPoints = $state(100);
 	let newStudentName = $state('');
-	let rowData = $state([]);
-	let columnDefs = $state([]);
 
-	// Access store functions
+	// Access the store
 	const {
 		categories,
 		getSelectedCategory,
@@ -25,104 +55,242 @@
 		assignStudentToCategory
 	} = gradebookStore;
 
+	// Derived values using runes
 	const selectedCategory = $derived($getSelectedCategory);
 	const categoryStudents = $derived($getStudentsInSelectedCategory);
 	const categoryAssignments = $derived($getAssignmentsForSelectedCategory);
 
-	// Update data when relevant state changes
-	$effect(() => {
-		updateGridData();
+	// Create reactive data source for the grid
+	let rowData = $state(createRowData());
+
+	// Create a reactive gridOptions object with all properties - typed correctly
+	let gridOptions = $state<GridOptions<GradeRow>>({
+		columnDefs: createColumnDefs(),
+		getRowId: (params) => params.data.studentId,
+		defaultColDef: {
+			sortable: true,
+			filter: true,
+			resizable: true,
+			editable: false,
+			enableCellChangeFlash: true, // Fixed from suppressCellFlash
+			suppressHeaderMenuButton: true,
+			wrapHeaderText: true,
+			autoHeaderHeight: true,
+			minWidth: 120,
+			cellStyle: {
+				display: 'flex',
+				alignItems: 'center',
+				lineHeight: '40px',
+				paddingLeft: '12px'
+			}
+		},
+		// Proper event handler
+		onCellValueChanged: (params) => {
+			const { data, colDef, newValue } = params;
+			if (colDef.field !== 'student' && colDef.field !== 'average') {
+				const studentId = data.studentId;
+				const assignmentId = colDef.field || '';
+				const value = newValue === null || newValue === undefined || newValue === ''
+					? 0 // Default to 0 instead of null
+					: parseFloat(String(newValue));
+
+				if (!isNaN(value)) {
+					recordGrade(studentId, assignmentId, value);
+				}
+			}
+		},
+		rowSelection: {
+			type: 'multiple',
+			enableClickSelection: true // Fixed from suppressRowClickSelection
+		},
+		undoRedoCellEditing: true,
+		enableCellTextSelection: true,
+		suppressCellFocus: false,
+		domLayout: 'normal',
+		animateRows: false,
+		stopEditingWhenCellsLoseFocus: true
 	});
 
-	// Simple functions with no nested effects
-	function updateGridData() {
-		// Create column definitions
-		const cols = [
+	// Module definition as expected by the component
+	const modules = [ClientSideRowModelModule];
+
+	// Effect to update column definitions when assignments change
+	$effect(() => {
+		if (categoryAssignments) {
+			const newColDefs = createColumnDefs();
+			console.log(`Updated columnDefs, length: ${newColDefs.length || 0}`);
+			gridOptions.columnDefs = newColDefs;
+		}
+	});
+
+	// Effect to update rowData when dependencies change - runs after column defs
+	$effect(() => {
+		if (categoryStudents) {
+			const newRowData = createRowData();
+			console.log(`Updated rowData, students: ${categoryStudents.length}, assignments: ${categoryAssignments.length}`);
+			rowData = newRowData;
+		}
+	});
+
+	// Data transformation for AG Grid - safely creating row data
+	function createRowData(): GradeRow[] {
+		// Safety check
+		if (!categoryStudents || categoryStudents.length === 0) {
+			return [];
+		}
+
+		// Get grades once outside the loop to avoid triggering effects
+		const allGrades = get(gradebookStore.grades);
+		
+		return categoryStudents.map((student) => {
+			// Start with required fields
+			const row: GradeRow = {
+				studentId: student.id,
+				student: student.name,
+				average: 0
+			};
+
+			// Add dynamic columns for each assignment
+			if (categoryAssignments && categoryAssignments.length > 0) {
+				categoryAssignments.forEach((assignment) => {
+					if (assignment && assignment.id) {
+						const grade = allGrades.find(
+							(g) => g.studentId === student.id && g.assignmentId === assignment.id
+						);
+						row[assignment.id] = grade ? grade.points : null;
+					}
+				});
+			}
+
+			// Calculate average - avoid recalculating if we already know there are no assignments
+			if (categoryAssignments.length > 0) {
+				try {
+					row.average = studentAverageInCategory(student.id, categoryId || '');
+				} catch (err) {
+					console.error('Error calculating average:', err);
+					row.average = 0;
+				}
+			}
+
+			return row;
+		});
+	}
+
+	// Create column definitions with safety checks
+	function createColumnDefs() {
+		// Start with student column
+		const colDefs: any[] = [
 			{
 				headerName: 'Student',
 				field: 'student',
 				editable: false,
 				pinned: 'left',
 				minWidth: 180,
-				cellStyle: { fontWeight: 'bold' },
+				cellStyle: {
+					fontWeight: 'bold',
+					display: 'flex',
+					alignItems: 'center',
+					paddingLeft: '12px'
+				},
 				resizable: true,
 				lockPosition: true,
-				suppressMovable: true
+				suppressMovable: true,
+				enableCellChangeFlash: false // Fixed deprecated suppressCellFlash
 			}
 		];
 
-		// Add assignment columns
-		categoryAssignments.forEach((assignment) => {
-			cols.push({
-				headerName: assignment.name,
-				field: assignment.id,
-				editable: true,
-				type: 'numericColumn',
-				width: 120,
-				cellClass: 'editable-cell',
-				headerTooltip: `Max Points: ${assignment.maxPoints}`,
-				valueFormatter: (params) => {
-					return params.value === null || params.value === undefined ? '' : params.value;
-				},
-				cellEditor: 'agTextCellEditor',
-				cellEditorParams: {
-					useFormatter: false
-				},
-				cellStyle: (params) => {
-					if (params.value === null || params.value === undefined) {
-						return { backgroundColor: 'rgba(0, 0, 0, 0.2)' };
+		// Add assignment columns if available
+		if (categoryAssignments && categoryAssignments.length > 0) {
+			const validAssignments = categoryAssignments.filter((a) => a?.name && a?.id);
+			validAssignments.forEach((assignment) => {
+				colDefs.push({
+					headerName: assignment.name,
+					field: assignment.id,
+					editable: true,
+					type: 'numericColumn',
+					width: 120,
+					headerTooltip: `Max Points: ${assignment.maxPoints}`,
+					valueFormatter: (params: any) => {
+						return params.value === null || params.value === undefined ? '' : params.value;
+					},
+					cellEditor: 'agTextCellEditor',
+					cellEditorParams: {
+						useFormatter: false,
+						maxLength: 6,
+						type: 'number'
+					},
+					cellStyle: { 
+						display: 'flex', 
+						alignItems: 'center', 
+						paddingLeft: '12px',
+						backgroundColor: 'rgba(54, 54, 54, 0.1)' 
+					},
+					cellRendererParams: {
+						cellEditorTemplate: 'agTextCellEditor',
+						inputType: 'number'
 					}
-					return {};
-				}
+				});
 			});
-		});
+		}
 
-		// Add average column
-		cols.push({
+		// Always add average column
+		colDefs.push({
 			headerName: 'Average',
 			field: 'average',
 			editable: false,
 			type: 'numericColumn',
+			minWidth: 120,
 			pinned: 'right',
-			lockPosition: true,
-			suppressMovable: true,
-			valueFormatter: (params) => {
+			valueFormatter: (params: any) => {
 				return params.value ? `${params.value.toFixed(1)}%` : '–';
 			},
-			cellStyle: {
-				color: '#f3e8ff',
-				fontWeight: 'bold',
-				backgroundColor: 'rgba(99, 102, 241, 0.2)'
+			cellStyle: (params: any) => {
+				// Change background color based on grade
+				const val = params.value || 0;
+				let bgColor = 'rgba(139, 92, 246, 0.2)'; // Default purple
+				
+				if (val >= 90) {
+					bgColor = 'rgba(52, 211, 153, 0.2)'; // Green for A
+				} else if (val >= 80) {
+					bgColor = 'rgba(96, 165, 250, 0.2)'; // Blue for B
+				} else if (val >= 70) {
+					bgColor = 'rgba(251, 191, 36, 0.2)'; // Yellow for C
+				} else if (val >= 60) {
+					bgColor = 'rgba(249, 115, 22, 0.2)'; // Orange for D
+				} else if (val > 0) {
+					bgColor = 'rgba(239, 68, 68, 0.2)'; // Red for F
+				}
+				
+				return {
+					fontWeight: 'bold',
+					display: 'flex',
+					alignItems: 'center',
+					paddingLeft: '12px',
+					backgroundColor: bgColor,
+					color: '#ffffff'
+				};
 			}
 		});
 
-		columnDefs = cols;
-
-		// Create rows
-		const rows = [];
-		categoryStudents.forEach((student) => {
-			const row = {
-				studentId: student.id,
-				student: student.name
-			};
-
-			// Add assignment data
-			const grades = get(gradebookStore.grades);
-			categoryAssignments.forEach((assignment) => {
-				const grade = grades.find(
-					(g) => g.studentId === student.id && g.assignmentId === assignment.id
-				);
-				row[assignment.id] = grade ? grade.points : null;
-			});
-
-			// Calculate average
-			row['average'] = studentAverageInCategory(student.id, categoryId || '');
-			
-			rows.push(row);
-		});
-
-		rowData = rows;
+		return colDefs;
 	}
+
+	onMount(() => {
+		// Debug store data
+		console.log('Component mounted');
+
+		// Check and set initial category - this should only happen once
+		const cats = get(categories);
+		if (cats && cats.length > 0 && !categoryId) {
+			console.log('Setting initial category');
+			const firstId = cats[0].id || '';
+			categoryId = firstId;
+			// Use timeout to avoid immediate effect triggers
+			setTimeout(() => {
+				if (firstId) gradebookStore.selectCategory(firstId);
+			}, 0);
+		}
+	});
 
 	function handleAddAssignment() {
 		if (categoryId && assignmentName.trim()) {
@@ -142,191 +310,73 @@
 		}
 	}
 
-	function onCellValueChanged(params) {
-		const { data, colDef, newValue } = params;
-		if (colDef.field !== 'student' && colDef.field !== 'average') {
-			const studentId = data.studentId;
-			const assignmentId = colDef.field;
-			const value = newValue !== null && newValue !== undefined && newValue !== '' 
-				? parseFloat(newValue) 
-				: null;
-			
-			if (value === null || !isNaN(value)) {
-				recordGrade(studentId, assignmentId, value);
-			}
-		}
+	// Simple function to check if we can render the grid
+	function hasData() {
+		return rowData && rowData.length > 0;
 	}
-
-	// Grid options
-	const gridOptions = {
-		defaultColDef: {
-			sortable: true,
-			filter: true,
-			resizable: true,
-			editable: false,
-			cellEditor: 'agTextCellEditor',
-			cellEditorParams: {
-				useFormatter: false
-			},
-			enableCellChangeFlash: true
-		},
-		rowSelection: 'multiple',
-		undoRedoCellEditing: true,
-		enableCellTextSelection: true,
-		ensureDomOrder: true,
-		enterNavigatesVertically: true,
-		enterNavigatesVerticallyAfterEdit: true,
-		copyHeadersToClipboard: true,
-		clipboardDelimiter: '\t',
-		onCellValueChanged,
-		getRowId: (params) => params.data.studentId
-	};
-
-	// Try to create a sample student if none exist
-	function addSampleData() {
-		if (categoryId && categoryStudents.length === 0) {
-			const studentId = addGlobalStudent('Sample Student');
-			if (studentId) assignStudentToCategory(studentId, categoryId);
-		}
-		
-		if (categoryId && categoryAssignments.length === 0) {
-			addAssignmentToCategory('Homework 1', 50, categoryId);
-		}
-	}
-
-	// Initialize on component mount
-	onMount(() => {
-		const cats = get(categories);
-		if (cats.length > 0 && !categoryId) {
-			categoryId = cats[0].id;
-			gradebookStore.selectCategory(categoryId);
-			setTimeout(addSampleData, 300);
-		}
-	});
-
-	// Module for grid
-	const modules = [ClientSideRowModelModule];
 </script>
 
-<!-- PowerSchool Pro style layout with nav tabs -->
-<div class="bg-dark-surface rounded-xl overflow-hidden border border-dark-border shadow-lg mb-6">
-	<!-- Top bar with class name and actions -->
-	<div class="flex justify-between items-center p-4 border-b border-dark-border">
-		<div>
-			<h1 class="text-xl font-bold text-white">
-				{selectedCategory ? selectedCategory.name : 'No Class Selected'}
-			</h1>
-			<p class="text-dark-muted text-xs">Gradebook</p>
+{#if selectedCategory}
+	<div
+		class="bg-dark-card border border-dark-border rounded-xl overflow-hidden shadow-dark-card mb-4"
+	>
+		<div class="p-4 border-b border-dark-border bg-dark-surface">
+			<h3 class="font-medium text-white">{selectedCategory.name} - Grades</h3>
+			<p class="text-dark-muted text-xs mt-1">
+				Excel-like features: Click and drag to select cells, double-click to edit, Ctrl+C to copy,
+				and Ctrl+V to paste. Use arrow keys to navigate between cells.
+			</p>
 		</div>
-		
-		<div class="flex gap-2">
-			<button class="px-3 py-1.5 bg-dark-purple hover:bg-dark-accent text-white rounded-lg text-sm transition">
-				Export Grades
-			</button>
-			<button class="px-3 py-1.5 bg-dark-card hover:bg-dark-highlight text-white rounded-lg text-sm transition">
-				Print View
-			</button>
-		</div>
-	</div>
-	
-	<!-- Navigation tabs -->
-	<div class="flex border-b border-dark-border bg-dark-card">
-		<button class="px-4 py-2.5 text-sm font-medium text-white bg-dark-purple">Grades</button>
-		<button class="px-4 py-2.5 text-sm font-medium text-dark-muted hover:text-white hover:bg-dark-highlight transition">Assignments</button>
-		<button class="px-4 py-2.5 text-sm font-medium text-dark-muted hover:text-white hover:bg-dark-highlight transition">Students</button>
-		<button class="px-4 py-2.5 text-sm font-medium text-dark-muted hover:text-white hover:bg-dark-highlight transition">Settings</button>
-	</div>
-
-	<!-- Main content area -->
-	{#if selectedCategory}
-		<div>
-			<!-- Info banner -->
-			<div class="bg-dark-highlight/10 p-3 border-b border-dark-border">
-				<p class="text-dark-muted text-xs">
-					<span class="text-dark-lavender font-medium">Excel-like features:</span> 
-					Click and drag to select cells, double-click to edit, Ctrl+C to copy,
-					and Ctrl+V to paste. Use arrow keys to navigate between cells.
-				</p>
-			</div>
-			
-			<!-- Grid -->
-			<div class="h-[500px] w-full">
-				<AgGrid
-					gridClass="ag-theme-material w-full h-full"
+		<div class="h-[500px] ag-theme-alpine" data-ag-theme-mode="dark">
+			<!-- Conditional rendering -->
+			{#if hasData()}
+				<!-- Use the component with name matching our import -->
+				<AgGridSvelte
 					{gridOptions}
 					{rowData}
-					{columnDefs}
 					{modules}
+					style="width: 100%; height: 100%;"
+					gridClass="ag-theme-alpine"
 				/>
-			</div>
+			{:else}
+				<div class="flex items-center justify-center h-full bg-dark-card">
+					<div class="text-center p-6">
+						<svg class="w-12 h-12 mx-auto mb-4 text-dark-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+						</svg>
+						<h3 class="mb-2 text-lg font-medium text-white">No Data Available</h3>
+						<p class="text-dark-muted">Add students and assignments using the forms below.</p>
+					</div>
+				</div>
+			{/if}
 		</div>
-	{:else}
-		<div class="bg-dark-card p-8 text-center">
-			<svg
-				class="w-16 h-16 mx-auto text-dark-muted mb-4"
-				xmlns="http://www.w3.org/2000/svg"
-				fill="none"
-				viewBox="0 0 24 24"
-				stroke="currentColor"
-			>
-				<path
-					stroke-linecap="round"
-					stroke-linejoin="round"
-					stroke-width="2"
-					d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-				/>
-			</svg>
-			<h3 class="text-lg font-medium text-white mb-2">No Class Selected</h3>
-			<p class="text-dark-muted">Please select a class or create a new one to view grades.</p>
-		</div>
-	{/if}
-</div>
+	</div>
+{:else}
+	<div class="bg-dark-card border border-dark-border p-8 rounded-xl text-center">
+		<svg
+			class="w-16 h-16 mx-auto text-dark-muted mb-4"
+			xmlns="http://www.w3.org/2000/svg"
+			fill="none"
+			viewBox="0 0 24 24"
+			stroke="currentColor"
+		>
+			<path
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				stroke-width="2"
+				d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+			/>
+		</svg>
+		<h3 class="text-lg font-medium text-white mb-2">No Class Selected</h3>
+		<p class="text-dark-muted">Please select a class or create a new one to view grades.</p>
+	</div>
+{/if}
 
-<!-- Quick actions cards -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-	<!-- Assignment Statistics Card -->
-	{#if selectedCategory}
-		<div class="bg-dark-card border border-dark-border rounded-xl p-4">
-			<h3 class="font-medium text-white mb-3 flex items-center">
-				<svg class="w-5 h-5 mr-2 text-dark-lavender" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-				</svg>
-				Class Statistics
-			</h3>
-			<div class="grid grid-cols-2 gap-4">
-				<div class="bg-dark-surface rounded-lg p-3">
-					<p class="text-dark-muted text-xs">Students</p>
-					<p class="text-2xl font-bold text-white">{categoryStudents.length}</p>
-				</div>
-				<div class="bg-dark-surface rounded-lg p-3">
-					<p class="text-dark-muted text-xs">Assignments</p>
-					<p class="text-2xl font-bold text-white">{categoryAssignments.length}</p>
-				</div>
-				<div class="bg-dark-surface rounded-lg p-3">
-					<p class="text-dark-muted text-xs">Class Average</p>
-					<p class="text-2xl font-bold text-dark-lavender">
-						{categoryStudents.length > 0 ? 
-							(categoryStudents.reduce((sum, student) => sum + studentAverageInCategory(student.id, categoryId), 0) / categoryStudents.length).toFixed(1) + '%' 
-							: '–'}
-					</p>
-				</div>
-				<div class="bg-dark-surface rounded-lg p-3">
-					<p class="text-dark-muted text-xs">Last Updated</p>
-					<p class="text-sm font-medium text-white">{new Date().toLocaleDateString()}</p>
-				</div>
-			</div>
-		</div>
-	{/if}
-
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
 	<!-- Add assignment form -->
 	{#if selectedCategory}
 		<div class="bg-dark-card border border-dark-border rounded-xl p-4">
-			<h3 class="font-medium text-white mb-3 flex items-center">
-				<svg class="w-5 h-5 mr-2 text-dark-lavender" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-				</svg>
-				Add Assignment
-			</h3>
+			<h3 class="font-medium text-white mb-3">Add Assignment</h3>
 			<div class="grid grid-cols-2 gap-4">
 				<div>
 					<label for="assignmentName" class="block text-dark-muted text-sm mb-1">Name</label>
@@ -334,7 +384,7 @@
 						id="assignmentName"
 						type="text"
 						bind:value={assignmentName}
-						class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-2 text-sm"
+						class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-2 text-sm focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"
 						placeholder="e.g. Midterm Exam"
 					/>
 				</div>
@@ -345,12 +395,12 @@
 						type="number"
 						bind:value={maxPoints}
 						min="1"
-						class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-2 text-sm"
+						class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-2 text-sm focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"
 					/>
 				</div>
 				<div class="col-span-2">
 					<button
-						on:click={handleAddAssignment}
+						onclick={handleAddAssignment}
 						class="w-full bg-dark-purple hover:bg-dark-accent text-white p-2 rounded-lg text-sm transition"
 					>
 						Add Assignment
@@ -358,86 +408,30 @@
 				</div>
 			</div>
 		</div>
+
+		<!-- Add student form -->
+		<div class="bg-dark-card border border-dark-border rounded-xl p-4">
+			<h3 class="font-medium text-white mb-3">Add Student to {selectedCategory.name}</h3>
+			<div class="grid grid-cols-4 gap-4">
+				<div class="col-span-3">
+					<label for="studentName" class="block text-dark-muted text-sm mb-1">Student Name</label>
+					<input
+						id="studentName"
+						type="text"
+						bind:value={newStudentName}
+						class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-2 text-sm focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"
+						placeholder="e.g. John Smith"
+					/>
+				</div>
+				<div class="flex items-end">
+					<button
+						onclick={handleAddStudent}
+						class="w-full bg-dark-purple hover:bg-dark-accent text-white p-2 rounded-lg text-sm transition"
+					>
+						Add
+					</button>
+				</div>
+			</div>
+		</div>
 	{/if}
 </div>
-
-<!-- Add student form -->
-{#if selectedCategory}
-	<div class="bg-dark-card border border-dark-border rounded-xl p-4 mb-6">
-		<h3 class="font-medium text-white mb-3 flex items-center">
-			<svg class="w-5 h-5 mr-2 text-dark-lavender" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-			</svg>
-			Add Student to {selectedCategory.name}
-		</h3>
-		<div class="flex gap-4">
-			<div class="flex-grow">
-				<label for="studentName" class="block text-dark-muted text-sm mb-1">Student Name</label>
-				<input
-					id="studentName"
-					type="text"
-					bind:value={newStudentName}
-					class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-2 text-sm"
-					placeholder="e.g. John Smith"
-				/>
-			</div>
-			<div class="w-40 flex items-end">
-				<button
-					on:click={handleAddStudent}
-					class="w-full bg-dark-purple hover:bg-dark-accent text-white p-2 rounded-lg text-sm transition"
-				>
-					Add Student
-				</button>
-			</div>
-		</div>
-	</div>
-{/if}
-
-<!-- Tips and help section -->
-<div class="bg-dark-surface border border-dark-border rounded-xl p-4 mb-6">
-	<h3 class="font-medium text-white mb-2 flex items-center">
-		<svg class="w-5 h-5 mr-2 text-dark-lavender" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-			<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-		</svg>
-		Gradebook Tips
-	</h3>
-	<div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-		<div>
-			<p class="text-dark-muted mb-2">
-				<span class="text-white font-medium">Quick Cell Editing:</span> Double-click on any cell to edit grades directly.
-			</p>
-			<p class="text-dark-muted">
-				<span class="text-white font-medium">Keyboard Navigation:</span> Use arrow keys to move between cells after editing.
-			</p>
-		</div>
-		<div>
-			<p class="text-dark-muted mb-2">
-				<span class="text-white font-medium">Copy and Paste:</span> Use Ctrl+C and Ctrl+V to copy and paste values between cells.
-			</p>
-			<p class="text-dark-muted">
-				<span class="text-white font-medium">Empty Grades:</span> Leave a cell blank for ungraded assignments.
-			</p>
-		</div>
-	</div>
-</div>
-
-<style>
-/* Basic styling for AG Grid dark theme */
-:global(.ag-theme-material) {
-  --ag-background-color: #121212 !important;
-  --ag-header-background-color: #1e1e1e !important;
-  --ag-odd-row-background-color: #0a0a0a !important;
-  --ag-foreground-color: #e0e0e0 !important;
-  --ag-header-foreground-color: #ffffff !important;
-  --ag-border-color: #333333 !important;
-  --ag-row-border-color: #333333 !important;
-  --ag-row-hover-color: #2a2a2a !important;
-}
-
-/* Force dark styling on critical elements */
-:global(.ag-theme-material .ag-root-wrapper),
-:global(.ag-theme-material .ag-root),
-:global(.ag-theme-material .ag-header) {
-  background-color: #121212 !important;
-}
-</style>
