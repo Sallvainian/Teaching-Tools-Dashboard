@@ -1,6 +1,6 @@
 // src/lib/stores/jeopardy-supabase.ts
 import { writable, derived, get } from 'svelte/store';
-import type { JeopardyGame, Category, Question, Team, GameSettings, GameTemplate } from '$lib/types/jeopardy';
+import type { JeopardyGame, Question, Team, GameSettings, GameTemplate } from '$lib/types/jeopardy';
 import * as db from '$lib/services/database';
 
 function createJeopardyStore() {
@@ -679,7 +679,7 @@ function createJeopardyStore() {
   }
 
   // Import/Export
-  async function importGameData(gameId: string, jsonData: any): Promise<boolean> {
+  async function importGameData(gameId: string, jsonData: Record<string, unknown>): Promise<boolean> {
     try {
       const success = await db.importJeopardyData(gameId, jsonData);
       

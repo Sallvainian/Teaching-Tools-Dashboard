@@ -157,7 +157,7 @@
 <div class="mb-6">
 	<h2 class="text-lg font-semibold text-white mb-4">Tools & Modules</h2>
 	<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-		{#each modules as mod}
+		{#each modules as mod (mod.path)}
 			<a
 				href={mod.path}
 				class="flex flex-col group bg-dark-card border border-dark-border rounded-xl p-6 hover:border-dark-purple transition shadow-dark-card overflow-hidden relative"

@@ -201,7 +201,7 @@
 				<div>
 					<h3 class="text-dark-muted uppercase text-xs font-semibold mb-3 px-3">Classes</h3>
 					<div class="space-y-1">
-						{#each $getCategories as category}
+						{#each $getCategories as category (category.id)}
 							<button
 								on:click={() => handleSelectClass(category.id)}
 								class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white text-left"

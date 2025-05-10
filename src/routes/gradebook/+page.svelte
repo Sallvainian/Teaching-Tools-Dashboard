@@ -8,7 +8,7 @@
 
 	// Import AG Grid core modules
 	import { ClientSideRowModelModule } from '@ag-grid-community/client-side-row-model';
-	import type { GridOptions, ICellRendererParams } from '@ag-grid-community/core';
+	import type { GridOptions } from '@ag-grid-community/core';
 
 	// Define our model types for better type safety
 	interface Student {
@@ -33,7 +33,7 @@
 		studentId: string;
 		student: string;
 		average: number;
-		[key: string]: any; // For dynamic assignment columns
+		[key: string]: string | number | null; // For dynamic assignment columns
 	}
 
 	// State variables
@@ -179,7 +179,7 @@
 	// Create column definitions with safety checks
 	function createColumnDefs() {
 		// Start with student column
-		const colDefs: any[] = [
+		const colDefs: Array<import('@ag-grid-community/core').ColDef<GradeRow>> = [
 			{
 				headerName: 'Student',
 				field: 'student',

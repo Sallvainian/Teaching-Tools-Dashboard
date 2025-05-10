@@ -11,7 +11,7 @@ export default function makeSvelteCellRenderer(
     //
     return class SvelteCellRenderer implements ICellRenderer {
         element: HTMLElement | undefined = undefined;
-        component: Record<string, any> | undefined = undefined;
+        component: Record<string, unknown> | undefined = undefined;
         props: ICellRendererParams | undefined = $state(undefined);
 
         init(params: ICellRendererParams) {

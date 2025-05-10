@@ -7,17 +7,18 @@ export type MigrationResult = {
 };
 
 // Helper for loading localStorage data
-function loadFromStorage<T>(key: string, defaultValue: T): T {
-  if (typeof window === 'undefined') return defaultValue;
-
-  try {
-    const stored = localStorage.getItem(key);
-    return stored ? JSON.parse(stored) : defaultValue;
-  } catch (e) {
-    console.error(`Error loading ${key} from localStorage:`, e);
-    return defaultValue;
-  }
-}
+// Commented out for now until we implement data migration
+// function loadFromStorage<T>(key: string, defaultValue: T): T {
+//   if (typeof window === 'undefined') return defaultValue;
+//
+//   try {
+//     const stored = localStorage.getItem(key);
+//     return stored ? JSON.parse(stored) : defaultValue;
+//   } catch (e) {
+//     console.error(`Error loading ${key} from localStorage:`, e);
+//     return defaultValue;
+//   }
+// }
 
 // Stub functions that will be implemented in the future
 export async function migrateAllData(): Promise<MigrationResult> {

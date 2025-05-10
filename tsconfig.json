@@ -1,6 +1,7 @@
 {
 	"extends": "./.svelte-kit/tsconfig.json",
 	"compilerOptions": {
+		"allowImportingTsExtensions": true,
 		"allowJs": true,
 		"checkJs": true,
 		"esModuleInterop": true,
@@ -10,7 +11,25 @@
 		"sourceMap": true,
 		"strict": true,
 		"moduleResolution": "bundler"
-	}
+	},
+	"include": [
+		"src/**/*",
+		"src/**/*.svelte",
+		"src/**/*.ts",
+		"src/**/*.js",
+		"src/**/*.d.ts",
+		"svelte.config.ts",
+		"eslint.config.ts",
+		"vite.config.ts"
+	],
+	"exclude": [
+		"node_modules",
+		"dist",
+		".svelte-kit",
+		"build",
+		"coverage",
+		"**/*.min.js"
+	]
 	// Path aliases are handled by https://svelte.dev/docs/kit/configuration#alias
 	// except $lib which is handled by https://svelte.dev/docs/kit/configuration#files
 	//

@@ -443,7 +443,7 @@ function createJeopardyStore() {
 	activeGameId.subscribe(($id) => saveToStorage('activeGameId', $id));
 
 	// Import game data from JSON
-	function importGameData(gameId: string, jsonData: any): boolean {
+	function importGameData(gameId: string, jsonData: Record<string, unknown>): boolean {
 		try {
 			// Validate the required structure
 			if (!jsonData || typeof jsonData !== 'object') {
@@ -455,7 +455,7 @@ function createJeopardyStore() {
 				throw new Error('JSON must contain a categories array');
 			}
 
-			const categories = jsonData.categories.map((cat: any) => {
+			const categories = (jsonData.categories as Array<Record<string, unknown>>).map((cat) => {
 				// Validate category structure
 				if (!cat.name || typeof cat.name !== 'string') {
 					throw new Error('Each category must have a name property');
@@ -469,7 +469,7 @@ function createJeopardyStore() {
 				const categoryId = nanoid();
 
 				// Process questions
-				const questions = cat.questions.map((q: any) => {
+				const questions = (cat.questions as Array<Record<string, unknown>>).map((q) => {
 					// Validate question structure
 					if (!q.text || typeof q.text !== 'string') {
 						throw new Error('Each question must have a text property');

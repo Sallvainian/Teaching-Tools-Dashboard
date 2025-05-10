@@ -6,11 +6,11 @@ const config: Config = {
 	preprocess: vitePreprocess(),
 	kit: {
 		adapter: vercel({
-			edge: false,
 			external: [],
 			split: false
 		})
 	}
 };
 
+// Export the config
 export default config;

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { jeopardyStore } from '$lib/stores/jeopardy';
-	import { onMount, onDestroy } from 'svelte';
-	import { nanoid } from 'nanoid';
+	import { onDestroy } from 'svelte';
 
 	// Access the store
 	const {
@@ -325,7 +324,7 @@
 	}
 
 	// Update game settings
-	function handleUpdateSettings(settings: any) {
+	function handleUpdateSettings(settings: import('$lib/types/jeopardy').GameSettings) {
 		const game = $getActiveGame;
 		if (!game) return;
 
