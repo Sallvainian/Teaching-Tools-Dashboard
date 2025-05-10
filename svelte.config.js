@@ -1,16 +1,16 @@
+// svelte.config.js
 import vercel from '@sveltejs/adapter-vercel';
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
-import type { Config } from '@sveltejs/kit';
 
-const config: Config = {
+const config = {
 	preprocess: vitePreprocess(),
 	kit: {
 		adapter: vercel({
-			external: [],
+			runtime: 'nodejs20.x',
 			split: false
+			// Removed 'external' as it's not a valid property
 		})
 	}
 };
 
-// Export the config
 export default config;
