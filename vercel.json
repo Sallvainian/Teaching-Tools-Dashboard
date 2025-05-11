@@ -1,19 +1,19 @@
 {
-	"version": 2,
-	"buildCommand": "pnpm run build",
-	"devCommand": "pnpm run dev",
-	"installCommand": "pnpm install --no-frozen-lockfile",
-	"framework": "sveltekit",
-	"regions": ["iad1"],
-	"headers": [
-		{
-			"source": "/(.*)",
-			"headers": [
-				{
-					"key": "Cache-Control",
-					"value": "public, max-age=0, must-revalidate"
-				}
-			]
-		}
-	]
+  "version": 2,
+  "buildCommand": "pnpm run build",
+  "devCommand": "pnpm run dev",
+  "installCommand": "pnpm install --no-frozen-lockfile",
+  "framework": "sveltekit",
+  "regions": ["iad1"],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    }
+  ]
 }

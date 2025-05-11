@@ -121,13 +121,13 @@ Runes are special functions prefixed with `$` that control reactivity in Svelte 
 
 ```svelte
 <script>
-	let count = $state(0); // Basic reactive state
-	let user = $state({ name: 'John' }); // Deep reactive state (objects/arrays)
-	let items = $state.raw([1, 2, 3]); // Non-deep reactive state
+  let count = $state(0); // Basic reactive state
+  let user = $state({ name: 'John' }); // Deep reactive state (objects/arrays)
+  let items = $state.raw([1, 2, 3]); // Non-deep reactive state
 </script>
 
 <button onclick={() => count++}>
-	Clicks: {count}
+  Clicks: {count}
 </button>
 ```
 
@@ -138,14 +138,14 @@ Runes are special functions prefixed with `$` that control reactivity in Svelte 
 
 ```svelte
 <script>
-	let count = $state(0);
-	let doubled = $derived(count * 2);
+  let count = $state(0);
+  let doubled = $derived(count * 2);
 
-	// For complex derivations:
-	let total = $derived.by(() => {
-		// Complex calculation logic
-		return result;
-	});
+  // For complex derivations:
+  let total = $derived.by(() => {
+    // Complex calculation logic
+    return result;
+  });
 </script>
 ```
 
@@ -157,22 +157,22 @@ Runes are special functions prefixed with `$` that control reactivity in Svelte 
 
 ```svelte
 <script>
-	let count = $state(0);
+  let count = $state(0);
 
-	$effect(() => {
-		// Runs after DOM updates when 'count' changes
-		console.log('Count changed to', count);
+  $effect(() => {
+    // Runs after DOM updates when 'count' changes
+    console.log('Count changed to', count);
 
-		// Optional teardown function
-		return () => {
-			// Cleanup code here
-		};
-	});
+    // Optional teardown function
+    return () => {
+      // Cleanup code here
+    };
+  });
 
-	// For pre-DOM-update effects
-	$effect.pre(() => {
-		// Runs before DOM updates
-	});
+  // For pre-DOM-update effects
+  $effect.pre(() => {
+    // Runs before DOM updates
+  });
 </script>
 ```
 
@@ -185,14 +185,14 @@ Runes are special functions prefixed with `$` that control reactivity in Svelte 
 
 ```svelte
 <script>
-	// Destructuring with defaults
-	let { name = 'Guest', count = 0 } = $props();
+  // Destructuring with defaults
+  let { name = 'Guest', count = 0 } = $props();
 
-	// With TypeScript
-	let { name, count }: { name: string; count: number } = $props();
+  // With TypeScript
+  let { name, count }: { name: string; count: number } = $props();
 
-	// Generate unique IDs for accessibility
-	const uid = $props.id();
+  // Generate unique IDs for accessibility
+  const uid = $props.id();
 </script>
 ```
 
@@ -200,8 +200,8 @@ Runes are special functions prefixed with `$` that control reactivity in Svelte 
 
 ```svelte
 <script>
-	// Makes the value prop bindable from parent
-	let { value = $bindable('') } = $props();
+  // Makes the value prop bindable from parent
+  let { value = $bindable('') } = $props();
 </script>
 
 <input bind:value />
@@ -211,17 +211,17 @@ Runes are special functions prefixed with `$` that control reactivity in Svelte 
 
 ```svelte
 <script module>
-	// Module-level logic (runs once)
+  // Module-level logic (runs once)
 </script>
 
 <script>
-	// Component logic
+  // Component logic
 </script>
 
 <!-- Template markup -->
 
 <style>
-	/* Component-scoped CSS */
+  /* Component-scoped CSS */
 </style>
 ```
 
@@ -231,29 +231,29 @@ Runes are special functions prefixed with `$` that control reactivity in Svelte 
 
 ```svelte
 {#if condition}
-	<!-- content -->
+  <!-- content -->
 {:else if otherCondition}
-	<!-- content -->
+  <!-- content -->
 {:else}
-	<!-- content -->
+  <!-- content -->
 {/if}
 
 {#each items as item, index (item.id)}
-	<!-- content with item -->
+  <!-- content with item -->
 {:else}
-	<!-- if array is empty -->
+  <!-- if array is empty -->
 {/each}
 
 {#await promise}
-	<!-- loading -->
+  <!-- loading -->
 {:then value}
-	<!-- resolved -->
+  <!-- resolved -->
 {:catch error}
-	<!-- rejected -->
+  <!-- rejected -->
 {/await}
 
 {#key value}
-	<!-- recreated when value changes -->
+  <!-- recreated when value changes -->
 {/key}
 ```
 
@@ -261,28 +261,28 @@ Runes are special functions prefixed with `$` that control reactivity in Svelte 
 
 ```svelte
 {#snippet header()}
-	<th>Name</th>
-	<th>Price</th>
+  <th>Name</th>
+  <th>Price</th>
 {/snippet}
 
 {#snippet row(item)}
-	<td>{item.name}</td>
-	<td>{item.price}</td>
+  <td>{item.name}</td>
+  <td>{item.price}</td>
 {/snippet}
 
 <Table data={items} {header} {row} />
 
 <!-- Or nest snippets inside a component -->
 <Table data={items}>
-	{#snippet header()}
-		<th>Name</th>
-		<th>Price</th>
-	{/snippet}
+  {#snippet header()}
+    <th>Name</th>
+    <th>Price</th>
+  {/snippet}
 
-	{#snippet row(item)}
-		<td>{item.name}</td>
-		<td>{item.price}</td>
-	{/snippet}
+  {#snippet row(item)}
+    <td>{item.name}</td>
+    <td>{item.price}</td>
+  {/snippet}
 </Table>
 
 <!-- Use snippets with the render tag -->
@@ -424,12 +424,12 @@ This project uses [ag-grid-svelte5](https://github.com/JohnMaher1/ag-grid-svelte
 
    ```svelte
    <script>
-   	import AgGridSvelte from 'ag-grid-svelte5';
-   	import type { GridOptions } from '@ag-grid-community/core';
+     import AgGridSvelte from 'ag-grid-svelte5';
+     import type { GridOptions } from '@ag-grid-community/core';
 
-   	const gridOptions: GridOptions = {
-   		// Grid configuration...
-   	};
+     const gridOptions: GridOptions = {
+       // Grid configuration...
+     };
    </script>
 
    <AgGridSvelte class="ag-theme-material w-full h-full" {gridOptions} />
@@ -443,10 +443,10 @@ This project uses [ag-grid-svelte5](https://github.com/JohnMaher1/ag-grid-svelte
 
   ```css
   :root {
-  	--ag-background-color: #121212;
-  	--ag-header-background-color: #1e1e1e;
-  	--ag-odd-row-background-color: #0a0a0a;
-  	/* other theme variables... */
+    --ag-background-color: #121212;
+    --ag-header-background-color: #1e1e1e;
+    --ag-odd-row-background-color: #0a0a0a;
+    /* other theme variables... */
   }
   ```
 
@@ -454,19 +454,19 @@ This project uses [ag-grid-svelte5](https://github.com/JohnMaher1/ag-grid-svelte
 
   ```typescript
   const gridOptions: GridOptions = {
-  	// Use object form of rowSelection (not string)
-  	rowSelection: { type: 'multiple', enableClickSelection: true },
+    // Use object form of rowSelection (not string)
+    rowSelection: { type: 'multiple', enableClickSelection: true },
 
-  	// Put enableCellChangeFlash in defaultColDef
-  	defaultColDef: {
-  		sortable: true,
-  		filter: true,
-  		// Move from root level to defaultColDef as per v31.2+ recommendation
-  		enableCellChangeFlash: true
-  	}
+    // Put enableCellChangeFlash in defaultColDef
+    defaultColDef: {
+      sortable: true,
+      filter: true,
+      // Move from root level to defaultColDef as per v31.2+ recommendation
+      enableCellChangeFlash: true,
+    },
 
-  	// Avoid enterprise-only features
-  	// Do NOT use: cellSelection, enableRangeSelection, enableRangeHandle
+    // Avoid enterprise-only features
+    // Do NOT use: cellSelection, enableRangeSelection, enableRangeHandle
   };
   ```
 
