@@ -281,17 +281,14 @@
   onMount(() => {
     // Debug store data
     console.log('Component mounted');
+  });
 
-    // Check and set initial category - this should only happen once
-    const cats = get(categories);
-    if (cats && cats.length > 0 && !categoryId) {
-      console.log('Setting initial category');
-      const firstId = cats[0].id || '';
-      categoryId = firstId;
-      // Use timeout to avoid immediate effect triggers
-      setTimeout(() => {
-        if (firstId) gradebookStore.selectCategory(firstId);
-      }, 0);
+  // Pure reactive approach to handle initial category selection
+  // Add this instead
+  $effect(() => {
+    if ($categories?.length > 0 && !categoryId) {
+      console.log('Setting initial category reactively');
+      gradebookStore.selectCategory($categories[0].id);
     }
   });
 
