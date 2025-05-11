@@ -27,12 +27,6 @@
       description: 'Gamify behavior management and student engagement.',
       icon: Users,
     },
-    {
-      name: 'Test Module',
-      path: '/test',
-      description: 'Prototype or test experimental features here.',
-      icon: Beaker,
-    },
   ];
 </script>
 
