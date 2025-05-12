@@ -10,8 +10,8 @@ export default defineConfig({
   test: {
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json-summary', 'lcov'],
-      reportsDirectory: './.qodana/code-coverage',
+      reporter: ['text', 'lcov'],
+      reportsDirectory: './coverage',
       include: ['src/**/*.{js,ts,svelte}'],
       exclude: [
         'src/**/*.{test,spec}.{js,ts,svelte}',
