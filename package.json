@@ -15,7 +15,7 @@
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "test:unit": "vitest",
     "test": "pnpm run test:unit -- --run --coverage",
-    "test:coverage": "pnpm run test:unit -- --run --coverage",
+    "test:coverage": "pnpm run test:unit -- --config ./vite.config.ts --run --coverage",
     "lint": "eslint .",
     "lint:fix": "eslint --fix ."
   },
