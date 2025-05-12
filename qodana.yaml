@@ -5,11 +5,18 @@ profile:
 include:
   - name: CheckDependencyLicenses
 
-# Optional failure conditions for coverage
+# Failure conditions based on thresholds
 failureConditions:
   testCoverageThresholds:
-    fresh: 50  # Coverage threshold for new/modified code
-    total: 40  # Total coverage threshold
+    fresh: 50  # Coverage threshold for new/modified code (percentage)
+    total: 40  # Total coverage threshold (percentage)
 
+# Preparing the environment before analysis
 bootstrap: |
   mkdir -p .qodana/code-coverage
+  
+# Coverage format configuration
+coverage:
+  formats:
+    - lcov
+    - cobertura

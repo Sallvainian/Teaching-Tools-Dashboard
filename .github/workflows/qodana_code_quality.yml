@@ -39,6 +39,9 @@ jobs:
       - name: Run tests with coverage
         run: pnpm test:coverage
 
+      - name: List coverage files
+        run: ls -la .qodana/code-coverage
+
       - name: Archive coverage data
         uses: actions/upload-artifact@v3
         with:

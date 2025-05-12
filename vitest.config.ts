@@ -10,7 +10,7 @@ export default defineConfig({
     setupFiles: ['./vitest-setup-client.ts'],
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html', 'lcov'],
+      reporter: ['text', 'json-summary', 'lcov', 'cobertura'],
       reportsDirectory: './.qodana/code-coverage',
       include: ['src/**/*.{js,ts,svelte}'],
       exclude: [
