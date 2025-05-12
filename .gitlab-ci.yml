@@ -1,4 +1,0 @@
-include:
-  - component: $CI_SERVER_FQDN/qodana/qodana/qodana-gitlab-ci@v2025.1
-    inputs:
-      args: --linter,jetbrains/qodana-js:2025.1,--apply-fixes
