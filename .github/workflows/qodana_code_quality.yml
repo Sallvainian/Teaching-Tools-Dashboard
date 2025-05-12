@@ -19,6 +19,32 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}  # to check out the actual pull request commit, not the merge commit
           fetch-depth: 0  # a full history is required for pull request analysis
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: '10.3.0'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Create coverage directory
+        run: mkdir -p .qodana/code-coverage
+
+      - name: Run tests with coverage
+        run: pnpm test:coverage
+
+      - name: Archive coverage data
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-data
+          path: .qodana/code-coverage
+
       - name: 'Qodana Scan'
         uses: JetBrains/qodana-action@v2025.1
         with:
