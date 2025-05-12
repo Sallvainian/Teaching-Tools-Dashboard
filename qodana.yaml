@@ -11,12 +11,6 @@ failureConditions:
     fresh: 50  # Coverage threshold for new/modified code (percentage)
     total: 40  # Total coverage threshold (percentage)
 
-# Preparing the environment before analysis
-bootstrap: |
-  mkdir -p .qodana/code-coverage
-  pnpm install
-  pnpm test:coverage
-
 # Coverage format configuration
 coverage:
   formats:

@@ -3,29 +3,49 @@ on:
   workflow_dispatch:
   pull_request:
   push:
-    branches: # Specify your branches here
-      - main # The 'main' branch
-      - 'releases/*' # The release branches
+    branches:
+      - main
+      - 'releases/*'
 
 jobs:
-  qodana:
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      checks: write
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
         with:
-          ref: ${{ github.event.pull_request.head.sha }}  # to check out the actual pull request commit, not the merge commit
-          fetch-depth: 0  # a full history is required for pull request analysis
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
 
-      # Qodana will handle test running and coverage generation via bootstrap in qodana.yaml
-      - name: 'Qodana Scan'
-        uses: JetBrains/qodana-action@v2025.1
+      - name: Use Node.js
+        uses: actions/setup-node@v3
         with:
-          pr-mode: false
-          args: --apply-fixes
+          node-version: '18'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: '10.3.0'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Create coverage directory
+        run: mkdir -p .qodana/code-coverage
+
+      - name: Run tests with coverage
+        run: pnpm test:coverage
+
+      - name: Archive coverage data
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-data
+          path: .qodana/code-coverage
+
+      - name: Qodana Scan
+        uses: JetBrains/qodana-action@v2025.1
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN_2144836382 }}
-          QODANA_ENDPOINT: 'https://qodana.cloud'
+        with:
+          args: "--apply-fixes"
+          pr-mode: false
