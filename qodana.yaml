@@ -14,9 +14,10 @@ failureConditions:
 # Preparing the environment before analysis
 bootstrap: |
   mkdir -p .qodana/code-coverage
-  
+  pnpm install
+  pnpm test:coverage
+
 # Coverage format configuration
 coverage:
   formats:
     - lcov
-    - cobertura
