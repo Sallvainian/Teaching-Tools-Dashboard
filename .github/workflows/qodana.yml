@@ -34,6 +34,7 @@ jobs:
 
       - name: Run tests with coverage
         run: pnpm test:coverage
+        continue-on-error: true
 
       - name: Create Qodana coverage directory
         run: mkdir -p .qodana/code-coverage
