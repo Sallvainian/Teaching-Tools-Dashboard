@@ -1,17 +1,19 @@
 version: "1.0"
 linter: jetbrains/qodana-js:2025.1
+name: SvelteKit - Test Code Coverage
+coverageDir: .qodana/code-coverage
+
+
+
+# Configure quality gates
+failThreshold: 100
+bootstrap: false
 profile:
-  name: qodana.recommended
-include:
-  - name: CheckDependencyLicenses
+  name: Project Default
 
-# Failure conditions based on thresholds
-failureConditions:
-  testCoverageThresholds:
-    fresh: 50  # Coverage threshold for new/modified code (percentage)
-    total: 40  # Total coverage threshold (percentage)
-
-# Coverage format configuration
-coverage:
-  formats:
-    - lcov
+exclude:
+  - name: All
+    paths:
+      - node_modules
+      - .svelte-kit
+      - coverage

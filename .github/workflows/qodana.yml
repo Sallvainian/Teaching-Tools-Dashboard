@@ -1,0 +1,55 @@
+name: Qodana with Code Coverage
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+      - 'releases/*'
+
+jobs:
+  qodana:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.x
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Run tests with coverage
+        run: pnpm test:coverage
+
+      - name: Create Qodana coverage directory
+        run: mkdir -p .qodana/code-coverage
+
+      - name: Copy coverage data for Qodana
+        run: |
+          if [ -f "coverage/lcov.info" ]; then
+            cp coverage/lcov.info .qodana/code-coverage/
+            echo "Coverage data copied to .qodana/code-coverage/"
+          else
+            echo "No coverage data found."
+            exit 1
+          fi
+
+      - name: Qodana Scan
+        uses: JetBrains/qodana-action@main
+        env:
+          QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
+        with:
+          args: "--coverage-dir,.qodana/code-coverage"
