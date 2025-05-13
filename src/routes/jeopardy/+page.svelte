@@ -753,7 +753,7 @@
 
 {#if showTemplateModal && $getActiveGame && $editMode}
 	<div class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4 transition-opacity duration-300 ease-in-out" on:click|self={() => showTemplateModal = false}>
-		<div class="bg-dark-card border border-dark-border p-6 rounded-xl shadow-dark-card w-full max-w-2xl max-h-[85vh] flex flex-col" on:click|stopPropagation>
+		<div role="button" class="bg-dark-card border border-dark-border p-6 rounded-xl shadow-dark-card w-full max-w-2xl max-h-[85vh] flex flex-col" on:click|stopPropagation>
 			<div class="flex justify-between items-center mb-4">
 				<h2 class="text-xl font-semibold text-white">Apply Template to "{$getActiveGame.name}"</h2>
 				<button
