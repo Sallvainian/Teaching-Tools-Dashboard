@@ -10,4 +10,4 @@ if [ -f "coverage/lcov.info" ]; then
   echo "Coverage data copied to .qodana/code-coverage/"
 else
   echo "No coverage data found. Run 'pnpm test' first."
-fi.
+fi
