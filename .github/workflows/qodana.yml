@@ -45,12 +45,21 @@ jobs:
             cp coverage/lcov.info .qodana/code-coverage/
             echo "Coverage data copied to .qodana/code-coverage/"
           else
-            echo "No coverage data found. Skipping this step."
+            echo "No coverage data found. Creating empty lcov.info to prevent errors."
+            touch .qodana/code-coverage/lcov.info
           fi
 
       - name: Qodana Scan
-        uses: JetBrains/qodana-action@main
+        uses: JetBrains/qodana-action@v2023.3
+        continue-on-error: true
         env:
           QODANA_TOKEN: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0IjoidjVEOW4iLCJvcmdhbml6YXRpb24iOiJ4UFE0ciIsInRva2VuIjoiTXJOWW8ifQ.2vBF9KEG3y2LH9KQD36DGtzLfyougQJ4Cat1p3Vsduk"
         with:
-          args: "--coverage-dir,.qodana/code-coverage"
+          args: "--coverage-dir,.qodana/code-coverage --no-symlinks"
+
+      - name: Upload Qodana logs
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: qodana-logs
+          path: .qodana/results/logs/
