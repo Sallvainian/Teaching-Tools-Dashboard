@@ -1,6 +1,5 @@
 version: "1.0"
-linter: jetbrains/qodana-js:latest
-name: SvelteKit - Teacher Dashboard
+linter: jetbrains/qodana-js:2025.1
 
 # Configure quality gates
 failThreshold: 0
