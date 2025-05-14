@@ -51,8 +51,8 @@ jobs:
         uses: JetBrains/qodana-action@latest
         continue-on-error: true
         env:
-          # The actual token should be stored in GitHub Secrets
-          QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
+          # Use the existing GitHub Secret with the correct name
+          QODANA_TOKEN: ${{ secrets.QODANA_TOKEN_724674951 }}
         with:
           args: "--coverage-dir,.qodana/code-coverage"
 
