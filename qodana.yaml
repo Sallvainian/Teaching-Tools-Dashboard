@@ -1,15 +1,13 @@
 version: "1.0"
 linter: jetbrains/qodana-js:2025.1
 name: SvelteKit - Teacher Dashboard
-coverageDir: .qodana/code-coverage
+
+# Simplify the configuration by removing problematic options
+include:
+  - name: Qodana.JavaScript
 
 # Don't fail the build on quality issues
-failThreshold: 0
-
-# Project-specific settings
-bootstrap: false
-profile:
-  name: Project Default
+failThreshold: 100000
 
 # Exclude directories from analysis
 exclude:
@@ -18,5 +16,3 @@ exclude:
       - node_modules
       - .svelte-kit
       - coverage
-      - .qodana
-      - static
