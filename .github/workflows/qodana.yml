@@ -57,9 +57,3 @@ jobs:
         with:
           args: "--coverage-dir,.qodana/code-coverage --no-symlinks"
 
-      - name: Upload Qodana logs
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: qodana-logs
-          path: .qodana/results/logs/
