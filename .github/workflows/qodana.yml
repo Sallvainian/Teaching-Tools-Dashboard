@@ -44,6 +44,18 @@ jobs:
             touch .qodana/code-coverage/lcov.info
           fi
 
+      - name: Check coverage file before Qodana
+        run: |
+          echo "Checking coverage file:"
+          if [ -f ".qodana/code-coverage/lcov.info" ]; then
+            echo "Coverage file exists. Size:"
+            ls -la .qodana/code-coverage/lcov.info
+            echo "First 10 lines of the file:"
+            head -n 10 .qodana/code-coverage/lcov.info || echo "Empty file"
+          else
+            echo "Coverage file does not exist."
+          fi
+
       - name: Qodana Scan
         uses: JetBrains/qodana-action@v2023.3
         continue-on-error: true
@@ -51,4 +63,20 @@ jobs:
           QODANA_TOKEN: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0IjoidjVEOW4iLCJvcmdhbml6YXRpb24iOiJ4UFE0ciIsInRva2VuIjoiTXJOWW8ifQ.2vBF9KEG3y2LH9KQD36DGtzLfyougQJ4Cat1p3Vsduk"
         with:
           args: "--coverage-dir,.qodana/code-coverage --no-symlinks"
+
+      - name: Check Qodana logs
+        if: ${{ always() }}
+        run: |
+          echo "Checking Qodana logs:"
+          if [ -d "/home/runner/work/_temp/qodana/results/logs" ]; then
+            ls -la /home/runner/work/_temp/qodana/results/logs
+            echo "Content of log files:"
+            for file in /home/runner/work/_temp/qodana/results/logs/*; do
+              echo "=== $file ==="
+              cat "$file" || echo "Failed to read file"
+              echo "=============="
+            done
+          else
+            echo "Qodana logs directory not found."
+          fi
 
