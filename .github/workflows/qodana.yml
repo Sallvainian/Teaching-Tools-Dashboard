@@ -51,7 +51,7 @@ jobs:
         uses: JetBrains/qodana-action@latest
         continue-on-error: true
         env:
-          QODANA_TOKEN: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0IjoidjVEOW4iLCJvcmdhbml6YXRpb24iOiJ4UFE0ciIsInRva2VuIjoiTXJOWW8ifQ.2vBF9KEG3y2LH9KQD36DGtzLfyougQJ4Cat1p3Vsduk"
+          QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
         with:
           args: "--coverage-dir,.qodana/code-coverage"
 
