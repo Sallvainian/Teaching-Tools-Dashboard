@@ -32,20 +32,15 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
 
-      - name: Run tests with coverage
-        run: pnpm test:coverage
+      - name: Run tests with coverage for Qodana
+        run: pnpm test:coverage:qodana
         continue-on-error: true
 
-      - name: Create Qodana coverage directory
-        run: mkdir -p .qodana/code-coverage
-
-      - name: Copy coverage data for Qodana
+      - name: Create empty coverage file if missing
         run: |
-          if [ -f "coverage/lcov.info" ]; then
-            cp coverage/lcov.info .qodana/code-coverage/
-            echo "Coverage data copied to .qodana/code-coverage/"
-          else
+          if [ ! -f ".qodana/code-coverage/lcov.info" ]; then
             echo "No coverage data found. Creating empty lcov.info to prevent errors."
+            mkdir -p .qodana/code-coverage
             touch .qodana/code-coverage/lcov.info
           fi
 
