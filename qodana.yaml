@@ -1,13 +1,13 @@
 version: "1.0"
-linter: jetbrains/qodana-js:2025.1
+linter: jetbrains/qodana-js:latest
 name: SvelteKit - Teacher Dashboard
 
-# Simplify the configuration by removing problematic options
+# Configure quality gates
+failThreshold: 0
+
+# Include essential inspections
 include:
   - name: Qodana.JavaScript
-
-# Don't fail the build on quality issues
-failThreshold: 100000
 
 # Exclude directories from analysis
 exclude:

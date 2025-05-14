@@ -1,4 +1,4 @@
-name: Qodana Scan
+name: Qodana with Code Coverage
 
 on:
   workflow_dispatch:
@@ -19,11 +19,39 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.x
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Run tests with coverage
+        run: pnpm test:coverage
+        continue-on-error: true
+
+      - name: Prepare coverage data for Qodana
+        run: |
+          mkdir -p .qodana/code-coverage
+          if [ -f "coverage/lcov.info" ]; then
+            cp coverage/lcov.info .qodana/code-coverage/
+            echo "Coverage data copied to .qodana/code-coverage/"
+          else
+            echo "No coverage data found. Creating empty file."
+            touch .qodana/code-coverage/lcov.info
+          fi
+
       - name: Qodana Scan
-        uses: JetBrains/qodana-action@v2023.3
+        uses: JetBrains/qodana-action@latest
         continue-on-error: true
         env:
           QODANA_TOKEN: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0IjoidjVEOW4iLCJvcmdhbml6YXRpb24iOiJ4UFE0ciIsInRva2VuIjoiTXJOWW8ifQ.2vBF9KEG3y2LH9KQD36DGtzLfyougQJ4Cat1p3Vsduk"
         with:
-          args: "--no-symlinks"
+          args: "--coverage-dir,.qodana/code-coverage"
 
