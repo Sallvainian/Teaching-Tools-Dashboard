@@ -1,6 +1,6 @@
 // src/lib/stores/gradebook.ts
 import { writable, derived, get } from 'svelte/store';
-import { nanoid } from '@sitnik/nanoid';
+import { v4 as uuidv4 } from 'uuid';
 import type { Student, Category, Assignment, Grade } from '$lib/types/gradebook';
 import { supabase } from '$lib/supabaseClient';
 import type { Tables } from '../../supabase';
@@ -205,7 +205,7 @@ function createGradebookStore() {
         error.set(err.message || 'Failed to add student');
         
         // Fallback to local-only if Supabase fails
-        const id = nanoid();
+        const id = uuidv4();
         const newStudent: Student = { id, name: trimmed };
         students.update((arr: Student[]) => [...arr, newStudent]);
         saveToStorage('students', get(students));
@@ -213,7 +213,7 @@ function createGradebookStore() {
       }
     } else {
       // Local storage only mode
-      const id = nanoid();
+      const id = uuidv4();
       const newStudent: Student = { id, name: trimmed };
       students.update((arr: Student[]) => [...arr, newStudent]);
       saveToStorage('students', get(students));
@@ -254,7 +254,7 @@ function createGradebookStore() {
         error.set(err.message || 'Failed to add category');
         
         // Fallback to local-only if Supabase fails
-        const id = nanoid();
+        const id = uuidv4();
         const newCategory: Category = { id, name: trimmed, studentIds: [] };
         categories.update((arr: Category[]) => [...arr, newCategory]);
         selectedCategoryId.update((cur: string | null) => cur || id);
@@ -263,7 +263,7 @@ function createGradebookStore() {
       }
     } else {
       // Local storage only mode
-      const id = nanoid();
+      const id = uuidv4();
       const newCategory: Category = { id, name: trimmed, studentIds: [] };
       categories.update((arr: Category[]) => [...arr, newCategory]);
       selectedCategoryId.update((cur: string | null) => cur || id);
@@ -412,14 +412,14 @@ function createGradebookStore() {
         error.set(err.message || 'Failed to add assignment');
         
         // Fallback to local-only if Supabase fails
-        const id = nanoid();
+        const id = uuidv4();
         const newAssignment: Assignment = { id, name: trimmed, maxPoints, categoryId };
         assignments.update((arr: Assignment[]) => [...arr, newAssignment]);
         saveToStorage('assignments', get(assignments));
       }
     } else {
       // Local storage only mode
-      const id = nanoid();
+      const id = uuidv4();
       const newAssignment: Assignment = { id, name: trimmed, maxPoints, categoryId };
       assignments.update((arr: Assignment[]) => [...arr, newAssignment]);
       saveToStorage('assignments', get(assignments));

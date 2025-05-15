@@ -1,6 +1,6 @@
 // src/lib/stores/jeopardy.ts
 import { writable, derived, get } from 'svelte/store';
-import { nanoid } from '@sitnik/nanoid';
+import { v4 as uuidv4 } from 'uuid';
 import type {
 	JeopardyGame,
 	Category,
@@ -73,7 +73,7 @@ function createJeopardyStore() {
 
 	// Game management functions
 	function createGame(name: string): string {
-		const gameId = nanoid();
+		const gameId = uuidv4();
 		const newGame: JeopardyGame = {
 			id: gameId,
 			name,
@@ -132,7 +132,7 @@ function createJeopardyStore() {
 
 	// Category functions
 	function addCategory(gameId: string, name: string): string {
-		const categoryId = nanoid();
+		const categoryId = uuidv4();
 		const newCategory: Category = {
 			id: categoryId,
 			name,
@@ -200,7 +200,7 @@ function createJeopardyStore() {
 		isDoubleJeopardy: boolean = false,
 		timeLimit?: number
 	): string {
-		const questionId = nanoid();
+		const questionId = uuidv4();
 		const newQuestion: Question = {
 			id: questionId,
 			text: questionText,
@@ -320,7 +320,7 @@ function createJeopardyStore() {
 
 	// Team functions
 	function addTeam(gameId: string, name: string, color: string = '#3B82F6'): string {
-		const teamId = nanoid();
+		const teamId = uuidv4();
 		const newTeam: Team = {
 			id: teamId,
 			name,
@@ -499,7 +499,7 @@ function createJeopardyStore() {
 					return null; // Will filter out invalid categories
 				}
 
-				const categoryId = nanoid(); // Assuming nanoid is available
+				const categoryId = uuidv4(); // Using UUID for ID generation
 
 				// Process questions
 				const questions: Question[] = (cat.questions as Array<Record<string, unknown>>).map((q, qIndex) => {
@@ -536,7 +536,7 @@ function createJeopardyStore() {
 					}
 
 					return {
-						id: nanoid(), // Assuming nanoid is available
+						id: uuidv4(), // Using UUID for ID generation
 						text: q.text as string, // Safe due to prior validation
 						answer: q.answer as string, // Safe due to prior validation
 						pointValue: q.pointValue as number, // Safe due to prior validation
