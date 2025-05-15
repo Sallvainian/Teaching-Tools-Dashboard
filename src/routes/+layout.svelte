@@ -74,6 +74,10 @@
             href="/class-dojo-remake"
             class="text-gray-300 hover:text-dark-highlight transition font-medium">Dojo</a
           >
+          <a
+            href="/observation-log"
+            class="text-gray-300 hover:text-dark-highlight transition font-medium">Behavior Logs</a
+          >
         </div>
 
         <div class="flex items-center gap-3">
@@ -194,6 +198,26 @@
                 />
               </svg>
               <span>Dojo</span>
+            </a>
+            <a
+              href="/observation-log"
+              class="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white"
+            >
+              <svg
+                class="w-5 h-5"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                />
+              </svg>
+              <span>Behavior Logs</span>
             </a>
           </div>
         </div>

@@ -62,7 +62,7 @@
     "@sveltejs/adapter-vercel": "^5.7.2",
     "ag-grid-svelte5": "^1.0.3",
     "ag-grid-svelte5-extended": "^0.0.13",
-    "nanoid": "^5.1.5"
+    "uuid": "^9.0.1"
   },
   "packageManager": "pnpm@10.10.0"
 }
