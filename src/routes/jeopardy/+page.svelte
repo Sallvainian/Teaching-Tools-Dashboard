@@ -849,6 +849,120 @@
 	{/if}
 </div>
 
+{#if editingQuestion.categoryId}
+	<div class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4 transition-opacity duration-300 ease-in-out"
+		onclick={(e) => { if (e.target === e.currentTarget) editingQuestion = { categoryId: '', questionId: '', text: '', answer: '', pointValue: 100, isDoubleJeopardy: false, timeLimit: 30 }; }}
+		onkeydown={(e) => { if (e.key === 'Escape') editingQuestion = { categoryId: '', questionId: '', text: '', answer: '', pointValue: 100, isDoubleJeopardy: false, timeLimit: 30 }; }}
+		role="dialog"
+		aria-modal="true"
+		aria-label="Edit Question"
+		tabindex="-1">
+		<div role="dialog" tabindex="-1" class="bg-dark-card border border-dark-border p-6 rounded-xl shadow-dark-card w-full max-w-xl max-h-[85vh] flex flex-col"
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => {
+				// Only prevent default for Enter key but not for space
+				// This allows space to work in form inputs
+				if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') {
+					e.preventDefault();
+					e.stopPropagation();
+				}
+			}}>
+			<div class="flex justify-between items-center mb-4">
+				<h2 class="text-xl font-semibold text-white">{editingQuestion.questionId ? 'Edit' : 'Add'} Question</h2>
+				<button
+					onclick={() => editingQuestion = { categoryId: '', questionId: '', text: '', answer: '', pointValue: 100, isDoubleJeopardy: false, timeLimit: 30 }}
+					class="text-gray-400 hover:text-white text-2xl leading-none p-1 hover:bg-dark-accent rounded-full w-8 h-8 flex items-center justify-center"
+					aria-label="Close modal"
+				>&times;</button>
+			</div>
+			<div class="overflow-y-auto flex-grow pr-2">
+				<div class="space-y-4">
+					<div>
+						<label for="question-text" class="block text-sm text-dark-lavender font-medium mb-2">Question Text</label>
+						<textarea 
+							id="question-text" 
+							bind:value={editingQuestion.text} 
+							class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-3 focus:ring-2 focus:ring-dark-purple focus:border-dark-purple min-h-[100px]"
+							placeholder="Enter the question here..."
+						></textarea>
+					</div>
+					<div>
+						<label for="question-answer" class="block text-sm text-dark-lavender font-medium mb-2">Answer</label>
+						<input 
+							id="question-answer" 
+							type="text" 
+							bind:value={editingQuestion.answer} 
+							class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-3 focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"
+							placeholder="Enter the answer here..."
+						/>
+					</div>
+					<div class="grid grid-cols-2 gap-4">
+						<div>
+							<label for="question-points" class="block text-sm text-dark-lavender font-medium mb-2">Point Value</label>
+							<input 
+								id="question-points" 
+								type="number"
+								min="100"
+								step="100" 
+								bind:value={editingQuestion.pointValue} 
+								class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-3 focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"
+							/>
+						</div>
+						<div>
+							<label for="question-time" class="block text-sm text-dark-lavender font-medium mb-2">Time Limit (seconds)</label>
+							<input 
+								id="question-time" 
+								type="number"
+								min="5"
+								step="5" 
+								bind:value={editingQuestion.timeLimit} 
+								class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-3 focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"
+							/>
+						</div>
+					</div>
+					<div class="flex items-center mt-2">
+						<input 
+							id="is-double-jeopardy"
+							type="checkbox"
+							bind:checked={editingQuestion.isDoubleJeopardy}
+							class="h-4 w-4 text-dark-purple focus:ring-dark-purple border-dark-border bg-dark-surface rounded"
+						/>
+						<label for="is-double-jeopardy" class="ml-2 block text-white">
+							Double Jeopardy Question
+						</label>
+					</div>
+				</div>
+			</div>
+			<div class="flex justify-between mt-6 pt-4 border-t border-dark-border">
+				{#if editingQuestion.questionId}
+					<button
+						onclick={_handleDeleteQuestion}
+						class="px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition"
+					>
+						Delete Question
+					</button>
+				{:else}
+					<div></div>
+				{/if}
+				<div class="flex gap-2">
+					<button
+						onclick={() => editingQuestion = { categoryId: '', questionId: '', text: '', answer: '', pointValue: 100, isDoubleJeopardy: false, timeLimit: 30 }}
+						class="px-4 py-2 bg-dark-surface text-gray-300 rounded-lg hover:bg-dark-accent hover:text-white transition"
+					>
+						Cancel
+					</button>
+					<button
+						onclick={_handleSaveQuestion}
+						class="px-4 py-2 bg-dark-highlight text-dark-purple font-medium rounded-lg hover:bg-dark-lavender transition"
+					>
+						Save Question
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{/if}
+
 {#if showTemplateModal && $getActiveGame && $editMode}
 	<div class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4 transition-opacity duration-300 ease-in-out" 
     onclick={(e) => { if (e.target === e.currentTarget) showTemplateModal = false; }}
