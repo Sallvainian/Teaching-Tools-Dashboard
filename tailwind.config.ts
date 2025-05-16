@@ -34,7 +34,14 @@ const config: Config = {
       },
     },
   },
-  plugins: [typography, forms],
+  plugins: [typography, forms, require('daisyui')],
+  daisyui: {
+    themes: ["dark", "light"],
+    darkTheme: "dark",
+    base: false, // Don't apply DaisyUI's base styles
+    styled: true, // Include DaisyUI's component styles
+    utils: true, // Include DaisyUI's utility classes
+  },
 };
 
 export default config;

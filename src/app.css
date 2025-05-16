@@ -1,27 +1,4 @@
-/* AG Grid CSS imports */
-@import '@ag-grid-community/styles/ag-grid.css';
-@import '@ag-grid-community/styles/ag-theme-alpine.css';
-
-/* Force dark theme with !important flags */
-.ag-theme-alpine {
-  --ag-background-color: #121212 !important;
-  --ag-header-background-color: #1e1e1e !important;
-  --ag-odd-row-background-color: #0a0a0a !important;
-  --ag-border-color: #333333 !important;
-  --ag-foreground-color: #e0e0e0 !important;
-  --ag-header-foreground-color: #ffffff !important;
-}
-
-/* Force dark backgrounds on all grid elements */
-.ag-theme-alpine .ag-root-wrapper,
-.ag-theme-alpine .ag-root,
-.ag-theme-alpine .ag-header,
-.ag-theme-alpine .ag-body-viewport,
-.ag-theme-alpine .ag-center-cols-container,
-.ag-theme-alpine .ag-header-container,
-.ag-theme-alpine .ag-row {
-  background-color: #121212 !important;
-}
+/* AG Grid CSS imports are in +layout.svelte */
 
 /* Tailwind directives */
 @tailwind base;

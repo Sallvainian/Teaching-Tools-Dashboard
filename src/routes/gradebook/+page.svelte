@@ -2,6 +2,7 @@
   import { gradebookStore } from '$lib/stores/gradebook';
   import { onMount } from 'svelte';
   import { get } from 'svelte/store';
+  import LoadingBounce from '$lib/components/LoadingBounce.svelte';
 
   // Import AG Grid components with correct name
   import AgGridSvelte from 'ag-grid-svelte5';
@@ -53,6 +54,7 @@
     recordGrade,
     addGlobalStudent,
     assignStudentToCategory,
+    isLoading,
   } = gradebookStore;
 
   // Derived values using runes
@@ -278,9 +280,10 @@
     return colDefs;
   }
 
-  onMount(() => {
-    // Debug store data
-    console.log('Component mounted');
+  onMount(async () => {
+    // Ensure data is loaded when gradebook is accessed
+    await gradebookStore.ensureDataLoaded();
+    console.log('Gradebook data loaded');
   });
 
   // Pure reactive approach to handle initial category selection
@@ -316,7 +319,11 @@
   }
 </script>
 
-{#if selectedCategory}
+{#if $isLoading}
+  <div class="flex items-center justify-center min-h-[500px]">
+    <LoadingBounce />
+  </div>
+{:else if selectedCategory}
   <div
     class="bg-dark-card border border-dark-border rounded-xl overflow-hidden shadow-dark-card mb-4"
   >

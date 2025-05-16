@@ -43,7 +43,7 @@
           {#each logs as log}
             <tr 
               class="hover:bg-dark-accent cursor-pointer transition-colors duration-150"
-              on:click={() => selectLog(log.id)}
+              onclick={() => selectLog(log.id)}
             >
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
                 {log.studentName}

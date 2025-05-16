@@ -83,7 +83,10 @@ function createJeopardyStore() {
 			lastModified: new Date().toISOString(),
 			settings: {
 				defaultTimeLimit: 30,
-				useTimer: false,
+				useTimer: true,
+				readingTime: 5,
+				autoShowAnswer: true,
+				timerSize: 'large',
 				allowWagers: true
 			}
 		};

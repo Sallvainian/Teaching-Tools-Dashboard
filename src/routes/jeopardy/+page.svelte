@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { jeopardyStore } from '$lib/stores/jeopardy';
-	import type { Question as GameQuestionType } from '$lib/types/jeopardy';
-	import { onDestroy } from 'svelte';
+	import type { Question as GameQuestionType, TimerSize } from '$lib/types/jeopardy';
+	import { onDestroy, onMount } from 'svelte';
+	import JeopardyTimer from '$lib/components/JeopardyTimer.svelte';
+	import LoadingBounce from '$lib/components/LoadingBounce.svelte';
 
 	// Access the store (ensure all used functions are destructured)
 	const {
@@ -84,6 +86,7 @@
 	let timerIntervalId: number | null = null;
 	let remainingSeconds = 30;
 	let timerDisplay = '';
+	let isLoading = true;
 
 	// Game templates
 	const templates = getGameTemplates();
@@ -186,11 +189,7 @@
 		selectedTeamId = '';
 		wagerInputValue = question.isDoubleJeopardy ? question.pointValue.toString() : '0';
 
-		if (question.timeLimit && question.timeLimit > 0) {
-			startQuestionTimer(question.timeLimit);
-		} else if (game.settings?.defaultTimeLimit && game.settings.useTimer) {
-			startQuestionTimer(game.settings.defaultTimeLimit);
-		}
+		// Timer is now handled by the JeopardyTimer component
 	}
 
 	function startQuestionTimer(seconds: number) {
@@ -221,6 +220,13 @@
 		}
 		setWagerAmount(wager);
 	}
+
+	onMount(() => {
+		// Simulate loading time
+		setTimeout(() => {
+			isLoading = false;
+		}, 500);
+	});
 
 	onDestroy(() => {
 		if (timerIntervalId !== null) clearInterval(timerIntervalId);
@@ -272,6 +278,24 @@
 		if (!isNaN(value) && $getActiveGame) {
 			updateGameSettings($getActiveGame.id, { defaultTimeLimit: value });
 		}
+	}
+
+	function handleReadingTimeChange(event: Event) {
+		const target = event.target as HTMLInputElement;
+		const value = parseInt(target.value, 10);
+		if (!isNaN(value) && $getActiveGame) {
+			updateGameSettings($getActiveGame.id, { readingTime: value });
+		}
+	}
+
+	function handleAutoShowAnswerChange(event: Event) {
+		const target = event.target as HTMLInputElement;
+		if ($getActiveGame) updateGameSettings($getActiveGame.id, { autoShowAnswer: target.checked });
+	}
+
+	function handleTimerSizeChange(event: Event) {
+		const target = event.target as HTMLSelectElement;
+		if ($getActiveGame) updateGameSettings($getActiveGame.id, { timerSize: target.value as TimerSize });
 	}
 
 	// MODIFIED: Apply game template (can now create a new game or apply to existing)
@@ -383,21 +407,31 @@
 
 </script>
 
+{#if isLoading}
+	<div class="flex items-center justify-center min-h-[600px]">
+		<LoadingBounce />
+	</div>
+{:else}
 <div class="mb-8">
 	<div class="flex justify-between items-center mb-6">
 		<div>
-			<h1 class="text-2xl font-bold text-white mb-1">Jeopardy</h1>
-			<p class="text-dark-muted">Create and play Jeopardy-style quiz games</p>
+			{#if $getActiveQuestion && $getActiveGame}
+				<h1 class="text-2xl font-bold text-white mb-1">{$getActiveGame.name}</h1>
+				<p class="text-dark-muted">{$getActiveGame.description || 'Playing a quiz game'}</p>
+			{:else}
+				<h1 class="text-2xl font-bold text-white mb-1">Jeopardy</h1>
+				<p class="text-dark-muted">Create and play Jeopardy-style quiz games</p>
+			{/if}
 		</div>
 		<div class="flex gap-3">
 			{#if $getActiveGame && !$getActiveQuestion} <button
-				on:click={toggleMode}
+				onclick={toggleMode}
 				class="flex items-center gap-2 px-4 py-2 bg-dark-card border border-dark-border rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white transition"
 			>
 				{$editMode ? 'Play Game' : 'Edit Game'}
 			</button>
 				<button
-					on:click={handleResetGame}
+					onclick={handleResetGame}
 					class="flex items-center gap-2 px-4 py-2 bg-dark-card border border-dark-border rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white transition"
 				>
 					Reset Game
@@ -427,7 +461,7 @@
 					class="flex-grow bg-dark-surface text-white border border-dark-border rounded-lg p-3 focus:ring-2 focus:ring-dark-purple focus:border-dark-purple placeholder:text-dark-muted"
 				/>
 				<button
-					on:click={handleCreateGame}
+					onclick={handleCreateGame}
 					class="px-4 py-3 bg-dark-highlight text-dark-purple font-medium rounded-lg hover:bg-dark-lavender transition focus:ring-2 focus:ring-offset-2 focus:ring-dark-purple"
 				>
 					Create Game
@@ -453,7 +487,7 @@
 								{template.categories.reduce((acc, cat) => acc + cat.questions.length, 0)} questions
 							</p>
 							<button
-								on:click={() => handleApplyTemplate(template.id)}
+								onclick={() => handleApplyTemplate(template.id)}
 								class="w-full py-2 bg-dark-highlight text-dark-purple font-medium rounded hover:bg-dark-lavender transition mt-auto"
 							>
 								Use This Template
@@ -480,19 +514,19 @@
 							</div>
 							<div class="flex justify-between items-center mt-4">
 								<button
-									on:click={() => { setActiveGame(game.id); setEditMode(false); }}
+									onclick={() => { setActiveGame(game.id); setEditMode(false); }}
 									class="text-sm px-3 py-1 bg-dark-highlight text-dark-purple rounded hover:bg-dark-lavender transition"
 								>
 									Play
 								</button>
 								<button
-									on:click={() => { setActiveGame(game.id); setEditMode(true); }}
+									onclick={() => { setActiveGame(game.id); setEditMode(true); }}
 									class="text-sm px-3 py-1 bg-dark-card text-gray-300 rounded hover:bg-dark-accent hover:text-white transition"
 								>
 									Edit
 								</button>
 								<button
-									on:click={() => { if (confirm('Are you sure you want to delete this game?')) deleteGame(game.id); }}
+									onclick={() => { if (confirm('Are you sure you want to delete this game?')) deleteGame(game.id); }}
 									class="text-sm px-3 py-1 bg-dark-card text-gray-300 rounded hover:bg-red-500 hover:text-white transition"
 								>
 									Delete
@@ -506,14 +540,52 @@
 
 	{:else if $getActiveQuestion}
 		<div class="flex flex-col">
+			{#if $getActiveGame?.settings?.useTimer && $getActiveGame?.settings?.timerSize !== 'small'}
+				<JeopardyTimer 
+					readingTime={$getActiveGame.settings.readingTime || 5}
+					totalTime={$getActiveQuestion.timeLimit || $getActiveGame.settings.defaultTimeLimit || 30}
+					size={$getActiveGame.settings.timerSize || 'large'}
+					onTimeExpired={() => {
+						if ($getActiveGame.settings.autoShowAnswer) {
+							showAnswer = true;
+						}
+						showFeedback('Time expired!', false, 2000);
+					}}
+					onReadingComplete={() => {
+						// Reading phase complete, main timer starts
+					}}
+				/>
+			{/if}
 			<div class="bg-dark-surface border-2 border-dark-purple rounded-xl p-10 mb-4 text-center min-h-[300px] flex flex-col justify-center relative">
-				{#if timerIntervalId !== null}<div class="absolute top-4 right-4 bg-dark-card px-3 py-1 rounded-lg text-xl font-mono">{timerDisplay}</div>{/if}
+				{#if $getActiveGame?.settings?.useTimer && $getActiveGame?.settings?.timerSize === 'small'}
+					<JeopardyTimer 
+						readingTime={$getActiveGame.settings.readingTime || 5}
+						totalTime={$getActiveQuestion.timeLimit || $getActiveGame.settings.defaultTimeLimit || 30}
+						size="small"
+						position="corner"
+						onTimeExpired={() => {
+							if ($getActiveGame.settings.autoShowAnswer) {
+								showAnswer = true;
+							}
+							showFeedback('Time expired!', false, 2000);
+						}}
+						onReadingComplete={() => {
+							// Reading phase complete, main timer starts
+						}}
+					/>
+				{/if}
 				{#if $getActiveQuestion.isDoubleJeopardy}<div class="absolute top-4 left-4 bg-dark-highlight px-3 py-1 rounded-lg text-dark-purple font-bold">Double Jeopardy</div>{/if}
+				{#if $getActiveQuestion.categoryName}
+					<div class="mb-6">
+						<h3 class="text-lg font-semibold text-dark-highlight">{$getActiveQuestion.categoryName}</h3>
+						<p class="text-2xl font-bold text-white mt-1">${$getActiveQuestion.pointValue}</p>
+					</div>
+				{/if}
 				<div class="text-xl md:text-2xl lg:text-3xl text-white font-medium mb-8">{$getActiveQuestion.text}</div>
 				{#if showAnswer}<div class="text-xl md:text-2xl text-dark-highlight font-medium mb-4">{$getActiveQuestion.answer}</div>{/if}
 				<div class="flex justify-center mt-4">
-					<button on:click={() => (showAnswer = !showAnswer)} class="px-4 py-2 bg-dark-card text-gray-300 rounded-lg hover:bg-dark-accent hover:text-white transition mx-2">{showAnswer ? 'Hide Answer' : 'Show Answer'}</button>
-					<button on:click={() => setActiveQuestion(null)} class="px-4 py-2 bg-dark-card text-gray-300 rounded-lg hover:bg-dark-accent hover:text-white transition mx-2">Back to Board</button>
+					<button onclick={() => (showAnswer = !showAnswer)} class="px-4 py-2 bg-dark-card text-gray-300 rounded-lg hover:bg-dark-accent hover:text-white transition mx-2">{showAnswer ? 'Hide Answer' : 'Show Answer'}</button>
+					<button onclick={() => setActiveQuestion(null)} class="px-4 py-2 bg-dark-card text-gray-300 rounded-lg hover:bg-dark-accent hover:text-white transition mx-2">Back to Board</button>
 				</div>
 			</div>
 			{#if $getActiveQuestion.isDoubleJeopardy}
@@ -522,7 +594,7 @@
 					<div class="flex flex-col items-center">
 						<div class="flex items-center gap-3 mb-4">
 							<input type="number" bind:value={wagerInputValue} min="0" max={Math.max($getActiveQuestion.pointValue * 2, 1000)} class="bg-dark-surface text-white border border-dark-border rounded-lg p-3 focus:ring-2 focus:ring-dark-purple focus:border-dark-purple w-32 text-center"/>
-							<button on:click={handleWagerSubmit} class="px-4 py-3 bg-dark-highlight text-dark-purple font-medium rounded-lg hover:bg-dark-lavender transition">Set Wager</button>
+							<button onclick={handleWagerSubmit} class="px-4 py-3 bg-dark-highlight text-dark-purple font-medium rounded-lg hover:bg-dark-lavender transition">Set Wager</button>
 						</div>
 						<p class="text-dark-muted text-sm">Current wager: <span class="text-white font-medium">{$wagerAmount}</span> points</p>
 					</div>
@@ -532,15 +604,15 @@
 				<h3 class="text-lg font-semibold text-white mb-4 text-center">Award Points ({$getActiveQuestion.isDoubleJeopardy ? $wagerAmount : $getActiveQuestion.pointValue})</h3>
 				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
 					{#each $getActiveGame.teams as team (team.id)}
-						<button class="p-4 rounded-lg text-white flex items-center justify-between transition-all" style="background-color: {team.color}; opacity: {selectedTeamId === team.id ? '1' : '0.6'};" on:click={() => (selectedTeamId = team.id)}>
+						<button class="p-4 rounded-lg text-white flex items-center justify-between transition-all" style="background-color: {team.color}; opacity: {selectedTeamId === team.id ? '1' : '0.6'};" onclick={() => (selectedTeamId = team.id)}>
 							<span class="font-medium">{team.name}</span>
 							<span class="bg-dark-surface bg-opacity-30 px-3 py-1 rounded-full">{team.score}</span>
 						</button>
 					{/each}
 				</div>
 				<div class="flex justify-center gap-4 mt-6">
-					<button on:click={handleAwardPoints} disabled={!selectedTeamId || ($getActiveQuestion.isDoubleJeopardy && $wagerAmount <= 0)} class="px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed">Correct (+{$getActiveQuestion.isDoubleJeopardy ? $wagerAmount : $getActiveQuestion.pointValue})</button>
-					<button on:click={handleDeductPoints} disabled={!selectedTeamId || ($getActiveQuestion.isDoubleJeopardy && $wagerAmount <= 0)} class="px-6 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed">Incorrect (-{$getActiveQuestion.isDoubleJeopardy ? $wagerAmount : $getActiveQuestion.pointValue})</button>
+					<button onclick={handleAwardPoints} disabled={!selectedTeamId || ($getActiveQuestion.isDoubleJeopardy && $wagerAmount <= 0)} class="px-6 py-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition disabled:opacity-50 disabled:cursor-not-allowed">Correct (+{$getActiveQuestion.isDoubleJeopardy ? $wagerAmount : $getActiveQuestion.pointValue})</button>
+					<button onclick={handleDeductPoints} disabled={!selectedTeamId || ($getActiveQuestion.isDoubleJeopardy && $wagerAmount <= 0)} class="px-6 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed">Incorrect (-{$getActiveQuestion.isDoubleJeopardy ? $wagerAmount : $getActiveQuestion.pointValue})</button>
 				</div>
 			</div>
 		</div>
@@ -551,8 +623,8 @@
 				<div class="bg-dark-card border border-dark-border p-6 rounded-xl shadow-dark-card">
 					<h2 class="text-lg font-semibold text-white mb-4">Game: {$getActiveGame.name}</h2>
 					<div class="flex justify-between">
-						<button on:click={() => setActiveGame(null)} class="px-4 py-2 bg-dark-surface text-gray-300 rounded hover:bg-dark-accent hover:text-white transition">Back to Games</button>
-						<button on:click={toggleMode} class="px-4 py-2 bg-dark-highlight text-dark-purple font-medium rounded hover:bg-dark-lavender transition">Play Game</button>
+						<button onclick={() => setActiveGame(null)} class="px-4 py-2 bg-dark-surface text-gray-300 rounded hover:bg-dark-accent hover:text-white transition">Back to Games</button>
+						<button onclick={toggleMode} class="px-4 py-2 bg-dark-highlight text-dark-purple font-medium rounded hover:bg-dark-lavender transition">Play Game</button>
 					</div>
 				</div>
 
@@ -561,18 +633,44 @@
 					<div class="space-y-4">
 						<div class="flex items-center">
 							<label class="flex items-center cursor-pointer">
-								<input type="checkbox" checked={$getActiveGame.settings?.useTimer || false} on:change={handleUseTimerChange} class="h-4 w-4 bg-dark-surface border-dark-border text-dark-purple focus:ring-dark-purple rounded"/>
+								<input type="checkbox" checked={$getActiveGame.settings?.useTimer || false} onchange={handleUseTimerChange} class="h-4 w-4 bg-dark-surface border-dark-border text-dark-purple focus:ring-dark-purple rounded"/>
 								<span class="ml-2 text-white">Use timer for questions by default</span>
 							</label>
 						</div>
 						<div>
-							<label for="default-time-limit" class="block text-sm text-dark-lavender font-medium mb-2">Default time limit (seconds)</label>
-							<input id="default-time-limit" type="number" value={$getActiveGame.settings?.defaultTimeLimit || 30} on:change={handleDefaultTimeLimitChange} min="5" max="300" step="5" class="w-full md:w-1/3 bg-dark-surface text-white border border-dark-border rounded-lg p-3 focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"/>
+							<label for="question-time" class="block text-sm text-dark-lavender font-medium mb-2">Question Time (seconds)</label>
+							<input id="question-time" type="number" value={$getActiveGame.settings?.defaultTimeLimit || 30} onchange={handleDefaultTimeLimitChange} min="5" max="300" step="5" class="w-full md:w-1/3 bg-dark-surface text-white border border-dark-border rounded-lg p-3 focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"/>
+							<p class="text-dark-muted text-xs mt-1">Time allowed to answer the question after reading</p>
+						</div>
+						<div>
+							<label for="reading-time" class="block text-sm text-dark-lavender font-medium mb-2">Reading time (seconds)</label>
+							<input id="reading-time" type="number" value={$getActiveGame.settings?.readingTime || 5} onchange={handleReadingTimeChange} min="1" max="15" step="1" class="w-full md:w-1/3 bg-dark-surface text-white border border-dark-border rounded-lg p-3 focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"/>
+							<p class="text-dark-muted text-xs mt-1">Time given to read the question before countdown starts</p>
+						</div>
+						<div class="flex items-center mt-4">
+							<label class="flex items-center cursor-pointer">
+								<input type="checkbox" checked={$getActiveGame.settings?.autoShowAnswer || false} onchange={handleAutoShowAnswerChange} class="h-4 w-4 bg-dark-surface border-dark-border text-dark-purple focus:ring-dark-purple rounded"/>
+								<span class="ml-2 text-white">Automatically show answer when timer expires</span>
+							</label>
+						</div>
+						<div class="mt-4">
+							<label for="timer-size" class="block text-sm text-dark-lavender font-medium mb-2">Timer Size</label>
+							<select 
+								id="timer-size" 
+								value={$getActiveGame.settings?.timerSize || 'large'} 
+								onchange={handleTimerSizeChange}
+								class="w-full md:w-1/3 bg-dark-surface text-white border border-dark-border rounded-lg p-3 focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"
+							>
+								<option value="large">Large (Above question)</option>
+								<option value="medium">Medium (Wider bar)</option>
+								<option value="small">Small (Corner)</option>
+							</select>
+							<p class="text-dark-muted text-xs mt-1">Choose how the timer is displayed during questions</p>
 						</div>
 					</div>
 					<div class="mt-6 pt-4 border-t border-dark-border">
 						<button
-							on:click={() => showTemplateModal = true}
+							onclick={() => showTemplateModal = true}
 							class="w-full py-2 bg-dark-accent text-white font-medium rounded-lg hover:bg-opacity-80 transition"
 						>
 							Apply Template from Library...
@@ -587,13 +685,13 @@
 							<h3 class="text-white font-medium mb-2">Import from JSON</h3>
 							<p class="text-dark-muted text-sm mb-3">Import categories and questions from a JSON file.</p>
 							<div class="flex flex-col gap-3">
-								<input id="jsonFile" type="file" accept=".json,application/json" on:change={handleImportJSON} class="bg-dark-surface text-white border border-dark-border rounded-lg p-2 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-dark-highlight file:text-dark-purple hover:file:bg-dark-lavender"/>
+								<input id="jsonFile" type="file" accept=".json,application/json" onchange={handleImportJSON} class="bg-dark-surface text-white border border-dark-border rounded-lg p-2 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-dark-highlight file:text-dark-purple hover:file:bg-dark-lavender"/>
 							</div>
 						</div>
 						<div class="pt-4 border-t border-dark-border">
 							<h3 class="text-white font-medium mb-2">Export to JSON</h3>
 							<p class="text-dark-muted text-sm mb-3">Export your game's categories and questions to a JSON file for backup or sharing.</p>
-							<button on:click={handleExportJSON} class="px-4 py-2 bg-dark-highlight text-dark-purple font-medium rounded hover:bg-dark-lavender transition">Export Game</button>
+							<button onclick={handleExportJSON} class="px-4 py-2 bg-dark-highlight text-dark-purple font-medium rounded hover:bg-dark-lavender transition">Export Game</button>
 						</div>
 						<div class="mt-4 text-dark-muted text-xs">
 							<p class="font-semibold">JSON format:</p>
@@ -621,7 +719,7 @@
 					<h2 class="text-lg font-semibold text-white mb-4">Add Category</h2>
 					<div class="flex gap-2">
 						<input type="text" placeholder="Category name" bind:value={newCategoryName} class="flex-grow bg-dark-surface text-white border border-dark-border rounded-lg p-3 focus:ring-2 focus:ring-dark-purple focus:border-dark-purple placeholder:text-dark-muted"/>
-						<button on:click={handleAddCategory} class="px-4 py-2 bg-dark-highlight text-dark-purple font-medium rounded-lg hover:bg-dark-lavender transition">Add</button>
+						<button onclick={handleAddCategory} class="px-4 py-2 bg-dark-highlight text-dark-purple font-medium rounded-lg hover:bg-dark-lavender transition">Add</button>
 					</div>
 				</div>
 
@@ -630,7 +728,7 @@
 					<div class="flex gap-2 mb-4">
 						<input type="text" placeholder="Team name" bind:value={newTeamName} class="flex-grow bg-dark-surface text-white border border-dark-border rounded-lg p-3 focus:ring-2 focus:ring-dark-purple focus:border-dark-purple placeholder:text-dark-muted"/>
 						<div class="relative"><input type="color" bind:value={newTeamColor} class="w-12 h-12 rounded-lg cursor-pointer border border-dark-border"/></div>
-						<button on:click={handleAddTeam} class="px-4 py-2 bg-dark-highlight text-dark-purple font-medium rounded-lg hover:bg-dark-lavender transition">Add</button>
+						<button onclick={handleAddTeam} class="px-4 py-2 bg-dark-highlight text-dark-purple font-medium rounded-lg hover:bg-dark-lavender transition">Add</button>
 					</div>
 					<div class="space-y-3 mt-4">
 						{#each $getActiveGame.teams as team (team.id)}
@@ -641,7 +739,7 @@
 								</div>
 								<div class="flex items-center">
 									<span class="text-dark-muted mr-4">Score: {team.score}</span>
-									<button on:click={() => { if (confirm('Are you sure you want to delete this team?')) deleteTeam($getActiveGame.id, team.id); }} class="text-gray-400 hover:text-red-500 transition">Delete</button>
+									<button onclick={() => { if (confirm('Are you sure you want to delete this team?')) deleteTeam($getActiveGame.id, team.id); }} class="text-gray-400 hover:text-red-500 transition">Delete</button>
 								</div>
 							</div>
 						{/each}
@@ -662,8 +760,8 @@
 							<div class="p-4 border-b border-dark-border flex justify-between items-center bg-dark-surface rounded-t-xl">
 								<h3 class="text-white font-medium">{category.name}</h3>
 								<div class="flex gap-2">
-									<button on:click={() => openEditQuestion(category.id)} class="text-sm px-3 py-1 bg-dark-highlight text-dark-purple rounded hover:bg-dark-lavender transition">Add Question</button>
-									<button on:click={() => { if (confirm('Are you sure you want to delete this category and all its questions?')) deleteCategory($getActiveGame.id, category.id); }} class="text-sm px-3 py-1 bg-dark-card text-gray-300 rounded hover:bg-red-500 hover:text-white transition">Delete</button>
+									<button onclick={() => openEditQuestion(category.id)} class="text-sm px-3 py-1 bg-dark-highlight text-dark-purple rounded hover:bg-dark-lavender transition">Add Question</button>
+									<button onclick={() => { if (confirm('Are you sure you want to delete this category and all its questions?')) deleteCategory($getActiveGame.id, category.id); }} class="text-sm px-3 py-1 bg-dark-card text-gray-300 rounded hover:bg-red-500 hover:text-white transition">Delete</button>
 								</div>
 							</div>
 							<div class="p-4 space-y-3">
@@ -684,7 +782,7 @@
 													{#if question.isDoubleJeopardy}<span class="bg-dark-highlight bg-opacity-30 px-2 py-0.5 rounded text-dark-purple">Double Jeopardy</span>{/if}
 													{#if question.timeLimit}<span class="bg-dark-surface bg-opacity-70 px-2 py-0.5 rounded border border-dark-border">{question.timeLimit}s</span>{/if}
 												</div>
-												<div><button on:click={() => openEditQuestion(category.id, question)} class="text-gray-400 hover:text-white transition px-2">Edit</button></div>
+												<div><button onclick={() => openEditQuestion(category.id, question)} class="text-gray-400 hover:text-white transition px-2">Edit</button></div>
 											</div>
 										</div>
 									{/each}
@@ -700,8 +798,8 @@
 		<div class="flex flex-col md:flex-row justify-between items-center bg-dark-card border border-dark-border p-4 rounded-xl shadow-dark-card">
 			<div><h2 class="text-xl font-bold text-white">{$getActiveGame.name}</h2></div>
 			<div class="flex gap-3 mt-4 md:mt-0">
-				<button on:click={toggleMode} class="px-4 py-2 bg-dark-highlight text-dark-purple font-medium rounded hover:bg-dark-lavender transition">Edit Game</button>
-				<button on:click={handleResetGame} class="px-4 py-2 bg-dark-card text-gray-300 rounded hover:bg-dark-accent hover:text-white transition">Reset Board</button>
+				<button onclick={toggleMode} class="px-4 py-2 bg-dark-highlight text-dark-purple font-medium rounded hover:bg-dark-lavender transition">Edit Game</button>
+				<button onclick={handleResetGame} class="px-4 py-2 bg-dark-card text-gray-300 rounded hover:bg-dark-accent hover:text-white transition">Reset Board</button>
 			</div>
 		</div>
 		{#if $getActiveGame.teams.length > 0}
@@ -717,7 +815,7 @@
 		{:else}
 			<div class="bg-dark-card border border-dark-border p-6 rounded-xl shadow-dark-card text-center">
 				<p class="text-dark-muted mb-4">No teams yet. Add teams in Edit mode.</p>
-				<button on:click={toggleMode} class="px-4 py-2 bg-dark-highlight text-dark-purple font-medium rounded hover:bg-dark-lavender transition">Go to Edit Mode</button>
+				<button onclick={toggleMode} class="px-4 py-2 bg-dark-highlight text-dark-purple font-medium rounded hover:bg-dark-lavender transition">Go to Edit Mode</button>
 			</div>
 		{/if}
 		{#if $getActiveGame.categories.length > 0}
@@ -728,7 +826,7 @@
 							<div class="bg-dark-highlight text-dark-purple font-bold p-3 text-center rounded-lg min-h-[60px] flex items-center justify-center">{category.name}</div>
 							{#each category.questions as question (question.id)}
 								<button
-									on:click={() => handleOpenQuestion(category.id, question.id)}
+									onclick={() => handleOpenQuestion(category.id, question.id)}
 									disabled={question.isAnswered}
 									class="w-full bg-dark-surface border border-dark-border hover:border-dark-purple p-3 h-16 rounded-lg transition font-bold flex items-center justify-center disabled:opacity-40 disabled:hover:border-dark-border"
 									class:bg-dark-highlight={question.isDoubleJeopardy && !question.isAnswered}
@@ -744,7 +842,7 @@
 		{:else}
 			<div class="bg-dark-card border border-dark-border p-6 rounded-xl shadow-dark-card text-center">
 				<p class="text-dark-muted mb-4">No categories or questions yet. Add them in Edit mode.</p>
-				<button on:click={toggleMode} class="px-4 py-2 bg-dark-highlight text-dark-purple font-medium rounded hover:bg-dark-lavender transition">Go to Edit Mode</button>
+				<button onclick={toggleMode} class="px-4 py-2 bg-dark-highlight text-dark-purple font-medium rounded hover:bg-dark-lavender transition">Go to Edit Mode</button>
 			</div>
 		{/if}
 	</div>
@@ -752,10 +850,16 @@
 </div>
 
 {#if showTemplateModal && $getActiveGame && $editMode}
-	<div class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4 transition-opacity duration-300 ease-in-out" on:click|self={() => showTemplateModal = false}>
+	<div class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4 transition-opacity duration-300 ease-in-out" 
+    onclick={(e) => { if (e.target === e.currentTarget) showTemplateModal = false; }}
+    onkeydown={(e) => { if (e.key === 'Escape') showTemplateModal = false; }}
+    role="dialog"
+    aria-modal="true"
+    aria-label="Template Manager"
+    tabindex="-1">
 		<div role="button" tabindex="0" class="bg-dark-card border border-dark-border p-6 rounded-xl shadow-dark-card w-full max-w-2xl max-h-[85vh] flex flex-col"
-    on:click|stopPropagation
-    on:keydown={(e) => {
+    onclick={(e) => e.stopPropagation()}
+    onkeydown={(e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         e.stopPropagation();
@@ -767,7 +871,7 @@
 			<div class="flex justify-between items-center mb-4">
 				<h2 class="text-xl font-semibold text-white">Apply Template to "{$getActiveGame.name}"</h2>
 				<button
-					on:click={() => showTemplateModal = false}
+					onclick={() => showTemplateModal = false}
 					class="text-gray-400 hover:text-white text-2xl leading-none p-1 hover:bg-dark-accent rounded-full w-8 h-8 flex items-center justify-center"
 					aria-label="Close modal"
 				>&times;</button>
@@ -785,7 +889,7 @@
 							{template.categories.reduce((acc, cat) => acc + cat.questions.length, 0)} questions
 						</p>
 						<button
-							on:click={() => {
+							onclick={() => {
             handleApplyTemplate(template.id);
             if (generalMessage) {
                  showTemplateModal = false;
@@ -803,7 +907,7 @@
 			</div>
 			<div class="mt-6 text-right">
 				<button
-					on:click={() => showTemplateModal = false}
+					onclick={() => showTemplateModal = false}
 					class="px-4 py-2 bg-dark-surface text-gray-300 rounded-lg hover:bg-dark-accent hover:text-white transition"
 				>
 					Cancel
@@ -811,4 +915,5 @@
 			</div>
 		</div>
 	</div>
+{/if}
 {/if}

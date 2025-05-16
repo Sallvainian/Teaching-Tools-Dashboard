@@ -114,7 +114,7 @@
     {editMode ? 'Edit Behavior Log' : 'New Behavior Log'}
   </h2>
   
-  <form on:submit|preventDefault={handleSubmit} class="space-y-4">
+  <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="space-y-4">
     <!-- Student Name -->
     <div>
       <label for="studentName" class="block text-sm font-medium text-gray-300">
@@ -238,7 +238,7 @@
     <div class="flex justify-end space-x-3 pt-4">
       <button
         type="button"
-        on:click={cancel}
+        onclick={cancel}
         class="px-4 py-2 bg-dark-accent text-white rounded-md hover:bg-dark-muted focus:outline-none focus:ring-2 focus:ring-dark-border"
       >
         Cancel

@@ -61,7 +61,7 @@
   const dispatch = createEventDispatcher();
 </script>
 
-<svelte:window on:click={handleClickOutside} />
+<svelte:window onclick={handleClickOutside} />
 
 <div class="bg-dark-card rounded-lg p-6 shadow-dark-card mb-6 border border-dark-border">
   <h3 class="text-lg font-medium text-dark-highlight mb-4">Search & Filter Behavior Logs</h3>
@@ -77,7 +77,7 @@
         id="studentName"
         bind:value={filters.studentName}
         bind:this={studentNameInput}
-        on:focus={() => { if (filters.studentName) showStudentSuggestions = true; }}
+        onfocus={() => { if (filters.studentName) showStudentSuggestions = true; }}
         class="block w-full rounded-md bg-dark-surface border-dark-border text-white focus:ring-dark-purple focus:border-dark-purple"
         placeholder="Search by student name"
       />
@@ -87,11 +87,13 @@
         <div class="absolute z-10 mt-1 w-full bg-dark-surface rounded-md shadow-dark-card max-h-60 overflow-auto border border-dark-border">
           <ul class="py-1">
             {#each filteredStudentNames as name}
-              <li 
-                class="px-4 py-2 text-sm text-white hover:bg-dark-accent cursor-pointer"
-                on:click={() => selectStudentName(name)}
-              >
-                {name}
+              <li>
+                <button
+                  class="w-full text-left px-4 py-2 text-sm text-white hover:bg-dark-accent cursor-pointer"
+                  onclick={() => selectStudentName(name)}
+                >
+                  {name}
+                </button>
               </li>
             {/each}
           </ul>
@@ -163,14 +165,14 @@
   <div class="flex justify-end mt-4 space-x-3">
     <button
       type="button"
-      on:click={resetFilters}
+      onclick={resetFilters}
       class="px-4 py-2 bg-dark-accent text-white rounded-md hover:bg-dark-muted focus:outline-none focus:ring-2 focus:ring-dark-border"
     >
       Reset
     </button>
     <button
       type="button"
-      on:click={applyFilters}
+      onclick={applyFilters}
       class="px-4 py-2 bg-dark-purple text-white rounded-md hover:bg-dark-accent focus:outline-none focus:ring-2 focus:ring-dark-highlight"
     >
       Apply Filters

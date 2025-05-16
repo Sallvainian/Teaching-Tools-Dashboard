@@ -5,6 +5,8 @@
   import ObservationLogSearch from '$lib/components/ObservationLogSearch.svelte';
   import ObservationLogList from '$lib/components/ObservationLogList.svelte';
   import ObservationLogDetails from '$lib/components/ObservationLogDetails.svelte';
+  import LoadingBounce from '$lib/components/LoadingBounce.svelte';
+  import { onMount } from 'svelte';
   
   let showNewLogForm = false;
   let showDetailsView = false;
@@ -13,6 +15,7 @@
   
   // Current filtered logs
   let filteredLogs: StudentObservationLog[] = [];
+  let isLoading = true;
   
   // Initial load of all logs
   $: {
@@ -72,8 +75,20 @@
     selectedLogId = null;
     showNewLogForm = true;
   }
+  
+  onMount(() => {
+    // Simulate loading time
+    setTimeout(() => {
+      isLoading = false;
+    }, 500);
+  });
 </script>
 
+{#if isLoading}
+  <div class="flex items-center justify-center min-h-[600px]">
+    <LoadingBounce />
+  </div>
+{:else}
 <div class="container mx-auto px-4 py-8 max-w-6xl">
   <header class="mb-8">
     <div class="flex justify-between items-center">
@@ -118,3 +133,4 @@
     />
   {/if}
 </div>
+{/if}

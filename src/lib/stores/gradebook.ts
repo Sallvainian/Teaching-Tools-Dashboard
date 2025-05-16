@@ -77,6 +77,7 @@ function createGradebookStore() {
   const isLoading = writable(false);
   const error = writable<string | null>(null);
   const useSupabase = writable(true); // Toggle between Supabase and localStorage
+  const dataLoaded = writable(false); // Track if data has been loaded
 
   // Derived stores
   const getGlobalStudents = derived(students, ($s: Student[]) => $s);
@@ -585,9 +586,13 @@ function createGradebookStore() {
     }
   }
 
-  // Load initial data based on storage mode
-  if (get(useSupabase)) {
-    void loadAllData();
+  // Lazy loading - don't load data until explicitly requested
+  // Only load data when gradebook is accessed
+  async function ensureDataLoaded() {
+    if (!get(dataLoaded) && get(useSupabase)) {
+      await loadAllData();
+      dataLoaded.set(true);
+    }
   }
 
   return {
@@ -615,6 +620,7 @@ function createGradebookStore() {
     recordGrade,
     clearAllData,
     setUseSupabase,
+    ensureDataLoaded,
   };
 }
 

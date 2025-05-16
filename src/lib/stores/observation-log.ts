@@ -16,24 +16,28 @@ function createObservationLogStore() {
     loaded: false
   };
 
-  try {
-    const storedData = localStorage.getItem(STORAGE_KEY);
-    if (storedData) {
-      initialData.logs = JSON.parse(storedData);
+  if (typeof window !== 'undefined') {
+    try {
+      const storedData = localStorage.getItem(STORAGE_KEY);
+      if (storedData) {
+        initialData.logs = JSON.parse(storedData);
+      }
+      initialData.loaded = true;
+    } catch (error) {
+      console.error('Failed to load observation logs from localStorage:', error);
     }
-    initialData.loaded = true;
-  } catch (error) {
-    console.error('Failed to load observation logs from localStorage:', error);
   }
 
   const { subscribe, update, set } = writable<ObservationLogState>(initialData);
 
   // Save to localStorage whenever the store changes
   const saveToLocalStorage = (logs: StudentObservationLog[]) => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
-    } catch (error) {
-      console.error('Failed to save observation logs to localStorage:', error);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(logs));
+      } catch (error) {
+        console.error('Failed to save observation logs to localStorage:', error);
+      }
     }
   };
 

@@ -47,8 +47,9 @@
       <h2 class="text-xl font-semibold text-white">Behavior Log Details</h2>
       <button
         type="button"
-        on:click={close}
+        onclick={close}
         class="text-gray-400 hover:text-white focus:outline-none"
+        aria-label="Close dialog"
       >
         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -131,21 +132,21 @@
         <div class="border-t border-gray-700 p-4 flex justify-end space-x-3">
           <button
             type="button"
-            on:click={toggleResolvedStatus}
+            onclick={toggleResolvedStatus}
             class={`px-4 py-2 rounded-md focus:outline-none focus:ring-2 ${log.resolved ? 'bg-yellow-600 hover:bg-yellow-700 focus:ring-yellow-500 text-white' : 'bg-green-600 hover:bg-green-700 focus:ring-green-500 text-white'}`}
           >
             {log.resolved ? 'Mark as Unresolved' : 'Mark as Resolved'}
           </button>
           <button
             type="button"
-            on:click={editLog}
+            onclick={editLog}
             class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             Edit
           </button>
           <button
             type="button"
-            on:click={deleteLog}
+            onclick={deleteLog}
             class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
           >
             Delete
