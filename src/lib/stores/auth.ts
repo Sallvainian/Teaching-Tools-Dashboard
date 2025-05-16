@@ -123,14 +123,22 @@ function createAuthStore() {
         
         // If successful, create an entry in app_users table
         if (data.user) {
-          // Add user to app_users table
-          await supabaseService.insertItem('app_users', {
-            id: data.user.id,
-            email: data.user.email!,
-            full_name,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
+          try {
+            // Try to add user to app_users table
+            await supabaseService.insertItem('app_users', {
+              id: data.user.id,
+              email: data.user.email!,
+              full_name,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+          } catch (dbError: any) {
+            // If user already exists (duplicate key error), that's ok - they're just re-signing up
+            if (dbError.code !== '23505') {
+              throw dbError; // Re-throw if it's not a duplicate key error
+            }
+            console.log('User already exists in app_users table, continuing...');
+          }
         }
         
         update(state => ({
@@ -144,12 +152,23 @@ function createAuthStore() {
         
       } catch (err: any) {
         console.error('Signup error:', err);
+        
+        // Enhance error message for user-friendly display
+        let errorMessage = err.message || 'Failed to sign up';
+        
+        // Detect if user already exists
+        if (err.message?.includes('User already registered') || 
+            err.message?.includes('already exists') ||
+            err.code === '23505') {
+          errorMessage = 'This email is already registered but may not be confirmed';
+        }
+        
         update(state => ({
           ...state,
-          error: err.message || 'Failed to sign up',
+          error: errorMessage,
           isLoading: false
         }));
-        throw err;
+        throw new Error(errorMessage);
       }
     },
 
@@ -173,6 +192,30 @@ function createAuthStore() {
         update(state => ({
           ...state,
           error: err.message || 'Failed to sign out',
+          isLoading: false
+        }));
+        throw err;
+      }
+    },
+
+    // Resend confirmation email
+    resendConfirmationEmail: async (email: string) => {
+      update(state => ({ ...state, isLoading: true, error: null }));
+      
+      try {
+        const { error } = await supabase.auth.resend({
+          type: 'signup',
+          email: email
+        });
+        
+        if (error) throw error;
+        
+        update(state => ({ ...state, isLoading: false }));
+        
+      } catch (err: any) {
+        update(state => ({
+          ...state,
+          error: err.message || 'Failed to resend confirmation email',
           isLoading: false
         }));
         throw err;

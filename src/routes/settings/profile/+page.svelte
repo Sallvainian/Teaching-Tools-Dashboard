@@ -1,0 +1,24 @@
+<script lang="ts">
+  import ProfileForm from '$lib/components/auth/ProfileForm.svelte';
+  import { user } from '$lib/stores/auth';
+  import { goto } from '$app/navigation';
+  
+  // Redirect if not authenticated
+  $effect(() => {
+    if (!$user) {
+      goto('/auth/login');
+    }
+  });
+</script>
+
+<div class="max-w-2xl mx-auto py-8 px-4">
+  <h1 class="text-2xl font-bold text-white mb-8">Profile Settings</h1>
+  
+  {#if $user}
+    <ProfileForm />
+  {:else}
+    <div class="bg-dark-card border border-dark-border p-6 rounded-xl">
+      <p class="text-dark-muted">Loading profile...</p>
+    </div>
+  {/if}
+</div>

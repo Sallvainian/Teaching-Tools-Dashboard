@@ -1,10 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '../supabase';
+import { createClient } from "@supabase/supabase-js";
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from "$env/static/public"
 
-// Create a Supabase client
-// When running locally or in development mode, use empty strings for credentials
-// This will allow the app to run without Supabase connection
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl = PUBLIC_SUPABASE_URL;
+const supabaseKey = PUBLIC_SUPABASE_ANON_KEY;
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl, supabaseKey);

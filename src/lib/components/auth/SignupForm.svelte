@@ -1,12 +1,28 @@
 <script lang="ts">
   import { authStore } from '$lib/stores/auth';
   
-  let email = '';
-  let password = '';
-  let confirmPassword = '';
-  let fullName = '';
+  let email = $state('');
+  let password = $state('');
+  let confirmPassword = $state('');
+  let fullName = $state('');
   let loading = $state(false);
   let error = $state('');
+  let showResendConfirmation = $state(false);
+  
+  async function resendConfirmation() {
+    loading = true;
+    error = '';
+    
+    try {
+      await authStore.resendConfirmationEmail(email);
+      error = 'Confirmation email sent! Please check your inbox.';
+      showResendConfirmation = false;
+    } catch (err: any) {
+      error = err.message || 'Failed to resend confirmation email';
+    } finally {
+      loading = false;
+    }
+  }
   
   async function handleSubmit() {
     if (!email || !password || !confirmPassword || !fullName) {
@@ -32,6 +48,11 @@
       // Success - no need to do anything as the auth store will update
     } catch (err: any) {
       error = err.message || 'Failed to sign up';
+      
+      // Check if this is a "user already exists" error
+      if (err.message?.includes('already registered') || err.message?.includes('already exists')) {
+        showResendConfirmation = true;
+      }
     } finally {
       loading = false;
     }
@@ -39,12 +60,25 @@
 </script>
 
 <div class="w-full max-w-md">
-  <form onsubmit|preventDefault={handleSubmit} class="bg-base-200 rounded-lg px-8 pt-6 pb-8 mb-4 shadow-md">
+  <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="bg-base-200 rounded-lg px-8 pt-6 pb-8 mb-4 shadow-md">
     <h2 class="text-2xl font-bold mb-6 text-center">Create an Account</h2>
     
     {#if error}
       <div class="bg-error/20 text-error px-4 py-3 rounded mb-4" role="alert">
         <p>{error}</p>
+        
+        {#if showResendConfirmation}
+          <div class="mt-3">
+            <p class="text-sm mb-2">This email is already registered but hasn't been confirmed.</p>
+            <button
+              onclick={resendConfirmation}
+              class="btn btn-sm btn-outline {loading ? 'loading' : ''}"
+              disabled={loading}
+            >
+              Resend Confirmation Email
+            </button>
+          </div>
+        {/if}
       </div>
     {/if}
     

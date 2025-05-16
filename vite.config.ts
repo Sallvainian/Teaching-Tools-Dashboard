@@ -7,6 +7,9 @@ export default defineConfig({
   css: {
     postcss: './postcss.config.ts',
   },
+  optimizeDeps: {
+    exclude: ['@ag-grid-community/core', '@ag-grid-community/client-side-row-model']
+  },
   test: {
     coverage: {
       provider: 'v8',

@@ -1,8 +1,8 @@
 <script lang="ts">
   import { authStore } from '$lib/stores/auth';
   
-  let email = '';
-  let password = '';
+  let email = $state('');
+  let password = $state('');
   let loading = $state(false);
   let error = $state('');
   
@@ -27,7 +27,7 @@
 </script>
 
 <div class="w-full max-w-md">
-  <form onsubmit|preventDefault={handleSubmit} class="bg-base-200 rounded-lg px-8 pt-6 pb-8 mb-4 shadow-md">
+  <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="bg-base-200 rounded-lg px-8 pt-6 pb-8 mb-4 shadow-md">
     <h2 class="text-2xl font-bold mb-6 text-center">Sign In</h2>
     
     {#if error}
