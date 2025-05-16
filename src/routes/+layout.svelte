@@ -17,6 +17,7 @@
   import { gradebookStore } from '$lib/stores/gradebook';
   import LoadingBounce from '$lib/components/LoadingBounce.svelte';
   import { navigating } from '$app/stores';
+  import { authStore, isAuthenticated, user } from '$lib/stores/auth';
 
   // Props for the layout
   const { children } = $props();
@@ -26,6 +27,7 @@
 
   let newClassName = $state('');
   let sidebarCollapsed = $state(false);
+  let userMenuOpen = $state(false);
 
   function handleAddClass() {
     if (newClassName.trim()) {
@@ -39,12 +41,35 @@
     goto('/gradebook');
   }
 
+  function toggleUserMenu() {
+    userMenuOpen = !userMenuOpen;
+  }
+
+  function handleSignOut() {
+    authStore.signOut();
+    goto('/auth/login');
+  }
+
   // Set dark mode on mount
   onMount(() => {
     // Set dark mode
     document.documentElement.classList.add('dark');
     // Set AG Grid dark mode attribute
     document.documentElement.setAttribute('data-ag-theme-mode', 'dark');
+
+    // Close user menu when clicking outside
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as HTMLElement;
+      if (userMenuOpen && !target.closest('.user-menu')) {
+        userMenuOpen = false;
+      }
+    }
+
+    document.addEventListener('click', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
   });
 </script>
 
@@ -87,13 +112,46 @@
           >
         </div>
 
-        <div class="flex items-center gap-3">
-          <div
-            class="w-8 h-8 bg-dark-purple rounded-full flex items-center justify-center text-white font-medium"
-          >
-            T
-          </div>
-          <span class="text-sm text-gray-300">Teacher</span>
+        <div class="relative user-menu">
+          {#if $isAuthenticated}
+            <button 
+              onclick={toggleUserMenu}
+              class="flex items-center gap-3 hover:bg-dark-accent/20 p-1 rounded-lg"
+            >
+              <div
+                class="w-8 h-8 bg-dark-purple rounded-full flex items-center justify-center text-white font-medium"
+              >
+                {$user?.user_metadata?.full_name?.[0] || $user?.email?.[0]?.toUpperCase() || 'T'}
+              </div>
+              <span class="text-sm text-gray-300">{$user?.user_metadata?.full_name || 'Teacher'}</span>
+              <svg class="w-4 h-4 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            
+            {#if userMenuOpen}
+              <div class="absolute right-0 mt-2 w-48 bg-dark-surface border border-dark-border rounded-md shadow-lg z-50">
+                <div class="py-1">
+                  <a href="/settings/profile" class="block px-4 py-2 text-sm text-gray-300 hover:bg-dark-accent hover:text-white">
+                    Profile
+                  </a>
+                  <a href="/settings" class="block px-4 py-2 text-sm text-gray-300 hover:bg-dark-accent hover:text-white">
+                    Settings
+                  </a>
+                  <button 
+                    onclick={handleSignOut}
+                    class="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-dark-accent hover:text-white"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              </div>
+            {/if}
+          {:else}
+            <a href="/auth/login" class="text-gray-300 hover:text-dark-highlight transition font-medium">
+              Sign in
+            </a>
+          {/if}
         </div>
       </div>
     </div>
@@ -292,56 +350,58 @@
           </div>
         </div>
 
-        <div>
-          {#if !sidebarCollapsed}
-            <h3 class="text-dark-muted uppercase text-xs font-semibold mb-3 px-3">Classes</h3>
-          {/if}
-          <div class="space-y-1">
-            {#each $getCategories as category (category.id)}
-              <button
-                onclick={() => handleSelectClass(category.id)}
-                class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white text-left relative group"
-                title={category.name}
-              >
-                {#if !sidebarCollapsed}
-                  <span>{category.name}</span>
-                  <span class="bg-dark-purple text-white text-xs rounded-full px-2 py-1"
-                    >{category.studentIds.length}</span
-                  >
-                {:else}
-                  <span class="text-xs">{category.name.slice(0, 2).toUpperCase()}</span>
-                  <span class="absolute left-full ml-2 px-2 py-1 bg-dark-surface border border-dark-border rounded text-sm text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                    {category.name} ({category.studentIds.length} students)
-                  </span>
-                {/if}
-              </button>
-            {:else}
-              {#if !sidebarCollapsed}
-                <p class="text-dark-muted text-sm px-3">No classes added yet</p>
-              {/if}
-            {/each}
-
+        {#if $isAuthenticated}
+          <div>
             {#if !sidebarCollapsed}
-              <div class="mt-3 pt-3 border-t border-dark-border">
-                <div class="flex items-center px-3 gap-2">
-                  <input
-                    type="text"
-                    bind:value={newClassName}
-                    placeholder="New class name"
-                    class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-2 text-sm focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"
-                  />
-                  <button
-                    onclick={handleAddClass}
-                    class="bg-dark-purple text-white p-2 rounded-lg text-sm"
-                    aria-label="Add new class"
-                  >
-                    +
-                  </button>
-                </div>
-              </div>
+              <h3 class="text-dark-muted uppercase text-xs font-semibold mb-3 px-3">Classes</h3>
             {/if}
+            <div class="space-y-1">
+              {#each $getCategories as category (category.id)}
+                <button
+                  onclick={() => handleSelectClass(category.id)}
+                  class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white text-left relative group"
+                  title={category.name}
+                >
+                  {#if !sidebarCollapsed}
+                    <span>{category.name}</span>
+                    <span class="bg-dark-purple text-white text-xs rounded-full px-2 py-1"
+                      >{category.studentIds.length}</span
+                    >
+                  {:else}
+                    <span class="text-xs">{category.name.slice(0, 2).toUpperCase()}</span>
+                    <span class="absolute left-full ml-2 px-2 py-1 bg-dark-surface border border-dark-border rounded text-sm text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                      {category.name} ({category.studentIds.length} students)
+                    </span>
+                  {/if}
+                </button>
+              {:else}
+                {#if !sidebarCollapsed}
+                  <p class="text-dark-muted text-sm px-3">No classes added yet</p>
+                {/if}
+              {/each}
+
+              {#if !sidebarCollapsed}
+                <div class="mt-3 pt-3 border-t border-dark-border">
+                  <div class="flex items-center px-3 gap-2">
+                    <input
+                      type="text"
+                      bind:value={newClassName}
+                      placeholder="New class name"
+                      class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-2 text-sm focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"
+                    />
+                    <button
+                      onclick={handleAddClass}
+                      class="bg-dark-purple text-white p-2 rounded-lg text-sm"
+                      aria-label="Add new class"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              {/if}
+            </div>
           </div>
-        </div>
+        {/if}
       </div>
     </aside>
 

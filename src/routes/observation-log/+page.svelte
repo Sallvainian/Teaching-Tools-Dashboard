@@ -94,7 +94,7 @@
     <div class="flex justify-between items-center">
       <h1 class="text-3xl font-bold text-white">Student Behavior Logs</h1>
       <button
-        on:click={createNewLog}
+        onclick={createNewLog}
         class="px-4 py-2 bg-dark-purple text-white rounded-md hover:bg-dark-accent focus:outline-none focus:ring-2 focus:ring-dark-highlight"
       >
         New Observation
@@ -110,26 +110,26 @@
       <ObservationLogForm
         editMode={editMode}
         logId={selectedLogId}
-        on:save={handleSaveLog}
-        on:cancel={handleCancelLog}
+        onsave={handleSaveLog}
+        oncancel={handleCancelLog}
       />
     </div>
   {:else}
     <div class="mb-8">
-      <ObservationLogSearch on:filter={handleFilter} />
+      <ObservationLogSearch onfilter={handleFilter} />
     </div>
     
     <div>
-      <ObservationLogList logs={filteredLogs} on:select={handleSelectLog} />
+      <ObservationLogList logs={filteredLogs} onselect={handleSelectLog} />
     </div>
   {/if}
   
   {#if showDetailsView && selectedLogId}
     <ObservationLogDetails
       logId={selectedLogId}
-      on:close={handleCloseDetails}
-      on:edit={handleEditLog}
-      on:delete={handleDeleteLog}
+      onclose={handleCloseDetails}
+      onedit={handleEditLog}
+      ondelete={handleDeleteLog}
     />
   {/if}
 </div>

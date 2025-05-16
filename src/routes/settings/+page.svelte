@@ -1,14 +1,27 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { gradebookStore } from '$lib/stores/gradebook';
+  import { observationLogStore } from '$lib/stores/observation-log';
+  import { jeopardyStore } from '$lib/stores/jeopardy';
 
-  // Settings values - only has localStorage support now
-  let darkMode = true;
+  // Settings values
+  let darkMode = $state(true);
+  let useSupabase = $state(true);
 
   onMount(() => {
     // Load current settings for dark mode
     const storedDarkMode = localStorage.getItem('darkMode');
     if (storedDarkMode !== null) {
       darkMode = JSON.parse(storedDarkMode);
+    }
+    
+    // Load current settings for data storage
+    const storedUseSupabase = localStorage.getItem('useSupabase');
+    if (storedUseSupabase !== null) {
+      useSupabase = JSON.parse(storedUseSupabase);
+    } else {
+      // Check current state from any store
+      useSupabase = gradebookStore.useSupabase.value;
     }
   });
 
@@ -26,6 +39,31 @@
     // Set AG Grid theme mode
     document.documentElement.setAttribute('data-ag-theme-mode', darkMode ? 'dark' : 'light');
   }
+  
+  function handleToggleDataStorage() {
+    useSupabase = !useSupabase;
+    localStorage.setItem('useSupabase', JSON.stringify(useSupabase));
+    
+    // Update all stores
+    gradebookStore.setUseSupabase(useSupabase);
+    observationLogStore.setUseSupabase(useSupabase);
+    jeopardyStore.setUseSupabase(useSupabase);
+  }
+  
+  function handleClearData() {
+    if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+      if (useSupabase) {
+        // Clear from both Supabase and localStorage
+        gradebookStore.clearAllData();
+        observationLogStore.clearLogs();
+        jeopardyStore.clearAllData();
+      } else {
+        // Clear localStorage only
+        localStorage.clear();
+        window.location.reload();
+      }
+    }
+  }
 </script>
 
 <div class="max-w-4xl mx-auto">
@@ -41,7 +79,7 @@
           type="checkbox"
           id="toggle-dark-mode"
           checked={darkMode}
-          on:change={handleToggleDarkMode}
+          onchange={handleToggleDarkMode}
           class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
         />
         <label
@@ -57,29 +95,49 @@
       displays.
     </p>
   </div>
+  
+  <div class="bg-dark-card border border-dark-border p-6 rounded-xl shadow-dark-card mb-8">
+    <h2 class="text-xl font-semibold text-white mb-4">Storage Settings</h2>
+
+    <div class="flex items-center mb-6">
+      <span class="mr-4 text-gray-300">Use Supabase Database:</span>
+      <div class="relative inline-block w-12 mr-2 align-middle select-none">
+        <input
+          type="checkbox"
+          id="toggle-storage"
+          checked={useSupabase}
+          onchange={handleToggleDataStorage}
+          class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
+        />
+        <label
+          for="toggle-storage"
+          class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-700 cursor-pointer"
+        ></label>
+      </div>
+      <span class="text-gray-300">{useSupabase ? 'On' : 'Off'}</span>
+    </div>
+
+    <p class="text-dark-muted mb-6">
+      When enabled, data is stored in Supabase cloud database, making it accessible across devices.
+      When disabled, data is stored only in your browser's local storage.
+    </p>
+  </div>
 
   <div class="bg-dark-card border border-dark-border p-6 rounded-xl shadow-dark-card">
     <h2 class="text-xl font-semibold text-white mb-4">Data Management</h2>
 
     <div class="space-y-4">
       <button
-        on:click={() => {
-          if (
-            confirm('Are you sure you want to clear all localStorage data? This cannot be undone.')
-          ) {
-            localStorage.clear();
-            window.location.reload();
-          }
-        }}
+        onclick={handleClearData}
         class="py-2 px-4 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
       >
-        Clear All Local Data
+        Clear All Data
       </button>
     </div>
 
     <div class="mt-6 text-xs text-dark-muted">
       <p>
-        Warning: Clearing local data will remove all data stored in your browser. This action cannot
+        Warning: Clearing data will remove all your data. This action cannot
         be undone.
       </p>
     </div>
@@ -96,10 +154,15 @@
     </p>
 
     <div class="mt-6 text-xs text-dark-muted">
-      <p>Current Storage: LocalStorage (Browser-based)</p>
+      <p>Current Storage: {useSupabase ? 'Supabase Database' : 'LocalStorage (Browser-based)'}</p>
       <p class="mt-1">
-        Data is stored in your browser. It will persist until you clear browser data or use the
-        clear data button above.
+        {#if useSupabase}
+          Data is stored in Supabase cloud database with browser localStorage as fallback.
+          This makes your data accessible across devices when you're logged in.
+        {:else}
+          Data is stored in your browser. It will persist until you clear browser data or use the
+          clear data button above.
+        {/if}
       </p>
     </div>
   </div>

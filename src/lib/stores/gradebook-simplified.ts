@@ -1,0 +1,376 @@
+// src/lib/stores/gradebook-simplified.ts
+import { writable, derived, get } from 'svelte/store';
+import type { Student, Category, Assignment, Grade } from '$lib/types/gradebook';
+import { gradebookService } from '$lib/services/supabaseService';
+import { 
+  dbStudentToAppStudent, 
+  dbCategoryToAppCategory, 
+  dbAssignmentToAppAssignment, 
+  dbGradeToAppGrade 
+} from '$lib/utils/modelConverters';
+
+function createGradebookStore() {
+  // Initialize stores with empty data or data from localStorage
+  const students = writable<Student[]>([]);
+  const categories = writable<Category[]>([]);
+  const selectedCategoryId = writable<string | null>(
+    gradebookService.loadFromStorage('selectedCategoryId', null)
+  );
+  const assignments = writable<Assignment[]>([]);
+  const grades = writable<Grade[]>([]);
+  const isLoading = writable(false);
+  const error = writable<string | null>(null);
+  const dataLoaded = writable(false);
+
+  // Get current state of useSupabase from service
+  const useSupabase = writable(gradebookService.isUsingSupabase());
+
+  // Derived stores
+  const getGlobalStudents = derived(students, ($s: Student[]) => $s);
+  const getCategories = derived(categories, ($c: Category[]) => $c);
+  const getSelectedCategory = derived(
+    [categories, selectedCategoryId], 
+    ([$c, $sel]: [Category[], string | null]) =>
+      $sel ? ($c.find((cat: Category) => cat.id === $sel) ?? null) : null
+  );
+  const getStudentsInSelectedCategory = derived(
+    [students, getSelectedCategory], 
+    ([$s, sel]: [Student[], Category | null]) =>
+      sel ? $s.filter((st: Student) => sel.studentIds.includes(st.id)) : []
+  );
+  const getAssignmentsForSelectedCategory = derived(
+    [assignments, selectedCategoryId],
+    ([$a, $sel]: [Assignment[], string | null]) => 
+      ($sel ? $a.filter((asgn: Assignment) => asgn.categoryId === $sel) : [])
+  );
+
+  // Load all data from Supabase or localStorage
+  async function loadAllData() {
+    isLoading.set(true);
+    error.set(null);
+    
+    try {
+      // Load students
+      const studentsData = await gradebookService.getItems('students');
+      
+      // Load categories
+      const categoriesData = await gradebookService.getItems('categories');
+      
+      // Load category_students relations
+      const categoryStudentsData = await gradebookService.getItems('category_students');
+      
+      // Load assignments
+      const assignmentsData = await gradebookService.getItems('assignments');
+      
+      // Load grades
+      const gradesData = await gradebookService.getItems('grades');
+
+      // Transform data to match our store format
+      const transformedStudents = studentsData.map(dbStudentToAppStudent);
+      
+      const transformedCategories = categoriesData.map((cat) =>
+        dbCategoryToAppCategory(cat, categoryStudentsData)
+      );
+      
+      const transformedAssignments = assignmentsData.map(dbAssignmentToAppAssignment);
+      
+      const transformedGrades = gradesData.map(dbGradeToAppGrade);
+
+      // Update stores
+      students.set(transformedStudents);
+      categories.set(transformedCategories);
+      assignments.set(transformedAssignments);
+      grades.set(transformedGrades);
+
+      // Select first category if none selected
+      if (categoriesData.length > 0 && get(selectedCategoryId) === null) {
+        selectedCategoryId.set(categoriesData[0].id);
+        gradebookService.saveToStorage('selectedCategoryId', categoriesData[0].id);
+      }
+      
+      // Mark data as loaded
+      dataLoaded.set(true);
+      
+    } catch (err: any) {
+      console.error('Error loading data:', err);
+      error.set(err.message || 'Failed to load data');
+    } finally {
+      isLoading.set(false);
+    }
+  }
+
+  // Student management
+  async function addGlobalStudent(name: string): Promise<string | null> {
+    const trimmed = name.trim();
+    if (!trimmed) return null;
+    
+    try {
+      // Insert into database or localStorage
+      const result = await gradebookService.insertItem('students', { 
+        name: trimmed
+      });
+      
+      if (!result) throw new Error('Failed to add student');
+      
+      // Update local store
+      const newStudent = dbStudentToAppStudent(result);
+      students.update((arr: Student[]) => [...arr, newStudent]);
+      
+      return newStudent.id;
+    } catch (err: any) {
+      console.error('Error adding student:', err);
+      error.set(err.message || 'Failed to add student');
+      return null;
+    }
+  }
+
+  // Category management
+  async function addCategory(name: string): Promise<void> {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    
+    try {
+      // Insert into database or localStorage
+      const result = await gradebookService.insertItem('categories', { 
+        name: trimmed 
+      });
+      
+      if (!result) throw new Error('Failed to add category');
+      
+      // Update local store
+      const newCategory: Category = {
+        id: result.id,
+        name: result.name,
+        studentIds: []
+      };
+
+      categories.update((arr: Category[]) => [...arr, newCategory]);
+      selectedCategoryId.update((cur: string | null) => cur || result.id);
+      
+      // Save selected category ID
+      gradebookService.saveToStorage('selectedCategoryId', get(selectedCategoryId));
+    } catch (err: any) {
+      console.error('Error adding category:', err);
+      error.set(err.message || 'Failed to add category');
+    }
+  }
+
+  function selectCategory(id: string | null): void {
+    selectedCategoryId.set(id);
+    gradebookService.saveToStorage('selectedCategoryId', id);
+  }
+
+  // Student assignment to category
+  async function assignStudentToCategory(studentId: string, categoryId: string): Promise<void> {
+    try {
+      // Insert relationship into database or localStorage
+      await gradebookService.insertItem('category_students', {
+        category_id: categoryId,
+        student_id: studentId
+      });
+      
+      // Update local store
+      categories.update((cats: Category[]) =>
+        cats.map((cat: Category) =>
+          cat.id === categoryId && !cat.studentIds.includes(studentId)
+            ? { ...cat, studentIds: [...cat.studentIds, studentId] }
+            : cat
+        )
+      );
+    } catch (err: any) {
+      console.error('Error assigning student to category:', err);
+      error.set(err.message || 'Failed to assign student');
+    }
+  }
+
+  async function removeStudentFromCategory(studentId: string, categoryId: string): Promise<void> {
+    try {
+      // Get the specific category_students entry
+      const categoryStudents = await gradebookService.getItems('category_students', {
+        filters: {
+          category_id: categoryId,
+          student_id: studentId
+        }
+      });
+      
+      if (categoryStudents.length > 0) {
+        // Delete the relationship
+        await gradebookService.deleteItem('category_students', categoryStudents[0].id);
+      }
+      
+      // Update local store
+      categories.update((cats: Category[]) =>
+        cats.map((cat: Category) =>
+          cat.id === categoryId
+            ? { ...cat, studentIds: cat.studentIds.filter((id: string) => id !== studentId) }
+            : cat
+        )
+      );
+    } catch (err: any) {
+      console.error('Error removing student from category:', err);
+      error.set(err.message || 'Failed to remove student');
+    }
+  }
+
+  // Assignment management
+  async function addAssignmentToCategory(name: string, maxPoints: number, categoryId: string): Promise<void> {
+    const trimmed = name.trim();
+    if (!trimmed || maxPoints <= 0) return;
+    
+    try {
+      // Insert into database or localStorage
+      const result = await gradebookService.insertItem('assignments', {
+        name: trimmed,
+        max_points: maxPoints,
+        category_id: categoryId
+      });
+      
+      if (!result) throw new Error('Failed to add assignment');
+      
+      // Update local store
+      const newAssignment = dbAssignmentToAppAssignment(result);
+      assignments.update((arr: Assignment[]) => [...arr, newAssignment]);
+    } catch (err: any) {
+      console.error('Error adding assignment:', err);
+      error.set(err.message || 'Failed to add assignment');
+    }
+  }
+
+  // Grade recording
+  async function recordGrade(studentId: string, assignmentId: string, points: number): Promise<void> {
+    const pts = Math.max(0, points);
+    
+    try {
+      // Check if grade already exists
+      const existingGrades = await gradebookService.getItems('grades', {
+        filters: {
+          student_id: studentId,
+          assignment_id: assignmentId
+        }
+      });
+      
+      if (existingGrades.length > 0) {
+        // Update existing grade
+        await gradebookService.updateItem('grades', existingGrades[0].id, {
+          points: pts
+        });
+      } else {
+        // Insert new grade
+        await gradebookService.insertItem('grades', {
+          student_id: studentId,
+          assignment_id: assignmentId,
+          points: pts
+        });
+      }
+      
+      // Update local store
+      grades.update((arr: Grade[]) => {
+        const idx = arr.findIndex(
+          (g: Grade) => g.studentId === studentId && g.assignmentId === assignmentId
+        );
+        if (idx > -1) {
+          const newArr = [...arr];
+          newArr[idx].points = pts;
+          return newArr;
+        }
+        return [...arr, { studentId, assignmentId, points: pts }];
+      });
+    } catch (err: any) {
+      console.error('Error recording grade:', err);
+      error.set(err.message || 'Failed to record grade');
+    }
+  }
+
+  // Student average calculation (no change needed - works with local data)
+  function studentAverageInCategory(studentId: string, categoryId: string): number {
+    const assigns = get(assignments).filter((a: Assignment) => a.categoryId === categoryId);
+    if (assigns.length === 0) return 0;
+
+    const currentGrades = get(grades);
+    let earned = 0;
+    let possible = 0;
+
+    for (const a of assigns) {
+      const g = currentGrades.find((gr: Grade) => gr.assignmentId === a.id && gr.studentId === studentId);
+      if (g) earned += g.points;
+      possible += a.maxPoints;
+    }
+
+    return possible > 0 ? parseFloat(((earned / possible) * 100).toFixed(1)) : 0;
+  }
+
+  // Clear all data
+  async function clearAllData(): Promise<void> {
+    try {
+      // Clear all from database or localStorage
+      const tables = ['grades', 'category_students', 'assignments', 'categories', 'students'];
+      
+      for (const table of tables) {
+        const items = await gradebookService.getItems(table as any);
+        for (const item of items) {
+          await gradebookService.deleteItem(table as any, item.id);
+        }
+      }
+      
+      // Clear local stores
+      students.set([]);
+      categories.set([]);
+      selectedCategoryId.set(null);
+      assignments.set([]);
+      grades.set([]);
+      
+      // Clear localStorage
+      gradebookService.removeFromStorage('selectedCategoryId');
+    } catch (err: any) {
+      console.error('Error clearing data:', err);
+      error.set(err.message || 'Failed to clear data');
+    }
+  }
+
+  // Toggle storage mode
+  function setUseSupabase(value: boolean): void {
+    useSupabase.set(value);
+    gradebookService.setUseSupabase(value);
+    if (value) {
+      // If enabling Supabase, load data from it
+      void loadAllData();
+    }
+  }
+
+  // Lazy loading - don't load data until explicitly requested
+  async function ensureDataLoaded() {
+    if (!get(dataLoaded) && get(useSupabase)) {
+      await loadAllData();
+    }
+  }
+
+  return {
+    students,
+    categories,
+    selectedCategoryId,
+    assignments,
+    grades,
+    isLoading,
+    error,
+    useSupabase,
+    getGlobalStudents,
+    getCategories,
+    getSelectedCategory,
+    getStudentsInSelectedCategory,
+    getAssignmentsForSelectedCategory,
+    studentAverageInCategory,
+    loadAllData,
+    addGlobalStudent,
+    addCategory,
+    selectCategory,
+    assignStudentToCategory,
+    removeStudentFromCategory,
+    addAssignmentToCategory,
+    recordGrade,
+    clearAllData,
+    setUseSupabase,
+    ensureDataLoaded,
+  };
+}
+
+export const gradebookStore = createGradebookStore();
