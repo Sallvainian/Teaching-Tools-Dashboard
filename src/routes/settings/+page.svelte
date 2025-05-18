@@ -3,6 +3,7 @@
   import { gradebookStore } from '$lib/stores/gradebook';
   import { observationLogStore } from '$lib/stores/observation-log';
   import { jeopardyStore } from '$lib/stores/jeopardy';
+  import { get } from 'svelte/store';
 
   // Settings values
   let darkMode = $state(true);
@@ -20,8 +21,8 @@
     if (storedUseSupabase !== null) {
       useSupabase = JSON.parse(storedUseSupabase);
     } else {
-      // Check current state from any store
-      useSupabase = gradebookStore.useSupabase.value;
+      // Get current state from gradebookStore
+      useSupabase = get(gradebookStore.useSupabase) || true;
     }
   });
 
@@ -44,10 +45,14 @@
     useSupabase = !useSupabase;
     localStorage.setItem('useSupabase', JSON.stringify(useSupabase));
     
-    // Update all stores
-    gradebookStore.setUseSupabase(useSupabase);
-    observationLogStore.setUseSupabase(useSupabase);
-    jeopardyStore.setUseSupabase(useSupabase);
+    // Update localStorage setting only
+    // The actual stores will check this value when needed
+    localStorage.setItem('useSupabase', JSON.stringify(useSupabase));
+    
+    // Refresh to apply changes
+    if (confirm('Storage setting changed. Reload page to apply changes?')) {
+      window.location.reload();
+    }
   }
   
   function handleClearData() {

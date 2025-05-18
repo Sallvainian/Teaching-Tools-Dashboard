@@ -1,3 +1,10 @@
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
 export type Json =
 	| string
 	| number
@@ -135,6 +142,184 @@ export interface Database {
 				Update: {
 					id?: string
 					name?: string
+				}
+				Relationships: []
+			}
+			// Add the missing tables
+			app_users: {
+				Row: {
+					id: string
+					full_name?: string
+					email?: string
+					created_at?: string
+					updated_at?: string
+					avatar_url?: string
+				}
+				Insert: {
+					id: string
+					full_name?: string
+					email?: string
+					created_at?: string
+					updated_at?: string
+					avatar_url?: string
+				}
+				Update: {
+					id?: string
+					full_name?: string
+					email?: string
+					created_at?: string
+					updated_at?: string
+					avatar_url?: string
+				}
+				Relationships: []
+			}
+			jeopardy_games: {
+				Row: {
+					id: string
+					name: string
+					description?: string
+					owner_id: string
+					date_created: string
+					last_modified: string
+					settings?: any
+				}
+				Insert: {
+					id?: string
+					name: string
+					description?: string
+					owner_id: string
+					date_created?: string
+					last_modified?: string
+					settings?: any
+				}
+				Update: {
+					id?: string
+					name?: string
+					description?: string
+					owner_id?: string
+					date_created?: string
+					last_modified?: string
+					settings?: any
+				}
+				Relationships: []
+			}
+			jeopardy_categories: {
+				Row: {
+					id: string
+					game_id: string
+					name: string
+					display_order: number
+				}
+				Insert: {
+					id?: string
+					game_id: string
+					name: string
+					display_order: number
+				}
+				Update: {
+					id?: string
+					game_id?: string
+					name?: string
+					display_order?: number
+				}
+				Relationships: []
+			}
+			jeopardy_questions: {
+				Row: {
+					id: string
+					category_id: string
+					text: string
+					answer: string
+					point_value: number
+					is_answered: boolean
+					is_double_jeopardy: boolean
+					time_limit?: number
+				}
+				Insert: {
+					id?: string
+					category_id: string
+					text: string
+					answer: string
+					point_value: number
+					is_answered?: boolean
+					is_double_jeopardy?: boolean
+					time_limit?: number
+				}
+				Update: {
+					id?: string
+					category_id?: string
+					text?: string
+					answer?: string
+					point_value?: number
+					is_answered?: boolean
+					is_double_jeopardy?: boolean
+					time_limit?: number
+				}
+				Relationships: []
+			}
+			jeopardy_teams: {
+				Row: {
+					id: string
+					game_id: string
+					name: string
+					score: number
+					color: string
+				}
+				Insert: {
+					id?: string
+					game_id: string
+					name: string
+					score?: number
+					color?: string
+				}
+				Update: {
+					id?: string
+					game_id?: string
+					name?: string
+					score?: number
+					color?: string
+				}
+				Relationships: []
+			}
+			observation_logs: {
+				Row: {
+					id: string
+					student_id: string
+					date: string
+					reason: string
+					notes?: string
+					mood?: string
+					follow_up_actions?: string
+					follow_up_date?: string
+					resolved: boolean
+					created_at: string
+					updated_at: string
+				}
+				Insert: {
+					id?: string
+					student_id: string
+					date: string
+					reason: string
+					notes?: string
+					mood?: string
+					follow_up_actions?: string
+					follow_up_date?: string
+					resolved?: boolean
+					created_at?: string
+					updated_at?: string
+				}
+				Update: {
+					id?: string
+					student_id?: string
+					date?: string
+					reason?: string
+					notes?: string
+					mood?: string
+					follow_up_actions?: string
+					follow_up_date?: string
+					resolved?: boolean
+					created_at?: string
+					updated_at?: string
 				}
 				Relationships: []
 			}

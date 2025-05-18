@@ -83,7 +83,7 @@
 	let showAnswer = false;
 	let selectedTeamId = '';
 	let wagerInputValue = '0';
-	let timerIntervalId: number | null = null;
+	let timerIntervalId: ReturnType<typeof setInterval> | null = null;
 	let remainingSeconds = 30;
 	let timerDisplay = '';
 	let isLoading = true;
@@ -267,34 +267,34 @@
 		}
 	}
 
-	function handleUseTimerChange(event: Event) {
-		const target = event.target as HTMLInputElement;
+	function handleUseTimerChange(event: Event & { currentTarget: HTMLInputElement }) {
+		const target = event.currentTarget;
 		if ($getActiveGame) updateGameSettings($getActiveGame.id, { useTimer: target.checked });
 	}
 
-	function handleDefaultTimeLimitChange(event: Event) {
-		const target = event.target as HTMLInputElement;
+	function handleDefaultTimeLimitChange(event: Event & { currentTarget: HTMLInputElement }) {
+		const target = event.currentTarget;
 		const value = parseInt(target.value, 10);
 		if (!isNaN(value) && $getActiveGame) {
 			updateGameSettings($getActiveGame.id, { defaultTimeLimit: value });
 		}
 	}
 
-	function handleReadingTimeChange(event: Event) {
-		const target = event.target as HTMLInputElement;
+	function handleReadingTimeChange(event: Event & { currentTarget: HTMLInputElement }) {
+		const target = event.currentTarget;
 		const value = parseInt(target.value, 10);
 		if (!isNaN(value) && $getActiveGame) {
 			updateGameSettings($getActiveGame.id, { readingTime: value });
 		}
 	}
 
-	function handleAutoShowAnswerChange(event: Event) {
-		const target = event.target as HTMLInputElement;
+	function handleAutoShowAnswerChange(event: Event & { currentTarget: HTMLInputElement }) {
+		const target = event.currentTarget;
 		if ($getActiveGame) updateGameSettings($getActiveGame.id, { autoShowAnswer: target.checked });
 	}
 
-	function handleTimerSizeChange(event: Event) {
-		const target = event.target as HTMLSelectElement;
+	function handleTimerSizeChange(event: Event & { currentTarget: HTMLSelectElement }) {
+		const target = event.currentTarget;
 		if ($getActiveGame) updateGameSettings($getActiveGame.id, { timerSize: target.value as TimerSize });
 	}
 
@@ -546,7 +546,7 @@
 					totalTime={$getActiveQuestion.timeLimit || $getActiveGame.settings.defaultTimeLimit || 30}
 					size={$getActiveGame.settings.timerSize || 'large'}
 					onTimeExpired={() => {
-						if ($getActiveGame.settings.autoShowAnswer) {
+						if ($getActiveGame.settings?.autoShowAnswer) {
 							showAnswer = true;
 						}
 						showFeedback('Time expired!', false, 2000);
@@ -564,7 +564,7 @@
 						size="small"
 						position="corner"
 						onTimeExpired={() => {
-							if ($getActiveGame.settings.autoShowAnswer) {
+							if ($getActiveGame.settings?.autoShowAnswer) {
 								showAnswer = true;
 							}
 							showFeedback('Time expired!', false, 2000);
@@ -862,7 +862,7 @@
 			onkeydown={(e) => {
 				// Only prevent default for Enter key but not for space
 				// This allows space to work in form inputs
-				if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'INPUT') {
+				if (e.key === 'Enter' && e.target && (e.target as HTMLElement).tagName !== 'TEXTAREA' && (e.target as HTMLElement).tagName !== 'INPUT') {
 					e.preventDefault();
 					e.stopPropagation();
 				}

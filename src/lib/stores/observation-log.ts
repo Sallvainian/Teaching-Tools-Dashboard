@@ -197,7 +197,7 @@ export const logsByReason = derived(observationLogStore, $store => {
 });
 
 export const uniqueStudentNames = derived(observationLogStore, $store => {
-  return [...new Set($store.logs.map(log => log.studentName))].sort();
+  return [...new Set($store.logs.map(log => log.studentName))].sort((a, b) => a.localeCompare(b));
 });
 
 // Dev/test data initialization
@@ -206,6 +206,7 @@ if (import.meta.env.DEV) {
     {
       id: 'test-log-1',
       studentName: 'Emma Johnson',
+      studentId: 'test-student-1',
       date: '2025-05-10',
       reason: 'Academic Performance',
       notes: 'Emma has been struggling with recent math concepts. She had difficulty completing the fractions worksheet and expressed frustration during class. Consider additional support or modified assignments.',
@@ -219,6 +220,7 @@ if (import.meta.env.DEV) {
     {
       id: 'test-log-2',
       studentName: 'Liam Smith',
+      studentId: 'test-student-2',
       date: '2025-05-12',
       reason: 'Behavioral Concern',
       notes: 'Liam had difficulty staying in his seat during morning work time. He was walking around the classroom and distracting other students. After a brief conversation about expectations, he was able to return to work.',
@@ -232,6 +234,7 @@ if (import.meta.env.DEV) {
     {
       id: 'test-log-3',
       studentName: 'Sophia Martinez',
+      studentId: 'test-student-3',
       date: '2025-05-13',
       reason: 'Achievement',
       notes: 'Sophia showed significant improvement in her reading fluency assessment today. She read 98 words per minute with 97% accuracy, which represents a 20% improvement from her last assessment.',
@@ -250,6 +253,7 @@ if (import.meta.env.DEV) {
     testData.forEach(log => {
       observationLogStore.addLog({
         studentName: log.studentName,
+        studentId: log.studentId,
         date: log.date,
         reason: log.reason,
         notes: log.notes,

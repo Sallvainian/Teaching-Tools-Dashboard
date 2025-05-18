@@ -102,10 +102,8 @@
         }
       }
     },
-    rowSelection: {
-      type: 'multiple',
-      enableClickSelection: true, // Fixed from suppressRowClickSelection
-    },
+    rowSelection: 'multiple',
+    suppressRowClickSelection: false, // Fixed from enableClickSelection 
     undoRedoCellEditing: true,
     enableCellTextSelection: true,
     suppressCellFocus: false,
@@ -303,9 +301,9 @@
     }
   }
 
-  function handleAddStudent() {
+  async function handleAddStudent() {
     if (newStudentName.trim() && categoryId) {
-      const studentId = addGlobalStudent(newStudentName.trim());
+      const studentId = await addGlobalStudent(newStudentName.trim());
       if (studentId) {
         assignStudentToCategory(studentId, categoryId);
         newStudentName = '';
@@ -342,7 +340,6 @@
           {gridOptions}
           {rowData}
           {modules}
-          style="width: 100%; height: 100%;"
           gridClass="ag-theme-alpine"
         />
       {:else}

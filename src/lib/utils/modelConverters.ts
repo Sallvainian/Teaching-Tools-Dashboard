@@ -56,13 +56,69 @@ export function dbGradeToAppGrade(dbGrade: Tables<'grades'>): Grade {
   };
 }
 
-// Jeopardy model converters
+// Define explicit interfaces for the database models we're working with
+interface JeopardyGameDB {
+  id: string;
+  name: string;
+  description?: string;
+  owner_id: string;
+  date_created: string;
+  last_modified: string;
+  settings?: any;
+}
+
+interface JeopardyCategoryDB {
+  id: string;
+  game_id: string;
+  name: string;
+  display_order: number;
+}
+
+interface JeopardyQuestionDB {
+  id: string;
+  category_id: string;
+  text: string;
+  answer: string;
+  point_value: number;
+  is_answered: boolean;
+  is_double_jeopardy: boolean;
+  time_limit?: number;
+}
+
+interface JeopardyTeamDB {
+  id: string;
+  game_id: string;
+  name: string;
+  score: number;
+  color: string;
+}
+
+interface ObservationLogDB {
+  id: string;
+  student_id: string;
+  date: string;
+  reason: string;
+  notes?: string;
+  mood?: string;
+  follow_up_actions?: string;
+  follow_up_date?: string;
+  resolved: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// Jeopardy model converters with explicit type casting
 export function dbGameToAppGame(
-  dbGame: Tables<'jeopardy_games'>,
-  dbCategories: Tables<'jeopardy_categories'>[],
-  dbQuestions: Tables<'jeopardy_questions'>[],
-  dbTeams: Tables<'jeopardy_teams'>[]
+  dbGame: any,
+  dbCategories: any[],
+  dbQuestions: any[],
+  dbTeams: any[]
 ): JeopardyGame {
+  // Cast to known types
+  const typedDbGame = dbGame as JeopardyGameDB;
+  const typedDbCategories = dbCategories as JeopardyCategoryDB[];
+  const typedDbQuestions = dbQuestions as JeopardyQuestionDB[];
+  const typedDbTeams = dbTeams as JeopardyTeamDB[];
   // Convert settings from JSON to typed object
   const settings: GameSettings = {
     defaultTimeLimit: 30,
@@ -71,18 +127,18 @@ export function dbGameToAppGame(
     autoShowAnswer: true,
     timerSize: 'large',
     allowWagers: true,
-    ...dbGame.settings as Record<string, any>
+    ...(typedDbGame.settings as Record<string, any> || {})
   };
 
   // Get categories for this game
-  const gameCategories = dbCategories
-    .filter(cat => cat.game_id === dbGame.id)
+  const gameCategories = typedDbCategories
+    .filter(cat => cat.game_id === typedDbGame.id)
     .sort((a, b) => a.display_order - b.display_order);
 
   // Process categories with their questions
   const categories: JeopardyCategory[] = gameCategories.map(dbCat => {
     // Get questions for this category
-    const categoryQuestions = dbQuestions
+    const categoryQuestions = typedDbQuestions
       .filter(q => q.category_id === dbCat.id)
       .map(dbQuestion => ({
         id: dbQuestion.id,
@@ -102,8 +158,8 @@ export function dbGameToAppGame(
   });
 
   // Get teams for this game
-  const teams: Team[] = dbTeams
-    .filter(team => team.game_id === dbGame.id)
+  const teams: Team[] = typedDbTeams
+    .filter(team => team.game_id === typedDbGame.id)
     .map(dbTeam => ({
       id: dbTeam.id,
       name: dbTeam.name,
@@ -112,26 +168,26 @@ export function dbGameToAppGame(
     }));
 
   return {
-    id: dbGame.id,
-    name: dbGame.name,
-    description: dbGame.description || undefined,
+    id: typedDbGame.id,
+    name: typedDbGame.name,
+    description: typedDbGame.description || undefined,
     categories,
     teams,
-    dateCreated: dbGame.date_created,
-    lastModified: dbGame.last_modified,
+    dateCreated: typedDbGame.date_created,
+    lastModified: typedDbGame.last_modified,
     settings
   };
 }
 
 // Convert from app model to database model for creating/updating
 export function appGameToDbModels(game: JeopardyGame, userId: string): {
-  gameData: Omit<Tables<'jeopardy_games'>, 'id'>,
-  categoriesData: Omit<Tables<'jeopardy_categories'>, 'id'>[],
-  questionsData: Omit<Tables<'jeopardy_questions'>, 'id'>[],
-  teamsData: Omit<Tables<'jeopardy_teams'>, 'id'>[]
+  gameData: any,
+  categoriesData: any[],
+  questionsData: any[],
+  teamsData: any[]
 } {
   // Prepare game data
-  const gameData: Omit<Tables<'jeopardy_games'>, 'id'> = {
+  const gameData: any = {
     owner_id: userId,
     name: game.name,
     description: game.description || null,
@@ -141,7 +197,7 @@ export function appGameToDbModels(game: JeopardyGame, userId: string): {
   };
 
   // Prepare categories data
-  const categoriesData: Omit<Tables<'jeopardy_categories'>, 'id'>[] = 
+  const categoriesData: any[] = 
     game.categories.map((cat, index) => ({
       game_id: game.id,
       name: cat.name,
@@ -151,7 +207,7 @@ export function appGameToDbModels(game: JeopardyGame, userId: string): {
     }));
 
   // Prepare questions data
-  const questionsData: Omit<Tables<'jeopardy_questions'>, 'id'>[] = 
+  const questionsData: any[] = 
     game.categories.flatMap((cat) => 
       cat.questions.map(q => ({
         category_id: cat.id,
@@ -167,7 +223,7 @@ export function appGameToDbModels(game: JeopardyGame, userId: string): {
     );
 
   // Prepare teams data
-  const teamsData: Omit<Tables<'jeopardy_teams'>, 'id'>[] = 
+  const teamsData: any[] = 
     game.teams.map(team => ({
       game_id: game.id,
       name: team.name,
@@ -186,24 +242,27 @@ export function appGameToDbModels(game: JeopardyGame, userId: string): {
 }
 
 // Observation log model converters
-export function dbLogToAppLog(dbLog: Tables<'observation_logs'>, studentName: string = ''): StudentObservationLog {
+export function dbLogToAppLog(dbLog: any, studentName: string = ''): StudentObservationLog {
+  // Cast to known type
+  const typedDbLog = dbLog as ObservationLogDB;
+  
   return {
-    id: dbLog.id,
+    id: typedDbLog.id,
     studentName,
-    studentId: dbLog.student_id,
-    date: dbLog.date,
-    reason: dbLog.reason,
-    notes: dbLog.notes || '',
-    mood: dbLog.mood || undefined,
-    followUpActions: dbLog.follow_up_actions || undefined,
-    followUpDate: dbLog.follow_up_date || '',
-    resolved: dbLog.resolved,
-    createdAt: dbLog.created_at,
-    updatedAt: dbLog.updated_at
+    studentId: typedDbLog.student_id,
+    date: typedDbLog.date,
+    reason: typedDbLog.reason,
+    notes: typedDbLog.notes || '',
+    mood: typedDbLog.mood || undefined,
+    followUpActions: typedDbLog.follow_up_actions || undefined,
+    followUpDate: typedDbLog.follow_up_date || '',
+    resolved: typedDbLog.resolved,
+    createdAt: typedDbLog.created_at,
+    updatedAt: typedDbLog.updated_at
   };
 }
 
-export function appLogToDbLog(log: Partial<StudentObservationLog>): Partial<Tables<'observation_logs'>> {
+export function appLogToDbLog(log: Partial<StudentObservationLog>): any {
   return {
     student_id: log.studentId,
     date: log.date,

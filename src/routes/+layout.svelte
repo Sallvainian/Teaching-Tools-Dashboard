@@ -208,6 +208,34 @@
               {/if}
             </a>
             <a
+              href="/classes"
+              class="flex items-center gap-2 py-2 rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white relative group transition-colors duration-100"
+              class:px-3={!sidebarCollapsed}
+              class:px-1={sidebarCollapsed}
+              class:justify-center={sidebarCollapsed}
+              title="Classes"
+            >
+              <svg
+                class="w-5 h-5 flex-shrink-0"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                />
+              </svg>
+              {#if !sidebarCollapsed}
+                <span>Classes</span>
+              {:else}
+                <span class="absolute left-full ml-2 px-2 py-1 bg-dark-surface border border-dark-border rounded text-sm text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">Classes</span>
+              {/if}
+            </a>
+            <a
               href="/gradebook"
               class="flex items-center gap-2 py-2 rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white relative group transition-colors duration-100"
               class:px-3={!sidebarCollapsed}

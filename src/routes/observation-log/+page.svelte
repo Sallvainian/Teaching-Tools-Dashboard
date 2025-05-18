@@ -110,26 +110,26 @@
       <ObservationLogForm
         editMode={editMode}
         logId={selectedLogId}
-        onsave={handleSaveLog}
-        oncancel={handleCancelLog}
+        on:save={handleSaveLog}
+        on:cancel={handleCancelLog}
       />
     </div>
   {:else}
     <div class="mb-8">
-      <ObservationLogSearch onfilter={handleFilter} />
+      <ObservationLogSearch on:filter={handleFilter} />
     </div>
     
     <div>
-      <ObservationLogList logs={filteredLogs} onselect={handleSelectLog} />
+      <ObservationLogList logs={filteredLogs} on:select={handleSelectLog} />
     </div>
   {/if}
   
   {#if showDetailsView && selectedLogId}
     <ObservationLogDetails
       logId={selectedLogId}
-      onclose={handleCloseDetails}
-      onedit={handleEditLog}
-      ondelete={handleDeleteLog}
+      on:close={handleCloseDetails}
+      on:edit={handleEditLog}
+      on:delete={handleDeleteLog}
     />
   {/if}
 </div>

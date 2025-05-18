@@ -33,8 +33,10 @@ export default ts.config(
     },
     rules: {
       'no-undef': 'off',
-      // Fixed: Using 'warn' instead of true/false and proper array syntax
-      '@typescript-eslint/no-explicit-any': 'warn',
+      // Using the more specific version of no-explicit-any
+      '@typescript-eslint/no-explicit-any': ['warn', {
+        ignoreRestArgs: true
+      }],
       '@typescript-eslint/no-unused-vars': [
         'warn',
         {
@@ -59,6 +61,7 @@ export default ts.config(
     rules: {
       'svelte/require-each-key': 'warn',
       'svelte/no-unused-svelte-ignore': 'warn',
+      'svelte/valid-compile': 'error',
     },
   }
 );

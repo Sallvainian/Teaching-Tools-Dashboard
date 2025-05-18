@@ -4,12 +4,12 @@ import type { Database, Tables, Inserts, Updates } from '../../supabase';
 // Main service class to handle all Supabase operations
 export class SupabaseService {
   private useSupabase: boolean;
-  private storagePrefix: string;
+  private readonly storagePrefix: string;
 
   constructor(storagePrefix: string = 'app') {
     // Determine if we should use Supabase based on available credentials
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? '';
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
     
     // Default to whatever is stored in localStorage, or true if nothing stored
     const storedValue = typeof window !== 'undefined' 
@@ -82,11 +82,11 @@ export class SupabaseService {
       try {
         let query = supabase
           .from(table)
-          .select(options.columns || '*');
+          .select(options.columns ?? '*');
         
         // Add joins if provided
         if (options.joins) {
-          query = query.select(`*, ${options.joins}`);
+          query = query.select(`*, ${options.joins}`) as any;
         }
         
         // Add filters if provided
@@ -100,7 +100,7 @@ export class SupabaseService {
         
         if (error) throw error;
         
-        return data as Tables<T>[];
+        return (data as unknown) as Tables<T>[];
       } catch (err) {
         console.error(`Error fetching data from ${String(table)}:`, err);
         // Return localStorage data as fallback
@@ -124,29 +124,29 @@ export class SupabaseService {
       try {
         let query = supabase
           .from(table)
-          .select(options.columns || '*')
+          .select(options.columns ?? '*')
           .eq('id', id);
         
         // Add joins if provided
         if (options.joins) {
-          query = query.select(`*, ${options.joins}`);
+          query = query.select(`*, ${options.joins}`) as any;
         }
         
         const { data, error } = await query.single();
         
         if (error) throw error;
         
-        return data as Tables<T>;
+        return (data as unknown) as Tables<T>;
       } catch (err) {
         console.error(`Error fetching item from ${String(table)}:`, err);
         // Fallback to localStorage - search for the item with matching ID
         const items = this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []);
-        return items.find(item => (item as any).id === id) || null;
+        return items.find(item => (item as any).id === id) ?? null;
       }
     } else {
       // Just use localStorage if Supabase is disabled
       const items = this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []);
-      return items.find(item => (item as any).id === id) || null;
+      return items.find(item => (item as any).id === id) ?? null;
     }
   }
 
@@ -176,7 +176,7 @@ export class SupabaseService {
         // For localStorage we need an ID - use the one provided or generate a random one
         const itemWithId = {
           ...data,
-          id: (data as any).id || crypto.randomUUID()
+          id: (data as any).id ?? crypto.randomUUID()
         };
         const newItems = [...existingItems, itemWithId];
         this.saveToStorage(`${String(table)}`, newItems);
@@ -188,7 +188,7 @@ export class SupabaseService {
       // For localStorage we need an ID - use the one provided or generate a random one
       const itemWithId = {
         ...data,
-        id: (data as any).id || crypto.randomUUID()
+        id: (data as any).id ?? crypto.randomUUID()
       };
       const newItems = [...existingItems, itemWithId];
       this.saveToStorage(`${String(table)}`, newItems);
@@ -253,37 +253,59 @@ export class SupabaseService {
 
   public async deleteItem<T extends keyof Database['public']['Tables']>(
     table: T,
-    id: string
+    id: string | Record<string, any>
   ): Promise<boolean> {
-    if (this.useSupabase) {
-      try {
-        const { error } = await supabase
-          .from(table)
-          .delete()
-          .eq('id', id);
+    try {
+      if (this.useSupabase) {
+        let query = supabase.from(table).delete();
+        
+        if (typeof id === 'string') {
+          // Use regular id-based deletion
+          query = query.eq('id', id);
+        } else {
+          // Handle composite keys
+          for (const [key, value] of Object.entries(id)) {
+            query = query.eq(key, value);
+          }
+        }
+        
+        const { error } = await query;
         
         if (error) throw error;
-        
-        // Also update localStorage for fallback
+      }
+      
+      // Update localStorage (for fallback or when Supabase is disabled)
+      if (typeof id === 'string') {
+        // Regular id-based deletion from localStorage
         const existingItems = this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []);
-        const filteredItems = existingItems.filter(item => (item as any).id !== id);
-        this.saveToStorage(`${String(table)}`, filteredItems);
+        const itemExists = existingItems.some(item => (item as any).id === id);
         
-        return true;
-      } catch (err) {
-        console.error(`Error deleting from ${String(table)}:`, err);
-        // Fallback to localStorage only
+        if (itemExists) {
+          const filteredItems = existingItems.filter(item => (item as any).id !== id);
+          this.saveToStorage(`${String(table)}`, filteredItems);
+          return true;
+        }
+      } else {
+        // Composite key deletion from localStorage
         const existingItems = this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []);
-        const filteredItems = existingItems.filter(item => (item as any).id !== id);
+        const filteredItems = existingItems.filter(item => {
+          // Only keep items that don't match ALL of the composite key values
+          for (const [key, value] of Object.entries(id)) {
+            if ((item as any)[key] !== value) {
+              return true; // Keep this item if any key doesn't match
+            }
+          }
+          return false; // Filter out items that match all keys
+        });
+        
         this.saveToStorage(`${String(table)}`, filteredItems);
         return true;
       }
-    } else {
-      // Just use localStorage if Supabase is disabled
-      const existingItems = this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []);
-      const filteredItems = existingItems.filter(item => (item as any).id !== id);
-      this.saveToStorage(`${String(table)}`, filteredItems);
-      return true;
+      
+      return false; // Item didn't exist
+    } catch (err) {
+      console.error(`Error deleting from ${String(table)}:`, err);
+      return false; // Return false on error
     }
   }
 
@@ -303,7 +325,7 @@ export class SupabaseService {
         
         if (error) throw error;
         
-        return data as Tables<T>[];
+        return (data as unknown) as Tables<T>[];
       } catch (err) {
         console.error(`Error fetching related data from ${String(table)}:`, err);
         // Fallback to localStorage - this is harder with relations
@@ -379,6 +401,7 @@ export class SupabaseService {
     }
   }
 }
+
 
 // Create and export a default instance
 export const supabaseService = new SupabaseService();

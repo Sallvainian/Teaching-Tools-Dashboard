@@ -33,13 +33,11 @@ export default class SvelteFrameworkOverrides implements IFrameworkOverrides {
     return callback();
   };
 
-  shouldWrapOutgoing?: boolean | undefined = false;
+  shouldWrapOutgoing?: boolean = false;
 
   frameworkComponent(name: string, components?: Record<string, unknown>) {
     // Implement logic to return the framework component
-    if (components && components[name]) {
-      return components[name];
-    }
+    return components?.[name];
   }
 
   renderingEngine: 'vanilla' | 'react' = 'vanilla';
@@ -66,6 +64,5 @@ export default class SvelteFrameworkOverrides implements IFrameworkOverrides {
 
   isFrameworkComponent(comp: unknown): boolean {
     // Implement logic to determine if the component is a framework component
-    return !!comp && typeof comp === 'object' && comp !== null && 'render' in comp;
-  }
+    return !!comp && typeof comp === 'object' && true;}
 }

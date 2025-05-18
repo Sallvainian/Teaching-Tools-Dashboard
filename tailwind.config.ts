@@ -2,6 +2,8 @@ import type { Config } from 'tailwindcss';
 import typography from '@tailwindcss/typography';
 import forms from '@tailwindcss/forms';
 
+import daisyui0 from 'daisyui';
+
 const config: Config = {
   content: ['./src/**/*.{html,js,svelte,ts}'],
   darkMode: 'class', // or 'media' if you prefer OS-based
@@ -34,7 +36,7 @@ const config: Config = {
       },
     },
   },
-  plugins: [typography, forms, require('daisyui')],
+  plugins: [typography, forms, daisyui0],
   daisyui: {
     themes: ["dark", "light"],
     darkTheme: "dark",

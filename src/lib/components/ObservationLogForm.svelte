@@ -66,6 +66,7 @@
       // Update existing log
       observationLogStore.updateLog(logId, {
         studentName,
+        studentId: 'student-' + Date.now().toString(), // Generate a temp ID if needed
         date,
         reason,
         notes,
@@ -78,6 +79,7 @@
       // Create new log
       observationLogStore.addLog({
         studentName,
+        studentId: 'student-' + Date.now().toString(), // Generate a temp ID
         date,
         reason,
         notes,

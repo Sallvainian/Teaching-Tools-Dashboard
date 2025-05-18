@@ -160,37 +160,38 @@ function createJeopardyStore() {
 
 	function updateCategory(gameId: string, categoryId: string, name: string): void {
 		games.update((games) => {
-			return games.map((game) => {
-				if (game.id === gameId) {
-					return {
-						...game,
-						categories: game.categories.map((cat) => {
-							if (cat.id === categoryId) {
-								return { ...cat, name };
-							}
-							return cat;
-						}),
-						lastModified: new Date().toISOString()
-					};
-				}
-				return game;
-			});
+			return games.map((game) => updateGameCategory(game, gameId, categoryId, name));
 		});
+	}
+
+	function updateGameCategory(game: JeopardyGame, gameId: string, categoryId: string, name: string): JeopardyGame {
+		if (game.id !== gameId) return game;
+		
+		const updatedCategories = game.categories.map((cat) => 
+			cat.id === categoryId ? { ...cat, name } : cat
+		);
+		
+		return {
+			...game,
+			categories: updatedCategories,
+			lastModified: new Date().toISOString()
+		};
 	}
 
 	function deleteCategory(gameId: string, categoryId: string): void {
 		games.update((games) => {
-			return games.map((game) => {
-				if (game.id === gameId) {
-					return {
-						...game,
-						categories: game.categories.filter((cat) => cat.id !== categoryId),
-						lastModified: new Date().toISOString()
-					};
-				}
-				return game;
-			});
+			return games.map((game) => deleteCategoryFromGame(game, gameId, categoryId));
 		});
+	}
+
+	function deleteCategoryFromGame(game: JeopardyGame, gameId: string, categoryId: string): JeopardyGame {
+		if (game.id !== gameId) return game;
+		
+		return {
+			...game,
+			categories: game.categories.filter((cat) => cat.id !== categoryId),
+			lastModified: new Date().toISOString()
+		};
 	}
 
 	// Question functions
@@ -215,27 +216,30 @@ function createJeopardyStore() {
 		};
 
 		games.update((games) => {
-			return games.map((game) => {
-				if (game.id === gameId) {
-					return {
-						...game,
-						categories: game.categories.map((cat) => {
-							if (cat.id === categoryId) {
-								return {
-									...cat,
-									questions: [...cat.questions, newQuestion]
-								};
-							}
-							return cat;
-						}),
-						lastModified: new Date().toISOString()
-					};
-				}
-				return game;
-			});
+			return games.map((game) => addQuestionToGame(game, gameId, categoryId, newQuestion));
 		});
 
 		return questionId;
+	}
+
+	function addQuestionToGame(game: JeopardyGame, gameId: string, categoryId: string, newQuestion: Question): JeopardyGame {
+		if (game.id !== gameId) return game;
+		
+		const updatedCategories = game.categories.map((cat) => {
+			if (cat.id === categoryId) {
+				return {
+					...cat,
+					questions: [...cat.questions, newQuestion]
+				};
+			}
+			return cat;
+		});
+		
+		return {
+			...game,
+			categories: updatedCategories,
+			lastModified: new Date().toISOString()
+		};
 	}
 
 	function updateQuestion(
@@ -245,53 +249,59 @@ function createJeopardyStore() {
 		updates: Partial<Question>
 	): void {
 		games.update((games) => {
-			return games.map((game) => {
-				if (game.id === gameId) {
-					return {
-						...game,
-						categories: game.categories.map((cat) => {
-							if (cat.id === categoryId) {
-								return {
-									...cat,
-									questions: cat.questions.map((q) => {
-										if (q.id === questionId) {
-											return { ...q, ...updates };
-										}
-										return q;
-									})
-								};
-							}
-							return cat;
-						}),
-						lastModified: new Date().toISOString()
-					};
-				}
-				return game;
-			});
+			return games.map((game) => updateQuestionInGame(game, gameId, categoryId, questionId, updates));
 		});
+	}
+
+	function updateQuestionInGame(
+		game: JeopardyGame,
+		gameId: string,
+		categoryId: string,
+		questionId: string,
+		updates: Partial<Question>
+	): JeopardyGame {
+		if (game.id !== gameId) return game;
+		
+		const updatedCategories = game.categories.map((cat) => {
+			if (cat.id !== categoryId) return cat;
+			
+			const updatedQuestions = cat.questions.map((q) => 
+				q.id === questionId ? { ...q, ...updates } : q
+			);
+			
+			return { ...cat, questions: updatedQuestions };
+		});
+		
+		return {
+			...game,
+			categories: updatedCategories,
+			lastModified: new Date().toISOString()
+		};
 	}
 
 	function deleteQuestion(gameId: string, categoryId: string, questionId: string): void {
 		games.update((games) => {
-			return games.map((game) => {
-				if (game.id === gameId) {
-					return {
-						...game,
-						categories: game.categories.map((cat) => {
-							if (cat.id === categoryId) {
-								return {
-									...cat,
-									questions: cat.questions.filter((q) => q.id !== questionId)
-								};
-							}
-							return cat;
-						}),
-						lastModified: new Date().toISOString()
-					};
-				}
-				return game;
-			});
+			return games.map((game) => deleteQuestionFromGame(game, gameId, categoryId, questionId));
 		});
+	}
+
+	function deleteQuestionFromGame(game: JeopardyGame, gameId: string, categoryId: string, questionId: string): JeopardyGame {
+		if (game.id !== gameId) return game;
+		
+		const updatedCategories = game.categories.map((cat) => {
+			if (cat.id !== categoryId) return cat;
+			
+			return {
+				...cat,
+				questions: cat.questions.filter((q) => q.id !== questionId)
+			};
+		});
+		
+		return {
+			...game,
+			categories: updatedCategories,
+			lastModified: new Date().toISOString()
+		};
 	}
 
 	function markQuestionAnswered(gameId: string, categoryId: string, questionId: string): void {
@@ -332,54 +342,56 @@ function createJeopardyStore() {
 		};
 
 		games.update((games) => {
-			return games.map((game) => {
-				if (game.id === gameId) {
-					return {
-						...game,
-						teams: [...game.teams, newTeam],
-						lastModified: new Date().toISOString()
-					};
-				}
-				return game;
-			});
+			return games.map((game) => addTeamToGame(game, gameId, newTeam));
 		});
 
 		return teamId;
 	}
 
+	function addTeamToGame(game: JeopardyGame, gameId: string, newTeam: Team): JeopardyGame {
+		if (game.id !== gameId) return game;
+		
+		return {
+			...game,
+			teams: [...game.teams, newTeam],
+			lastModified: new Date().toISOString()
+		};
+	}
+
 	function updateTeam(gameId: string, teamId: string, updates: Partial<Team>): void {
 		games.update((games) => {
-			return games.map((game) => {
-				if (game.id === gameId) {
-					return {
-						...game,
-						teams: game.teams.map((team) => {
-							if (team.id === teamId) {
-								return { ...team, ...updates };
-							}
-							return team;
-						}),
-						lastModified: new Date().toISOString()
-					};
-				}
-				return game;
-			});
+			return games.map((game) => updateTeamInGame(game, gameId, teamId, updates));
 		});
+	}
+
+	function updateTeamInGame(game: JeopardyGame, gameId: string, teamId: string, updates: Partial<Team>): JeopardyGame {
+		if (game.id !== gameId) return game;
+		
+		const updatedTeams = game.teams.map((team) => 
+			team.id === teamId ? { ...team, ...updates } : team
+		);
+		
+		return {
+			...game,
+			teams: updatedTeams,
+			lastModified: new Date().toISOString()
+		};
 	}
 
 	function deleteTeam(gameId: string, teamId: string): void {
 		games.update((games) => {
-			return games.map((game) => {
-				if (game.id === gameId) {
-					return {
-						...game,
-						teams: game.teams.filter((team) => team.id !== teamId),
-						lastModified: new Date().toISOString()
-					};
-				}
-				return game;
-			});
+			return games.map((game) => deleteTeamFromGame(game, gameId, teamId));
 		});
+	}
+
+	function deleteTeamFromGame(game: JeopardyGame, gameId: string, teamId: string): JeopardyGame {
+		if (game.id !== gameId) return game;
+		
+		return {
+			...game,
+			teams: game.teams.filter((team) => team.id !== teamId),
+			lastModified: new Date().toISOString()
+		};
 	}
 
 	function updateTeamScore(gameId: string, teamId: string, points: number): void {
@@ -396,43 +408,49 @@ function createJeopardyStore() {
 
 	function resetAllScores(gameId: string): void {
 		games.update((games) => {
-			return games.map((game) => {
-				if (game.id === gameId) {
-					return {
-						...game,
-						teams: game.teams.map((team) => ({
-							...team,
-							score: 0
-						})),
-						lastModified: new Date().toISOString()
-					};
-				}
-				return game;
-			});
+			return games.map((game) => resetScoresInGame(game, gameId));
 		});
+	}
+
+	function resetScoresInGame(game: JeopardyGame, gameId: string): JeopardyGame {
+		if (game.id !== gameId) return game;
+		
+		const resettedTeams = game.teams.map((team) => ({
+			...team,
+			score: 0
+		}));
+		
+		return {
+			...game,
+			teams: resettedTeams,
+			lastModified: new Date().toISOString()
+		};
 	}
 
 	// Reset all questions to unanswered
 	function resetGameBoard(gameId: string): void {
 		games.update((games) => {
-			return games.map((game) => {
-				if (game.id === gameId) {
-					return {
-						...game,
-						categories: game.categories.map((cat) => ({
-							...cat,
-							questions: cat.questions.map((q) => ({
-								...q,
-								isAnswered: false,
-								wager: undefined
-							}))
-						})),
-						lastModified: new Date().toISOString()
-					};
-				}
-				return game;
-			});
+			return games.map((game) => resetBoardInGame(game, gameId));
 		});
+	}
+
+	function resetBoardInGame(game: JeopardyGame, gameId: string): JeopardyGame {
+		if (game.id !== gameId) return game;
+		
+		const resetCategories = game.categories.map((cat) => ({
+			...cat,
+			questions: cat.questions.map((q) => ({
+				...q,
+				isAnswered: false,
+				wager: undefined
+			}))
+		}));
+		
+		return {
+			...game,
+			categories: resetCategories,
+			lastModified: new Date().toISOString()
+		};
 	}
 
 	// Clear all data
@@ -485,7 +503,7 @@ function createJeopardyStore() {
 			}
 
 			// Process categories
-			const categories: Category[] = (jsonData.categories as Array<Record<string, unknown>>).map((cat, catIndex) => {
+			const processedCategories = (jsonData.categories as Array<Record<string, unknown>>).map((cat, catIndex) => {
 				// Validate category structure
 				if (!cat || typeof cat !== 'object') {
 					console.error(`Invalid category format at index ${catIndex}: not an object.`);
@@ -505,56 +523,77 @@ function createJeopardyStore() {
 				const categoryId = uuidv4(); // Using UUID for ID generation
 
 				// Process questions
-				const questions: Question[] = (cat.questions as Array<Record<string, unknown>>).map((q, qIndex) => {
-					if (!q || typeof q !== 'object') {
-						console.error(`Invalid question format at index ${qIndex} in category "${cat.name}": not an object.`);
-						return null; // Will filter out invalid questions
-					}
-					// Validate question structure
-					if (!q.text || typeof q.text !== 'string') {
-						console.error(`Invalid question at index ${qIndex} in category "${cat.name}": "text" property is missing or not a string.`);
-						return null; // Will filter out invalid questions
-					}
+				const questions = (cat.questions as Array<Record<string, unknown>>)
+					.map((q, qIndex) => {
+						if (!q || typeof q !== 'object') {
+							console.error(`Invalid question format at index ${qIndex} in category "${cat.name}": not an object.`);
+							return null; // Will filter out invalid questions
+						}
+						// Validate question structure
+						if (!q.text || typeof q.text !== 'string') {
+							console.error(`Invalid question at index ${qIndex} in category "${cat.name}": "text" property is missing or not a string.`);
+							return null; // Will filter out invalid questions
+						}
 
-					if (!q.answer || typeof q.answer !== 'string') {
-						console.error(`Invalid question "${q.text}": "answer" property is missing or not a string.`);
-						return null; // Will filter out invalid questions
-					}
+						if (!q.answer || typeof q.answer !== 'string') {
+							console.error(`Invalid question "${q.text}": "answer" property is missing or not a string.`);
+							return null; // Will filter out invalid questions
+						}
 
-					if (q.pointValue === undefined || typeof q.pointValue !== 'number' || isNaN(q.pointValue)) {
-						console.error(`Invalid question "${q.text}": "pointValue" property is missing or not a valid number.`);
-						return null; // Will filter out invalid questions
-					}
+						if (q.pointValue === undefined || typeof q.pointValue !== 'number' || isNaN(q.pointValue)) {
+							console.error(`Invalid question "${q.text}": "pointValue" property is missing or not a valid number.`);
+							return null; // Will filter out invalid questions
+						}
 
-					// **Corrected and robust handling for isDoubleJeopardy and timeLimit**
-					const isDoubleJeopardy = getBooleanFromJson(q.isDoubleJeopardy, false);
-					const timeLimit = getOptionalNumberFromJson(q.timeLimit);
+						// **Corrected and robust handling for isDoubleJeopardy and timeLimit**
+						const isDoubleJeopardy = getBooleanFromJson(q.isDoubleJeopardy, false);
+						const timeLimit = getOptionalNumberFromJson(q.timeLimit);
 
-					// Optional: Add warnings if you want to know if a default was applied due to wrong type
-					if (q.isDoubleJeopardy !== undefined && typeof q.isDoubleJeopardy !== 'boolean') {
-						console.warn(`Warning for question "${q.text}": isDoubleJeopardy was not a boolean (received ${typeof q.isDoubleJeopardy}), defaulting to ${isDoubleJeopardy}.`);
-					}
-					if (q.timeLimit !== undefined && typeof q.timeLimit !== 'number') {
-						console.warn(`Warning for question "${q.text}": timeLimit was not a number (received ${typeof q.timeLimit}), defaulting to undefined.`);
-					}
+						// Optional: Add warnings if you want to know if a default was applied due to wrong type
+						if (q.isDoubleJeopardy !== undefined && typeof q.isDoubleJeopardy !== 'boolean') {
+							console.warn(
+								`Warning for question "${q.text}": isDoubleJeopardy was not a boolean (received ${typeof q.isDoubleJeopardy}), defaulting to ${isDoubleJeopardy}.`
+							);
+						}
+						if (q.timeLimit !== undefined && typeof q.timeLimit !== 'number') {
+							console.warn(`Warning for question "${q.text}": timeLimit was not a number (received ${typeof q.timeLimit}), defaulting to undefined.`);
+						}
 
-					return {
-						id: uuidv4(), // Using UUID for ID generation
-						text: q.text as string, // Safe due to prior validation
-						answer: q.answer as string, // Safe due to prior validation
-						pointValue: q.pointValue as number, // Safe due to prior validation
-						isAnswered: false,
-						isDoubleJeopardy: isDoubleJeopardy,
-						timeLimit: timeLimit
-					} as Question;
-				}).filter((q): q is Question => q !== null); // Type predicate to ensure non-null values
+						// Create a valid Question object
+						const question: Question = {
+							id: uuidv4(),
+							text: q.text,
+							answer: q.answer as string,
+							pointValue: q.pointValue as number,
+							isAnswered: false
+						};
+						
+						// Only add isDoubleJeopardy if it's true (since it's optional)
+						if (isDoubleJeopardy) {
+							question.isDoubleJeopardy = isDoubleJeopardy;
+						}
+						
+						// Only add timeLimit if it's defined
+						if (timeLimit !== undefined) {
+							question.timeLimit = timeLimit;
+						}
+						
+						return question;
+					})
+					.filter((q): q is Question => q !== null); // Filter out null values
 
-				return {
+				// Create a valid Category object
+				const category: Category = {
 					id: categoryId,
-					name: cat.name as string, // Safe due to prior validation
-					questions
-				} as Category;
+					name: cat.name as string,
+					questions: questions
+				};
+				
+				return category;
 			}).filter((c): c is Category => c !== null); // Type predicate to ensure non-null values
+
+			// Convert processed categories to the final array
+			const categories: Category[] = processedCategories;
 
 			// Update the game with the imported data
 			// 'games' here refers to your Svelte store

@@ -1,6 +1,7 @@
 export interface StudentObservationLog {
   id: string;
   studentName: string;
+  studentId: string;
   date: string; // ISO date string
   reason: string;
   notes: string;

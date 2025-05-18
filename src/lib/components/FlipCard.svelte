@@ -4,7 +4,8 @@
   export let frontFooter = "Footer Info";
   export let backContent = "Hover Me";
   export let backIcon = null;
-  export let gradientColors = ['#8b5cf6', '#a78bfa', '#c4b5fd']; // Purple gradients to match your theme
+  // Changed to const since it's not used in the component but might be referenced externally
+  export const gradientColors = ['#8b5cf6', '#a78bfa', '#c4b5fd']; // Purple gradients to match your theme
 </script>
 
 <div class="card">

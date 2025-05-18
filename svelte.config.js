@@ -13,7 +13,8 @@ const config = {
 			handleHttpError: ({ status, path, referrer, message }) => {
 				// Ignore 404 errors during prerendering
 				if (status === 404) return;
-				throw new Error(`${message} (status: ${status}, path: ${path}${referrer ? ` - referrer: ${referrer}` : ''})`);
+				const referrerText = referrer ? ` - referrer: ${referrer}` : '';
+				throw new Error(`${message} (status: ${status}, path: ${path}${referrerText})`);
 			}
 		}
 	}
