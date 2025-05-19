@@ -1,43 +1,38 @@
 <script lang="ts">
   import '../app.css';
-  // Only keep the font imports, no AG Grid CSS imports
-  // Font that matches the system font stack
+  // Core imports
   import '@fontsource/inter/400.css';
   import '@fontsource/inter/500.css';
   import '@fontsource/inter/600.css';
-
-  // Import AG Grid modules (registers modules globally)
   import '$lib/ag-grid-modules';
-  // Import AG Grid CSS early - must come before any grid renders
   import '@ag-grid-community/styles/ag-grid.css';
   import '@ag-grid-community/styles/ag-theme-material.css';
 
   import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
-  import { gradebookStore } from '$lib/stores/gradebook';
-  import LoadingBounce from '$lib/components/LoadingBounce.svelte';
   import { navigating } from '$app/stores';
-  import { authStore, isAuthenticated, user } from '$lib/stores/auth';
+  import LoadingBounce from '$lib/components/LoadingBounce.svelte';
+  
+  // Use regular imports - we'll fix the store files after
+  import { authStore, isAuthenticated } from '$lib/stores/auth';
+  import { gradebookStore } from '$lib/stores/gradebook';
 
-  // Props for the layout
-  const { children } = $props();
+  // Remove children prop - using slot instead
 
-  // Access the store
-  const { getCategories, selectCategory, addCategory } = gradebookStore;
-
-  let newClassName = $state('');
-  let sidebarCollapsed = $state(false);
-  let userMenuOpen = $state(false);
+  // Local state
+  let newClassName = '';
+  let sidebarCollapsed = false;
+  let userMenuOpen = false;
 
   function handleAddClass() {
     if (newClassName.trim()) {
-      addCategory(newClassName);
+      gradebookStore.addCategory(newClassName);
       newClassName = '';
     }
   }
 
-  function handleSelectClass(categoryId: string) {
-    selectCategory(categoryId);
+  function handleSelectClass(categoryId) {
+    gradebookStore.selectCategory(categoryId);
     goto('/gradebook');
   }
 
@@ -50,16 +45,15 @@
     goto('/auth/login');
   }
 
-  // Set dark mode on mount
+  // Setup with onMount (we'll convert to $effect later)
   onMount(() => {
     // Set dark mode
     document.documentElement.classList.add('dark');
-    // Set AG Grid dark mode attribute
     document.documentElement.setAttribute('data-ag-theme-mode', 'dark');
 
     // Close user menu when clicking outside
-    function handleClickOutside(event: MouseEvent) {
-      const target = event.target as HTMLElement;
+    function handleClickOutside(event) {
+      const target = event.target;
       if (userMenuOpen && !target.closest('.user-menu')) {
         userMenuOpen = false;
       }
@@ -71,84 +65,84 @@
       document.removeEventListener('click', handleClickOutside);
     };
   });
+
+  // Ensure data is loaded
+  onMount(() => {
+    gradebookStore.ensureDataLoaded();
+  });
 </script>
 
-<div class="min-h-screen bg-dark-bg text-gray-100 flex flex-col transition-colors">
-  <nav class="bg-dark-surface border-b border-dark-border">
+<div class="min-h-screen bg-gradient-dark text-dark-text flex flex-col transition-colors">
+  <nav class="bg-dark-surface border-b border-dark-border backdrop-blur-sm">
     <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
       <div class="flex items-center gap-3">
-        <div class="h-8 w-8 bg-dark-highlight rounded-md flex items-center justify-center">
+        <div class="h-8 w-8 bg-gradient-card border border-dark-border rounded-md flex items-center justify-center shadow-dark-card">
           <span class="text-dark-purple font-bold text-lg">T</span>
         </div>
-        <h1 class="text-xl font-bold tracking-wide text-white">
-          Teacher <span class="text-dark-lavender">Dashboard</span>
+        <h1 class="text-xl font-bold tracking-wide text-dark-highlight">
+          Teacher <span class="text-dark-purple">Dashboard</span>
         </h1>
       </div>
 
       <div class="flex items-center gap-8">
         <div class="flex gap-6">
-          <a
-            href="/dashboard"
-            class="text-gray-300 hover:text-dark-highlight transition font-medium">Dashboard</a
-          >
-          <a
-            href="/gradebook"
-            class="text-gray-300 hover:text-dark-highlight transition font-medium">Gradebook</a
-          >
-          <a href="/jeopardy" class="text-gray-300 hover:text-dark-highlight transition font-medium"
-            >Jeopardy</a
-          >
-          <a
-            href="/lesson-planner"
-            class="text-gray-300 hover:text-dark-highlight transition font-medium">Planner</a
-          >
-          <a
-            href="/class-dojo-remake"
-            class="text-gray-300 hover:text-dark-highlight transition font-medium">Dojo</a
-          >
-          <a
-            href="/observation-log"
-            class="text-gray-300 hover:text-dark-highlight transition font-medium">Behavior Logs</a
-          >
+          <a href="/dashboard" class="text-gray-300 hover:text-dark-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-dark-purple-bg">Dashboard</a>
+          <a href="/gradebook" class="text-gray-300 hover:text-dark-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-dark-purple-bg">Gradebook</a>
+          <a href="/jeopardy" class="text-gray-300 hover:text-dark-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-dark-purple-bg">Jeopardy</a>
+          <a href="/lesson-planner" class="text-gray-300 hover:text-dark-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-dark-purple-bg">Planner</a>
+          <a href="/class-dojo-remake" class="text-gray-300 hover:text-dark-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-dark-purple-bg">Dojo</a>
+          <a href="/log-entries" class="text-gray-300 hover:text-dark-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-dark-purple-bg">Log Entries</a>
         </div>
 
         <div class="relative user-menu">
           {#if $isAuthenticated}
             <button 
-              onclick={toggleUserMenu}
+              on:click={toggleUserMenu}
               class="flex items-center gap-3 hover:bg-dark-accent/20 p-1 rounded-lg"
             >
-              <div
-                class="w-8 h-8 bg-dark-purple rounded-full flex items-center justify-center text-white font-medium"
-              >
-                {$user?.user_metadata?.full_name?.[0] || $user?.email?.[0]?.toUpperCase() || 'T'}
+              <div class="w-8 h-8 bg-dark-purple rounded-full flex items-center justify-center text-white font-medium">
+                {$authStore.user?.user_metadata?.full_name?.[0] || $authStore.user?.email?.[0]?.toUpperCase() || 'T'}
               </div>
-              <span class="text-sm text-gray-300">{$user?.user_metadata?.full_name || 'Teacher'}</span>
+              <span class="text-sm text-gray-300">{$authStore.user?.user_metadata?.full_name || 'Teacher'}</span>
               <svg class="w-4 h-4 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
               </svg>
             </button>
             
             {#if userMenuOpen}
-              <div class="absolute right-0 mt-2 w-48 bg-dark-surface border border-dark-border rounded-md shadow-lg z-50">
+              <div class="absolute right-0 mt-2 w-48 bg-gradient-card border border-dark-border rounded-lg shadow-dark-dropdown z-50">
                 <div class="py-1">
-                  <a href="/settings/profile" class="block px-4 py-2 text-sm text-gray-300 hover:bg-dark-accent hover:text-white">
-                    Profile
+                  <a href="/settings/profile" class="menu-item text-sm" on:click={() => userMenuOpen = false}>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                    <span>Profile</span>
                   </a>
-                  <a href="/settings" class="block px-4 py-2 text-sm text-gray-300 hover:bg-dark-accent hover:text-white">
-                    Settings
+                  <a href="/settings" class="menu-item text-sm" on:click={() => userMenuOpen = false}>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <span>Settings</span>
                   </a>
+                  <div class="separator mx-2 my-1"></div>
                   <button 
-                    onclick={handleSignOut}
-                    class="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-dark-accent hover:text-white"
+                    on:click={() => {
+                      userMenuOpen = false;
+                      handleSignOut();
+                    }}
+                    class="menu-item danger text-sm w-full text-left"
                   >
-                    Sign out
+                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                    </svg>
+                    <span>Sign out</span>
                   </button>
                 </div>
               </div>
             {/if}
           {:else}
-            <a href="/auth/login" class="text-gray-300 hover:text-dark-highlight transition font-medium">
+            <a href="/auth/login" class="text-gray-300 hover:text-dark-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-dark-accent">
               Sign in
             </a>
           {/if}
@@ -162,9 +156,9 @@
     <aside class="hidden md:block bg-dark-surface border-r border-dark-border transition-[width] duration-150 relative"
            class:collapsed={sidebarCollapsed}
            style="width: {sidebarCollapsed ? '3.5rem' : '14rem'}">
-      <!-- Toggle button - Clean minimalist style -->
+      <!-- Toggle button -->
       <button 
-        onclick={() => sidebarCollapsed = !sidebarCollapsed}
+        on:click={() => sidebarCollapsed = !sidebarCollapsed}
         class="absolute -right-3 top-6 z-10 w-6 h-6 bg-dark-surface border border-dark-border rounded-md text-dark-muted hover:text-dark-highlight hover:border-dark-highlight transition-all duration-200"
         aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
@@ -176,12 +170,12 @@
       <div class="space-y-6 transition-[padding] duration-150" class:p-4={!sidebarCollapsed} class:px-0={sidebarCollapsed} class:py-4={sidebarCollapsed}>
         <div>
           {#if !sidebarCollapsed}
-            <h3 class="text-dark-muted uppercase text-xs font-semibold mb-3 px-3">Menu</h3>
+            <h3 class="text-gray-400 uppercase text-xs font-semibold mb-3 px-3">Menu</h3>
           {/if}
           <div class="space-y-1">
             <a
               href="/dashboard"
-              class="flex items-center gap-2 py-2 rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white relative group transition-colors duration-100"
+              class="menu-item relative group"
               class:px-3={!sidebarCollapsed}
               class:px-1={sidebarCollapsed}
               class:justify-center={sidebarCollapsed}
@@ -204,175 +198,115 @@
               {#if !sidebarCollapsed}
                 <span>Dashboard</span>
               {:else}
-                <span class="absolute left-full ml-2 px-2 py-1 bg-dark-surface border border-dark-border rounded text-sm text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">Dashboard</span>
+                <span class="absolute left-full ml-2 px-2 py-1 bg-gradient-card border border-dark-border rounded-lg text-sm text-dark-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dark-dropdown">Dashboard</span>
               {/if}
             </a>
+            
             <a
               href="/classes"
-              class="flex items-center gap-2 py-2 rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white relative group transition-colors duration-100"
+              class="menu-item relative group"
               class:px-3={!sidebarCollapsed}
               class:px-1={sidebarCollapsed}
               class:justify-center={sidebarCollapsed}
               title="Classes"
             >
-              <svg
-                class="w-5 h-5 flex-shrink-0"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                />
+              <svg class="w-5 h-5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
               {#if !sidebarCollapsed}
                 <span>Classes</span>
               {:else}
-                <span class="absolute left-full ml-2 px-2 py-1 bg-dark-surface border border-dark-border rounded text-sm text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">Classes</span>
+                <span class="absolute left-full ml-2 px-2 py-1 bg-gradient-card border border-dark-border rounded-lg text-sm text-dark-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dark-dropdown">Classes</span>
               {/if}
             </a>
+            
             <a
               href="/gradebook"
-              class="flex items-center gap-2 py-2 rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white relative group transition-colors duration-100"
+              class="menu-item relative group"
               class:px-3={!sidebarCollapsed}
               class:px-1={sidebarCollapsed}
               class:justify-center={sidebarCollapsed}
               title="Gradebook"
             >
-              <svg
-                class="w-5 h-5 flex-shrink-0"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-                />
+              <svg class="w-5 h-5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
               </svg>
               {#if !sidebarCollapsed}
                 <span>Gradebook</span>
               {:else}
-                <span class="absolute left-full ml-2 px-2 py-1 bg-dark-surface border border-dark-border rounded text-sm text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">Gradebook</span>
+                <span class="absolute left-full ml-2 px-2 py-1 bg-gradient-card border border-dark-border rounded-lg text-sm text-dark-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dark-dropdown">Gradebook</span>
               {/if}
             </a>
+            
             <a
               href="/jeopardy"
-              class="flex items-center gap-2 py-2 rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white relative group transition-colors duration-100"
+              class="menu-item relative group"
               class:px-3={!sidebarCollapsed}
               class:px-1={sidebarCollapsed}
               class:justify-center={sidebarCollapsed}
               title="Jeopardy"
             >
-              <svg
-                class="w-5 h-5 flex-shrink-0"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                />
+              <svg class="w-5 h-5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
               </svg>
               {#if !sidebarCollapsed}
                 <span>Jeopardy</span>
               {:else}
-                <span class="absolute left-full ml-2 px-2 py-1 bg-dark-surface border border-dark-border rounded text-sm text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">Jeopardy</span>
+                <span class="absolute left-full ml-2 px-2 py-1 bg-gradient-card border border-dark-border rounded-lg text-sm text-dark-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dark-dropdown">Jeopardy</span>
               {/if}
             </a>
+            
             <a
-              href="/lesson-planner"
-              class="flex items-center gap-2 py-2 rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white relative group transition-colors duration-100"
+              href="/log-entries"
+              class="menu-item relative group"
               class:px-3={!sidebarCollapsed}
               class:px-1={sidebarCollapsed}
               class:justify-center={sidebarCollapsed}
-              title="Planner"
+              title="Log Entries"
             >
-              <svg
-                class="w-5 h-5 flex-shrink-0"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
+              <svg class="w-5 h-5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
               {#if !sidebarCollapsed}
-                <span>Planner</span>
+                <span>Log Entries</span>
               {:else}
-                <span class="absolute left-full ml-2 px-2 py-1 bg-dark-surface border border-dark-border rounded text-sm text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">Planner</span>
+                <span class="absolute left-full ml-2 px-2 py-1 bg-gradient-card border border-dark-border rounded-lg text-sm text-dark-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dark-dropdown">Log Entries</span>
               {/if}
             </a>
+            
             <a
               href="/class-dojo-remake"
-              class="flex items-center gap-2 py-2 rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white relative group transition-colors duration-100"
+              class="menu-item relative group"
               class:px-3={!sidebarCollapsed}
               class:px-1={sidebarCollapsed}
               class:justify-center={sidebarCollapsed}
-              title="Dojo"
+              title="Class Dojo"
             >
-              <svg
-                class="w-5 h-5 flex-shrink-0"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                />
+              <svg class="w-5 h-5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               {#if !sidebarCollapsed}
-                <span>Dojo</span>
+                <span>Class Dojo</span>
               {:else}
-                <span class="absolute left-full ml-2 px-2 py-1 bg-dark-surface border border-dark-border rounded text-sm text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">Dojo</span>
+                <span class="absolute left-full ml-2 px-2 py-1 bg-gradient-card border border-dark-border rounded-lg text-sm text-dark-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dark-dropdown">Class Dojo</span>
               {/if}
             </a>
+            
             <a
-              href="/observation-log"
-              class="flex items-center gap-2 py-2 rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white relative group transition-colors duration-100"
+              href="/lesson-planner"
+              class="menu-item relative group"
               class:px-3={!sidebarCollapsed}
               class:px-1={sidebarCollapsed}
               class:justify-center={sidebarCollapsed}
-              title="Behavior Logs"
+              title="Lesson Planner"
             >
-              <svg
-                class="w-5 h-5 flex-shrink-0"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                />
+              <svg class="w-5 h-5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               {#if !sidebarCollapsed}
-                <span>Behavior Logs</span>
+                <span>Lesson Planner</span>
               {:else}
-                <span class="absolute left-full ml-2 px-2 py-1 bg-dark-surface border border-dark-border rounded text-sm text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">Behavior Logs</span>
+                <span class="absolute left-full ml-2 px-2 py-1 bg-gradient-card border border-dark-border rounded-lg text-sm text-dark-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dark-dropdown">Lesson Planner</span>
               {/if}
             </a>
           </div>
@@ -381,13 +315,13 @@
         {#if $isAuthenticated}
           <div>
             {#if !sidebarCollapsed}
-              <h3 class="text-dark-muted uppercase text-xs font-semibold mb-3 px-3">Classes</h3>
+              <h3 class="text-gray-400 uppercase text-xs font-semibold mb-3 px-3">Classes</h3>
             {/if}
             <div class="space-y-1">
-              {#each $getCategories as category (category.id)}
+              {#each $gradebookStore.getCategories as category (category.id)}
                 <button
-                  onclick={() => handleSelectClass(category.id)}
-                  class="w-full flex items-center justify-between px-3 py-2 rounded-lg text-gray-300 hover:bg-dark-accent hover:text-white text-left relative group"
+                  on:click={() => handleSelectClass(category.id)}
+                  class="w-full menu-item text-left relative group"
                   title={category.name}
                 >
                   {#if !sidebarCollapsed}
@@ -397,29 +331,29 @@
                     >
                   {:else}
                     <span class="text-xs">{category.name.slice(0, 2).toUpperCase()}</span>
-                    <span class="absolute left-full ml-2 px-2 py-1 bg-dark-surface border border-dark-border rounded text-sm text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                    <span class="absolute left-full ml-2 px-2 py-1 bg-gradient-card border border-dark-border rounded-lg text-sm text-dark-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dark-dropdown">
                       {category.name} ({category.studentIds.length} students)
                     </span>
                   {/if}
                 </button>
               {:else}
                 {#if !sidebarCollapsed}
-                  <p class="text-dark-muted text-sm px-3">No classes added yet</p>
+                  <p class="text-gray-400 text-sm px-3">No classes added yet</p>
                 {/if}
               {/each}
 
               {#if !sidebarCollapsed}
-                <div class="mt-3 pt-3 border-t border-dark-border">
+                <div class="mt-3 pt-3 separator">
                   <div class="flex items-center px-3 gap-2">
                     <input
                       type="text"
                       bind:value={newClassName}
                       placeholder="New class name"
-                      class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-2 text-sm focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"
+                      class="w-full bg-dark-bg text-dark-text-hover border border-dark-border rounded-lg p-2 text-sm focus:ring-2 focus:ring-dark-accent-hover focus:border-dark-accent-hover transition-all duration-200 placeholder:text-dark-muted"
                     />
                     <button
-                      onclick={handleAddClass}
-                      class="bg-dark-purple text-white p-2 rounded-lg text-sm"
+                      on:click={handleAddClass}
+                      class="bg-dark-purple text-white p-2 rounded-lg text-sm hover:bg-dark-purple-hover transition-all duration-300"
                       aria-label="Add new class"
                     >
                       +
@@ -436,16 +370,16 @@
     <!-- Main content area -->
     <main class="flex-grow p-6 overflow-y-auto relative">
       {#if $navigating}
-        <div class="absolute inset-0 bg-dark-bg bg-opacity-50 flex items-center justify-center z-50">
+        <div class="absolute inset-0 bg-dark-bg/80 backdrop-blur-sm flex items-center justify-center z-50">
           <LoadingBounce />
         </div>
       {/if}
-      {@render children?.()}
+      <slot></slot>
     </main>
   </div>
 
   <footer
-    class="bg-dark-surface text-center text-dark-muted text-xs py-4 border-t border-dark-border px-6"
+    class="bg-gradient-card text-center text-dark-muted text-xs py-4 border-t border-dark-border px-6"
   >
     Teacher Dashboard • {new Date().getFullYear()}
   </footer>

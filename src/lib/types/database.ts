@@ -153,6 +153,7 @@ export interface Database {
           id: string
           created_at: string
           updated_at: string
+          user_id: string
           name: string
           description: string | null
           settings: any
@@ -161,6 +162,7 @@ export interface Database {
           id?: string
           created_at?: string
           updated_at?: string
+          user_id?: string
           name: string
           description?: string | null
           settings?: any
@@ -169,6 +171,7 @@ export interface Database {
           id?: string
           created_at?: string
           updated_at?: string
+          user_id?: string
           name?: string
           description?: string | null
           settings?: any
@@ -274,6 +277,32 @@ export interface Database {
           actions?: string | null
           follow_up?: string | null
           tags?: string[]
+        }
+      }
+      teams: {
+        Row: {
+          id: string
+          created_at: string
+          game_id: string
+          name: string
+          score: number
+          color: string
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          game_id: string
+          name: string
+          score?: number
+          color: string
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          game_id?: string
+          name?: string
+          score?: number
+          color?: string
         }
       }
     }

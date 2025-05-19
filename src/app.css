@@ -7,44 +7,89 @@
 
 /* Your custom styles and AG Grid overrides come after */
 
+/* Gradient backgrounds */
+.bg-gradient-dark {
+  background: linear-gradient(139deg, rgb(36, 40, 50) 0%, rgb(36, 40, 50) 40%, rgb(37, 28, 40) 100%);
+}
+
+.bg-gradient-card {
+  background: linear-gradient(135deg, rgb(36, 40, 50) 0%, rgb(36, 40, 50) 40%, rgb(37, 28, 40) 100%);
+}
+
 /* Custom form styles */
 .input {
   @apply px-3 py-2 rounded-md focus:outline-none focus:ring-2;
 }
 
+/* Custom button styles */
+.btn-primary {
+  @apply bg-dark-purple text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-dark-purple-hover hover:shadow-dark-glow;
+}
+
+.btn-secondary {
+  @apply bg-dark-purple-bg text-dark-purple px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-dark-purple-hover hover:text-white;
+}
+
+.btn-danger {
+  @apply bg-dark-error text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-dark-error-hover;
+}
+
+/* Card styles */
+.card-dark {
+  @apply bg-gradient-card rounded-lg p-4 border border-dark-border shadow-dark-card transition-all duration-300 hover:shadow-dark-dropdown;
+}
+
+/* Menu item styles (inspired by dropdown) */
+.menu-item {
+  @apply flex items-center gap-3 px-3 py-2 rounded-md text-gray-300 transition-all duration-200 cursor-pointer hover:bg-dark-purple-bg hover:text-dark-text-hover active:scale-[0.99] active:translate-y-[0px];
+}
+
+.menu-item.danger {
+  @apply hover:bg-dark-error hover:text-dark-text-hover;
+}
+
+.menu-item.special {
+  @apply text-dark-purple hover:bg-dark-purple-hover;
+}
+
+/* Separator */
+.separator {
+  @apply border-t border-dark-separator;
+}
+
 /* AG Grid styling with CSS variables */
 .ag-theme-material {
-  /* Dark palette */
-  --ag-background-color: #121212;
-  --ag-header-background-color: #1e1e1e;
-  --ag-odd-row-background-color: #0a0a0a;
-  --ag-row-hover-color: #2a2a2a;
-  --ag-selected-row-background-color: rgba(139, 92, 246, 0.2);
+  /* Dark palette - matching new theme */
+  --ag-background-color: rgb(36, 40, 50);
+  --ag-header-background-color: rgb(24, 26, 32);
+  --ag-odd-row-background-color: rgba(37, 28, 40, 0.2);
+  --ag-row-hover-color: rgba(83, 83, 255, 0.1);
+  --ag-selected-row-background-color: rgba(83, 83, 255, 0.2);
 
   /* Borders */
-  --ag-border-color: #333333;
-  --ag-row-border-color: #333333;
-  --ag-cell-horizontal-border: #333333;
+  --ag-border-color: #42434a;
+  --ag-row-border-color: #42434a;
+  --ag-cell-horizontal-border: #42434a;
   --ag-borders: solid 1px;
   --ag-borders-critical: solid 1px;
   --ag-borders-secondary: solid 1px;
   --ag-borders-row: solid 1px;
 
   /* Text colors */
-  --ag-foreground-color: #e0e0e0;
+  --ag-foreground-color: #7e8590;
   --ag-header-foreground-color: #ffffff;
-  --ag-secondary-foreground-color: #bdc3c7;
-  --ag-disabled-foreground-color: rgba(224, 224, 224, 0.5);
+  --ag-secondary-foreground-color: #7e8590;
+  --ag-disabled-foreground-color: rgba(126, 133, 144, 0.5);
 
   /* Input fields */
-  --ag-input-border-color: #444444;
-  --ag-input-focus-border-color: #8b5cf6;
-  --ag-input-bg-color: #1e1e1e;
+  --ag-input-border-color: #42434a;
+  --ag-input-focus-border-color: #5353ff;
+  --ag-input-bg-color: rgb(36, 40, 50);
   --ag-input-text-color: #ffffff;
 
   /* Range selection */
-  --ag-range-selection-border-color: #8b5cf6;
-  --ag-range-selection-background-color: rgba(139, 92, 246, 0.1);
+  --ag-range-selection-border-color: #bd89ff;
+  --ag-range-selection-background-color: rgba(189, 137, 255, 0.1);
 
   /* Cell and grid dimensions */
   --ag-cell-horizontal-padding: 12px;
@@ -52,32 +97,35 @@
   --ag-header-height: 40px;
   --ag-header-column-separator-display: block;
   --ag-header-column-separator-width: 1px;
-  --ag-header-column-separator-color: #333333;
+  --ag-header-column-separator-color: #42434a;
 
   /* Font settings */
   --ag-font-family: 'Inter', sans-serif;
   --ag-font-size: 14px;
 
   /* Miscellaneous */
-  --ag-active-color: #8b5cf6;
-  --ag-alpine-active-color: #8b5cf6;
-  --ag-selected-tab-color: #8b5cf6;
-  --ag-cell-editor-bg-color: #1e1e1e;
-  --ag-popup-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  --ag-active-color: #5353ff;
+  --ag-alpine-active-color: #5353ff;
+  --ag-selected-tab-color: #bd89ff;
+  --ag-cell-editor-bg-color: rgb(36, 40, 50);
+  --ag-popup-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
 }
 
 /* Force dark mode specific styling */
 .ag-theme-material[data-ag-theme-mode='dark'] {
-  background-color: #121212;
-  color: #e0e0e0;
+  background-color: rgb(36, 40, 50);
+  color: #7e8590;
 }
 
 /* Add styles for specific cell classes */
 .ag-theme-material .editable-cell {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(83, 83, 255, 0.05);
 }
 
 /* Ensure proper sizing of the grid */
 .ag-theme-material.ag-root-wrapper {
-  border: 1px solid #333333;
+  border: 1px solid #42434a;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
 }

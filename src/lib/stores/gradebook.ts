@@ -141,14 +141,16 @@ function createGradebookStore() {
   }
 
   // Category management
-  async function addCategory(name: string): Promise<void> {
+  async function addCategory(name: string, userId?: string): Promise<void> {
     const trimmed = name.trim();
     if (!trimmed) return;
     
     try {
       // Insert into database or localStorage
       const result = await gradebookService.insertItem('categories', { 
-        name: trimmed 
+        name: trimmed,
+        user_id: userId, // Include user_id if provided
+        class_id: '0c741791-d46d-4c19-978c-e0fcf4322283' // Use default class ID
       });
       
       if (!result) throw new Error('Failed to add category');
@@ -359,8 +361,38 @@ function createGradebookStore() {
 
   // Lazy loading - don't load data until explicitly requested
   async function ensureDataLoaded() {
-    if (!get(dataLoaded) && get(useSupabase)) {
+    try {
+      // Check if data is already loaded
+      if (get(dataLoaded)) {
+        console.log("GradebookStore: Data already loaded");
+        return true;
+      }
+
+      // Check if we should use Supabase
+      if (!get(useSupabase)) {
+        console.log("GradebookStore: Not using Supabase, loading from localStorage");
+        dataLoaded.set(true);
+        return true;
+      }
+
+      // Import supabase client dynamically if needed to ensure it's initialized
+      const { supabase } = await import('$lib/supabaseClient');
+
+      // Check authentication state
+      const { data: authData } = await supabase.auth.getSession();
+      const isAuthenticated = !!authData?.session?.user;
+
+      // Log auth state and proceed with loading
+      console.log(`GradebookStore: User ${isAuthenticated ? 'is' : 'is not'} authenticated`);
+      
+      // Load data
+      console.log("GradebookStore: Loading data from Supabase...");
       await loadAllData();
+      return true;
+    } catch (err) {
+      console.error("GradebookStore: Error ensuring data loaded:", err);
+      error.set(err instanceof Error ? err.message : String(err));
+      throw err;
     }
   }
 

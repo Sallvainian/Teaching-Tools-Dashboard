@@ -9,14 +9,13 @@ import type {
 import type {
   JeopardyGame,
   Category as JeopardyCategory,
-  Question,
   Team,
   GameSettings
 } from '$lib/types/jeopardy';
 
 import type {
-  StudentObservationLog
-} from '$lib/types/observation-log';
+  LogEntry
+} from '$lib/types/log-entries';
 
 // Gradebook model converters
 export function dbStudentToAppStudent(dbStudent: Tables<'students'>): Student {
@@ -30,9 +29,11 @@ export function dbCategoryToAppCategory(
   dbCategory: Tables<'categories'>, 
   categoryStudents: Tables<'category_students'>[]
 ): Category {
+  // Handle categories from both schema versions
   return {
     id: dbCategory.id,
     name: dbCategory.name,
+    // Filter category_students relationships for this category
     studentIds: categoryStudents
       .filter(cs => cs.category_id === dbCategory.id)
       .map(cs => cs.student_id)
@@ -93,19 +94,6 @@ interface JeopardyTeamDB {
   color: string;
 }
 
-interface ObservationLogDB {
-  id: string;
-  student_id: string;
-  date: string;
-  reason: string;
-  notes?: string;
-  mood?: string;
-  follow_up_actions?: string;
-  follow_up_date?: string;
-  resolved: boolean;
-  created_at: string;
-  updated_at: string;
-}
 
 // Jeopardy model converters with explicit type casting
 export function dbGameToAppGame(
@@ -127,7 +115,7 @@ export function dbGameToAppGame(
     autoShowAnswer: true,
     timerSize: 'large',
     allowWagers: true,
-    ...(typedDbGame.settings as Record<string, any> || {})
+    ...(typedDbGame.settings as Record<string, any> ?? {})
   };
 
   // Get categories for this game
@@ -147,7 +135,7 @@ export function dbGameToAppGame(
         pointValue: dbQuestion.point_value,
         isAnswered: dbQuestion.is_answered,
         isDoubleJeopardy: dbQuestion.is_double_jeopardy,
-        timeLimit: dbQuestion.time_limit || undefined
+        timeLimit: dbQuestion.time_limit ?? undefined
       }));
     
     return {
@@ -170,7 +158,7 @@ export function dbGameToAppGame(
   return {
     id: typedDbGame.id,
     name: typedDbGame.name,
-    description: typedDbGame.description || undefined,
+    description: typedDbGame.description ?? undefined,
     categories,
     teams,
     dateCreated: typedDbGame.date_created,
@@ -190,7 +178,7 @@ export function appGameToDbModels(game: JeopardyGame, userId: string): {
   const gameData: any = {
     owner_id: userId,
     name: game.name,
-    description: game.description || null,
+    description: game.description ?? null,
     date_created: game.dateCreated,
     last_modified: game.lastModified,
     settings: game.settings as any
@@ -215,8 +203,8 @@ export function appGameToDbModels(game: JeopardyGame, userId: string): {
         answer: q.answer,
         point_value: q.pointValue,
         is_answered: q.isAnswered,
-        is_double_jeopardy: q.isDoubleJeopardy || false,
-        time_limit: q.timeLimit || null,
+        is_double_jeopardy: q.isDoubleJeopardy ?? false,
+        time_limit: q.timeLimit ?? null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }))
@@ -241,36 +229,32 @@ export function appGameToDbModels(game: JeopardyGame, userId: string): {
   };
 }
 
-// Observation log model converters
-export function dbLogToAppLog(dbLog: any, studentName: string = ''): StudentObservationLog {
-  // Cast to known type
-  const typedDbLog = dbLog as ObservationLogDB;
-  
+// Log entries model converters
+export function dbLogToAppLog(dbLog: Tables<'observation_logs'>): LogEntry {
   return {
-    id: typedDbLog.id,
-    studentName,
-    studentId: typedDbLog.student_id,
-    date: typedDbLog.date,
-    reason: typedDbLog.reason,
-    notes: typedDbLog.notes || '',
-    mood: typedDbLog.mood || undefined,
-    followUpActions: typedDbLog.follow_up_actions || undefined,
-    followUpDate: typedDbLog.follow_up_date || '',
-    resolved: typedDbLog.resolved,
-    createdAt: typedDbLog.created_at,
-    updatedAt: typedDbLog.updated_at
+    id: dbLog.id,
+    observer: dbLog.observer,
+    date: dbLog.date,
+    student: dbLog.student,
+    subject: dbLog.subject,
+    objective: dbLog.objective,
+    observation: dbLog.observation,
+    actions: dbLog.actions,
+    follow_up: dbLog.follow_up,
+    tags: dbLog.tags
   };
 }
 
-export function appLogToDbLog(log: Partial<StudentObservationLog>): any {
+export function appLogToDbLog(log: Partial<LogEntry>): any {
   return {
-    student_id: log.studentId,
+    observer: log.observer,
     date: log.date,
-    reason: log.reason,
-    notes: log.notes || null,
-    mood: log.mood || null,
-    follow_up_actions: log.followUpActions || null,
-    follow_up_date: log.followUpDate || null,
-    resolved: log.resolved
+    student: log.student,
+    subject: log.subject ?? null,
+    objective: log.objective ?? null,
+    observation: log.observation,
+    actions: log.actions ?? null,
+    follow_up: log.follow_up ?? null,
+    tags: log.tags ?? []
   };
 }

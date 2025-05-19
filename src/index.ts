@@ -13,12 +13,8 @@ export type Json =
 
 export type Database = {
 	graphql_public: {
-		Tables: {
-			[_ in never]: never
-		}
-		Views: {
-			[_ in never]: never
-		}
+		Tables: Record<string, never>
+		Views: Record<string, never>
 		Functions: {
 			graphql: {
 				Args: {
@@ -30,12 +26,8 @@ export type Database = {
 				Returns: Json
 			}
 		}
-		Enums: {
-			[_ in never]: never
-		}
-		CompositeTypes: {
-			[_ in never]: never
-		}
+		Enums: Record<string, never>
+		CompositeTypes: Record<string, never>
 	}
 	public: {
 		Tables: {
@@ -549,12 +541,8 @@ export type Database = {
 		Functions: {
 			[_ in never]: never
 		}
-		Enums: {
-			[_ in never]: never
-		}
-		CompositeTypes: {
-			[_ in never]: never
-		}
+		Enums: Record<string, never>
+		CompositeTypes: Record<string, never>
 	}
 }
 

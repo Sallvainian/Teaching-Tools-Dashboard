@@ -1,33 +1,30 @@
 <script lang="ts">
   import { gradebookStore } from '$lib/stores/gradebook';
   import { jeopardyStore } from '$lib/stores/jeopardy';
-  import { observationLogStore } from '$lib/stores/observation-log';
+  import { logEntriesStore } from '$lib/stores/log-entries';
   
-  // Get derived stores from jeopardyStore
-  const { getGames } = jeopardyStore;
+  // Store references
+  const { games } = jeopardyStore;
   
   // Get some stats
-  let observationCount = 0;
-  $: observationCount = observationLogStore.getLogs().length;
+  let logEntryCount = 0;
+  $: logEntryCount = $logEntriesStore.logs.length;
+  $: gameCount = $games.length;
 </script>
 
 <div class="container mx-auto px-4 py-8">
   <!-- Page header -->
   <div class="mb-8">
-    <h1 class="text-3xl font-bold text-white mb-1">Teacher Dashboard</h1>
-    <p class="text-dark-muted">Welcome back! Here's an overview of your teaching tools</p>
+    <h1 class="text-3xl font-bold text-dark-highlight mb-1">Teacher Dashboard</h1>
+    <p class="text-dark-text">Welcome back! Here's an overview of your teaching tools</p>
   </div>
 
   <!-- Stats Cards -->
   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-    <div class="bg-dark-card border border-dark-border p-4 rounded-xl">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-dark-muted text-sm">Total Students</p>
-          <h3 class="text-xl font-bold text-white">{$gradebookStore.students.length}</h3>
-        </div>
+    <div class="card-dark">
+      <div class="flex items-center gap-3">
         <div
-          class="w-10 h-10 rounded-lg bg-dark-purple bg-opacity-20 flex items-center justify-center text-dark-highlight"
+          class="w-10 h-10 rounded-lg bg-dark-purple-bg flex items-center justify-center text-dark-purple-light"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -44,17 +41,17 @@
             />
           </svg>
         </div>
+        <div>
+          <p class="text-gray-200 font-medium">Total Students</p>
+          <p class="text-gray-400 text-sm">{$gradebookStore.students.length} students enrolled</p>
+        </div>
       </div>
     </div>
 
-    <div class="bg-dark-card border border-dark-border p-4 rounded-xl">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-dark-muted text-sm">Classes</p>
-          <h3 class="text-xl font-bold text-white">{$gradebookStore.categories.length}</h3>
-        </div>
+    <div class="card-dark">
+      <div class="flex items-center gap-3">
         <div
-          class="w-10 h-10 rounded-lg bg-dark-purple bg-opacity-20 flex items-center justify-center text-dark-highlight"
+          class="w-10 h-10 rounded-lg bg-dark-purple-bg flex items-center justify-center text-dark-purple-light"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -71,17 +68,17 @@
             />
           </svg>
         </div>
+        <div>
+          <p class="text-gray-200 font-medium">Classes</p>
+          <p class="text-gray-400 text-sm">{$gradebookStore.categories.length} active classes</p>
+        </div>
       </div>
     </div>
 
-    <div class="bg-dark-card border border-dark-border p-4 rounded-xl">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-dark-muted text-sm">Games</p>
-          <h3 class="text-xl font-bold text-white">{$getGames.length}</h3>
-        </div>
+    <div class="card-dark">
+      <div class="flex items-center gap-3">
         <div
-          class="w-10 h-10 rounded-lg bg-dark-purple bg-opacity-20 flex items-center justify-center text-dark-highlight"
+          class="w-10 h-10 rounded-lg bg-dark-purple-bg flex items-center justify-center text-dark-purple-light"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -98,17 +95,17 @@
             />
           </svg>
         </div>
+        <div>
+          <p class="text-gray-200 font-medium">Games</p>
+          <p class="text-gray-400 text-sm">{gameCount} Jeopardy games</p>
+        </div>
       </div>
     </div>
 
-    <div class="bg-dark-card border border-dark-border p-4 rounded-xl">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-dark-muted text-sm">Observations</p>
-          <h3 class="text-xl font-bold text-white">{observationCount}</h3>
-        </div>
+    <div class="card-dark">
+      <div class="flex items-center gap-3">
         <div
-          class="w-10 h-10 rounded-lg bg-dark-purple bg-opacity-20 flex items-center justify-center text-dark-highlight"
+          class="w-10 h-10 rounded-lg bg-dark-purple-bg flex items-center justify-center text-dark-purple-light"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -125,21 +122,25 @@
             />
           </svg>
         </div>
+        <div>
+          <p class="text-gray-200 font-medium">Log Entries</p>
+          <p class="text-gray-400 text-sm">{logEntryCount} student observations</p>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Quick Actions -->
   <div class="mb-8">
-    <h2 class="text-xl font-bold text-white mb-4">Quick Actions</h2>
+    <h2 class="text-xl font-bold text-dark-highlight mb-4">Quick Actions</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <a
         href="/gradebook"
-        class="bg-dark-card border border-dark-border p-4 rounded-xl hover:border-dark-highlight transition-colors"
+        class="card-dark hover:border-dark-purple hover:shadow-dark-glow transition-all duration-300"
       >
         <div class="flex items-center gap-3">
           <div
-            class="w-10 h-10 rounded-lg bg-dark-purple bg-opacity-20 flex items-center justify-center text-dark-highlight"
+            class="w-10 h-10 rounded-lg bg-dark-purple-bg flex items-center justify-center text-dark-purple-light"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -157,19 +158,19 @@
             </svg>
           </div>
           <div>
-            <p class="text-white font-medium">Open Gradebook</p>
-            <p class="text-dark-muted text-sm">Manage grades and assignments</p>
+            <p class="text-gray-200 font-medium">Open Gradebook</p>
+            <p class="text-gray-400 text-sm">Manage grades and assignments</p>
           </div>
         </div>
       </a>
 
       <a
         href="/jeopardy"
-        class="bg-dark-card border border-dark-border p-4 rounded-xl hover:border-dark-highlight transition-colors"
+        class="card-dark hover:border-dark-purple hover:shadow-dark-glow transition-all duration-300"
       >
         <div class="flex items-center gap-3">
           <div
-            class="w-10 h-10 rounded-lg bg-dark-purple bg-opacity-20 flex items-center justify-center text-dark-highlight"
+            class="w-10 h-10 rounded-lg bg-dark-purple-bg flex items-center justify-center text-dark-purple-light"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -187,19 +188,19 @@
             </svg>
           </div>
           <div>
-            <p class="text-white font-medium">Create Game</p>
-            <p class="text-dark-muted text-sm">Make a Jeopardy quiz</p>
+            <p class="text-gray-200 font-medium">Create Game</p>
+            <p class="text-gray-400 text-sm">Make a Jeopardy quiz</p>
           </div>
         </div>
       </a>
 
       <a
         href="/lesson-planner"
-        class="bg-dark-card border border-dark-border p-4 rounded-xl hover:border-dark-highlight transition-colors"
+        class="card-dark hover:border-dark-purple hover:shadow-dark-glow transition-all duration-300"
       >
         <div class="flex items-center gap-3">
           <div
-            class="w-10 h-10 rounded-lg bg-dark-purple bg-opacity-20 flex items-center justify-center text-dark-highlight"
+            class="w-10 h-10 rounded-lg bg-dark-purple-bg flex items-center justify-center text-dark-purple-light"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -217,19 +218,19 @@
             </svg>
           </div>
           <div>
-            <p class="text-white font-medium">Plan Lesson</p>
-            <p class="text-dark-muted text-sm">Create lesson plans</p>
+            <p class="text-gray-200 font-medium">Plan Lesson</p>
+            <p class="text-gray-400 text-sm">Create lesson plans</p>
           </div>
         </div>
       </a>
 
       <a
-        href="/observation-log"
-        class="bg-dark-card border border-dark-border p-4 rounded-xl hover:border-dark-highlight transition-colors"
+        href="/log-entries"
+        class="card-dark hover:border-dark-purple hover:shadow-dark-glow transition-all duration-300"
       >
         <div class="flex items-center gap-3">
           <div
-            class="w-10 h-10 rounded-lg bg-dark-purple bg-opacity-20 flex items-center justify-center text-dark-highlight"
+            class="w-10 h-10 rounded-lg bg-dark-purple-bg flex items-center justify-center text-dark-purple-light"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -242,19 +243,13 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
               />
             </svg>
           </div>
           <div>
-            <p class="text-white font-medium">Add Observation</p>
-            <p class="text-dark-muted text-sm">Log classroom observations</p>
+            <p class="text-gray-200 font-medium">Add Log Entry</p>
+            <p class="text-gray-400 text-sm">Track student interactions</p>
           </div>
         </div>
       </a>
@@ -262,8 +257,8 @@
   </div>
 
   <!-- Recent Activity -->
-  <div class="bg-dark-card border border-dark-border p-6 rounded-xl">
-    <h2 class="text-xl font-bold text-white mb-4">Recent Activity</h2>
-    <p class="text-dark-muted">No recent activity to display.</p>
+  <div class="card-dark p-6">
+    <h2 class="text-xl font-bold text-dark-highlight mb-4">Recent Activity</h2>
+    <p class="text-dark-text">No recent activity to display.</p>
   </div>
 </div>

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { gradebookStore } from '$lib/stores/gradebook';
-  import { observationLogStore } from '$lib/stores/observation-log';
+  import { logEntriesStore } from '$lib/stores/log-entries';
   import { jeopardyStore } from '$lib/stores/jeopardy';
   import { get } from 'svelte/store';
 
@@ -45,9 +45,8 @@
     useSupabase = !useSupabase;
     localStorage.setItem('useSupabase', JSON.stringify(useSupabase));
     
-    // Update localStorage setting only
-    // The actual stores will check this value when needed
-    localStorage.setItem('useSupabase', JSON.stringify(useSupabase));
+    // Update the gradebook store to use new setting
+    gradebookStore.setUseSupabase(useSupabase);
     
     // Refresh to apply changes
     if (confirm('Storage setting changed. Reload page to apply changes?')) {
@@ -84,7 +83,7 @@
           type="checkbox"
           id="toggle-dark-mode"
           checked={darkMode}
-          onchange={handleToggleDarkMode}
+          on:change={handleToggleDarkMode}
           class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
         />
         <label
@@ -111,7 +110,7 @@
           type="checkbox"
           id="toggle-storage"
           checked={useSupabase}
-          onchange={handleToggleDataStorage}
+          on:change={handleToggleDataStorage}
           class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
         />
         <label

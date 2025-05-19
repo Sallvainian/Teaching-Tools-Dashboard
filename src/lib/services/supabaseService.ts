@@ -1,4 +1,3 @@
-import { supabase } from '$lib/supabaseClient';
 import type { Database, Tables, Inserts, Updates } from '../../supabase';
 
 // Main service class to handle all Supabase operations
@@ -7,10 +6,7 @@ export class SupabaseService {
   private readonly storagePrefix: string;
 
   constructor(storagePrefix: string = 'app') {
-    // Determine if we should use Supabase based on available credentials
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? '';
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
-    
+    // Supabase is now always available with hardcoded credentials
     // Default to whatever is stored in localStorage, or true if nothing stored
     const storedValue = typeof window !== 'undefined' 
       ? localStorage.getItem(`${storagePrefix}_useSupabase`)
@@ -18,7 +14,7 @@ export class SupabaseService {
       
     this.useSupabase = storedValue !== null 
       ? storedValue === 'true'
-      : (supabaseUrl !== '' && supabaseKey !== '');
+      : true; // Default to true since Supabase is now available
       
     this.storagePrefix = storagePrefix;
   }
@@ -80,6 +76,9 @@ export class SupabaseService {
     // Only try Supabase if enabled
     if (this.useSupabase) {
       try {
+        // Dynamically import supabase client to ensure it's properly initialized
+        const { supabase } = await import('$lib/supabaseClient');
+        
         let query = supabase
           .from(table)
           .select(options.columns ?? '*');
@@ -122,6 +121,9 @@ export class SupabaseService {
   ): Promise<Tables<T> | null> {
     if (this.useSupabase) {
       try {
+        // Dynamically import supabase client to ensure it's properly initialized
+        const { supabase } = await import('$lib/supabaseClient');
+        
         let query = supabase
           .from(table)
           .select(options.columns ?? '*')
@@ -156,6 +158,9 @@ export class SupabaseService {
   ): Promise<Tables<T> | null> {
     if (this.useSupabase) {
       try {
+        // Dynamically import supabase client to ensure it's properly initialized
+        const { supabase } = await import('$lib/supabaseClient');
+        
         const { data: insertedData, error } = await supabase
           .from(table)
           .insert(data)
@@ -203,6 +208,9 @@ export class SupabaseService {
   ): Promise<Tables<T> | null> {
     if (this.useSupabase) {
       try {
+        // Dynamically import supabase client to ensure it's properly initialized
+        const { supabase } = await import('$lib/supabaseClient');
+        
         const { data: updatedData, error } = await supabase
           .from(table)
           .update(data)
@@ -257,6 +265,9 @@ export class SupabaseService {
   ): Promise<boolean> {
     try {
       if (this.useSupabase) {
+        // Dynamically import supabase client to ensure it's properly initialized
+        const { supabase } = await import('$lib/supabaseClient');
+        
         let query = supabase.from(table).delete();
         
         if (typeof id === 'string') {
@@ -318,6 +329,9 @@ export class SupabaseService {
   ): Promise<Tables<T>[]> {
     if (this.useSupabase) {
       try {
+        // Dynamically import supabase client to ensure it's properly initialized
+        const { supabase } = await import('$lib/supabaseClient');
+        
         const { data, error } = await supabase
           .from(table)
           .select(`*, ${relationTable}!${foreignKey}(*)`)
@@ -343,6 +357,9 @@ export class SupabaseService {
     if (!this.useSupabase) return null;
     
     try {
+      // Dynamically import supabase client to ensure it's properly initialized
+      const { supabase } = await import('$lib/supabaseClient');
+      
       const { data, error } = await supabase.auth.getUser();
       if (error) throw error;
       return data.user;
@@ -356,6 +373,9 @@ export class SupabaseService {
     if (!this.useSupabase) return null;
     
     try {
+      // Dynamically import supabase client to ensure it's properly initialized
+      const { supabase } = await import('$lib/supabaseClient');
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -373,6 +393,9 @@ export class SupabaseService {
     if (!this.useSupabase) return null;
     
     try {
+      // Dynamically import supabase client to ensure it's properly initialized
+      const { supabase } = await import('$lib/supabaseClient');
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -393,6 +416,9 @@ export class SupabaseService {
     if (!this.useSupabase) return;
     
     try {
+      // Dynamically import supabase client to ensure it's properly initialized
+      const { supabase } = await import('$lib/supabaseClient');
+      
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     } catch (err) {

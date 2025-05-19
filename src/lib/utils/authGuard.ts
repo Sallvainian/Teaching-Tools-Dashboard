@@ -1,12 +1,14 @@
 import { redirect } from '@sveltejs/kit';
 import type { LoadEvent } from '@sveltejs/kit';
-import { supabase } from '$lib/supabaseClient';
 
 /**
  * Authentication guard for protected routes
  * Redirects to login if not authenticated
  */
 export async function authGuard({ url }: LoadEvent) {
+  // Dynamically import supabase client to ensure it's properly initialized
+  const { supabase } = await import('$lib/supabaseClient');
+  
   const { data } = await supabase.auth.getSession();
   
   if (!data.session) {

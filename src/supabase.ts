@@ -1,9 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '$lib/supabaseClient';
 
-const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export { supabase };
 
 export type Json =
 	| string
@@ -53,14 +50,20 @@ export interface Database {
 				Row: {
 					id: string
 					name: string
+					class_id: string
+					user_id?: string
 				}
 				Insert: {
 					id?: string
 					name: string
+					class_id?: string
+					user_id?: string
 				}
 				Update: {
 					id?: string
 					name?: string
+					class_id?: string
+					user_id?: string
 				}
 				Relationships: []
 			}

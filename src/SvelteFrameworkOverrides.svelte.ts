@@ -64,5 +64,5 @@ export default class SvelteFrameworkOverrides implements IFrameworkOverrides {
 
   isFrameworkComponent(comp: unknown): boolean {
     // Implement logic to determine if the component is a framework component
-    return !!comp && typeof comp === 'object' && true;}
+    return !!comp && typeof comp === 'object';}
 }

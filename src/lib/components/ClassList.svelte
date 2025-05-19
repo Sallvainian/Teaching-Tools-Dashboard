@@ -1,13 +1,9 @@
 <script lang="ts">
   import type { Category } from '$lib/types/gradebook';
   
-  interface Props {
-    classes: Category[];
-    selectedClassId: string | null;
-    onSelectClass: (classId: string) => void;
-  }
-  
-  let { classes, selectedClassId, onSelectClass }: Props = $props();
+  export let classes = [];
+  export let selectedClassId: string | null = null;
+  export let onSelectClass: (classId: string) => void;
 </script>
 
 <div class="bg-gray-800 border border-gray-700 rounded-lg p-4">
@@ -16,10 +12,10 @@
   <div class="space-y-2">
     {#each classes as classItem}
       <button
-        onclick={() => onSelectClass(classItem.id)}
+        on:click={() => onSelectClass(classItem.id)}
         class="w-full p-3 rounded-lg text-left transition-all duration-200 {
           selectedClassId === classItem.id
-            ? 'bg-emerald-600 text-white'
+            ? 'bg-dark-purple text-white'
             : 'bg-gray-700 hover:bg-gray-600 text-gray-100'
         }"
       >
@@ -27,7 +23,7 @@
           <span class="font-medium">{classItem.name}</span>
           <span class="text-sm {
             selectedClassId === classItem.id
-              ? 'text-emerald-100'
+              ? 'text-white/90'
               : 'text-gray-400'
           }">
             {classItem.studentIds.length} students

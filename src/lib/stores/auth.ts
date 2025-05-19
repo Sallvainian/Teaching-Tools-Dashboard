@@ -1,291 +1,247 @@
-import { writable, derived } from 'svelte/store';
-import type { Session, User } from '@supabase/supabase-js';
-import { supabaseService } from '$lib/services/supabaseService';
-import { supabase } from '$lib/supabaseClient';
-
-export interface AuthState {
-  user: User | null;
-  session: Session | null;
-  isLoading: boolean;
-  error: string | null;
-}
+// src/lib/stores/auth.ts
+import { writable, derived, get } from 'svelte/store';
+import type { AuthSession, User } from '@supabase/supabase-js';
 
 function createAuthStore() {
-	// Initialize store with loading state
-	const { subscribe, set, update } = writable<AuthState>({
-		user: null,
-		session: null,
-		isLoading: true,
-		error: null
-	});
+  const user = writable<User | null>(null);
+  const session = writable<AuthSession | null>(null);
+  const loading = writable(true);
+  const error = writable<string | null>(null);
 
-	// Store the subscription for cleanup
-	let authSubscription: { unsubscribe: () => void } | null = null;
+  // Derived store for authentication status
+  const isAuthenticated = derived(user, ($user) => !!$user);
 
-	// Initialize by getting current session
-	async function initialize() {
-		try {
-			// Get initial session
-			const { data, error } = await supabase.auth.getSession();
+  // Initialize on creation - only check existing session, don't create a new one
+  async function initialize() {
+    loading.set(true);
+    error.set(null);
 
-			if (error) {
-				throw error;
-			}
+    try {
+      // Dynamically import supabase client to ensure it's properly initialized
+      const { supabase } = await import('$lib/supabaseClient');
+      
+      // Get the current session
+      const { data, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError) throw sessionError;
+      
+      if (data?.session) {
+        session.set(data.session);
+        user.set(data.session.user);
+      }
+      
+      // Set up auth state change listener
+      const { data: authListener } = supabase.auth.onAuthStateChange(
+        (event, newSession) => {
+          if (newSession) {
+            session.set(newSession);
+            user.set(newSession.user);
+          } else {
+            session.set(null);
+            user.set(null);
+          }
+        }
+      );
 
-			// Set initial session and user
-			set({
-				user: data.session?.user || null,
-				session: data.session,
-				isLoading: false,
-				error: null
-			});
+      // Return cleanup function
+      return () => {
+        authListener.subscription.unsubscribe();
+      };
+    } catch (err: any) {
+      console.error('Error initializing auth store:', err);
+      error.set(err.message ?? 'Authentication check failed');
+    } finally {
+      loading.set(false);
+    }
+  }
 
-			// Listen for auth state changes
-			const { data: { subscription } } = supabase.auth.onAuthStateChange(
-				(_event, session) => {
-					set({
-						user: session?.user || null,
-						session,
-						isLoading: false,
-						error: null
-					});
-				}
-			);
+  // Sign in with email/password
+  async function signIn(email: string, password: string) {
+    loading.set(true);
+    error.set(null);
 
-			// Store subscription for cleanup
-			authSubscription = subscription;
+    try {
+      // Dynamically import supabase client to ensure it's properly initialized
+      const { supabase } = await import('$lib/supabaseClient');
+      
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
 
-			// Clean up subscription on-page unload
-			if (typeof window !== 'undefined') {
-				window.addEventListener('beforeunload', () => {
-					subscription.unsubscribe();
-				});
-			}
+      if (signInError) throw signInError;
 
-		} catch (err) {
-			const error = err as Error;
-			update(state => ({
-				...state,
-				error: error.message ?? 'Failed to initialize auth',
-				isLoading: false
-			}));
-		}
-	}
+      // Update stores
+      if (data?.session) {
+        session.set(data.session);
+        user.set(data.session.user);
+        return true;
+      }
+      
+      return false;
+    } catch (err: any) {
+      console.error('Sign in error:', err);
+      error.set(err.message ?? 'Sign in failed');
+      return false;
+    } finally {
+      loading.set(false);
+    }
+  }
 
-	// Call initialize
-	initialize();
+  // Sign up with email/password
+  async function signUp(email: string, password: string, userData: any = {}) {
+    loading.set(true);
+    error.set(null);
 
-	// Auth methods
-	return {
-		subscribe,
+    try {
+      // Dynamically import supabase client to ensure it's properly initialized
+      const { supabase } = await import('$lib/supabaseClient');
+      
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: userData
+        }
+      });
 
-		// Sign in with email and password
-		signInWithEmail: async (email: string, password: string) => {
-			update(state => ({ ...state, isLoading: true, error: null }));
+      if (signUpError) throw signUpError;
 
-			try {
-				const data = await supabaseService.signIn(email, password);
+      // Update stores
+      if (data?.session) {
+        session.set(data.session);
+        user.set(data.session.user);
+        return true;
+      }
+      
+      // Email confirmation might be required
+      return { needsEmailConfirmation: true };
+    } catch (err: any) {
+      console.error('Sign up error:', err);
+      error.set(err.message ?? 'Sign up failed');
+      return false;
+    } finally {
+      loading.set(false);
+    }
+  }
 
-				if (!data) throw new Error('Failed to sign in');
+  // Sign out
+  async function signOut() {
+    loading.set(true);
+    error.set(null);
 
-				update(state => ({
-					...state,
-					user: data.user,
-					session: data.session,
-					isLoading: false
-				}));
+    try {
+      // Dynamically import supabase client to ensure it's properly initialized
+      const { supabase } = await import('$lib/supabaseClient');
+      
+      const { error: signOutError } = await supabase.auth.signOut();
+      
+      if (signOutError) throw signOutError;
+      
+      // Clear stores
+      session.set(null);
+      user.set(null);
+      
+      return true;
+    } catch (err: any) {
+      console.error('Sign out error:', err);
+      error.set(err.message ?? 'Sign out failed');
+      return false;
+    } finally {
+      loading.set(false);
+    }
+  }
 
-				return data;
+  // Rest password
+  async function resetPassword(email: string) {
+    loading.set(true);
+    error.set(null);
 
-			} catch (err) {
-				const error = err as Error;
-				update(state => ({
-					...state,
-					error: error.message ?? 'Failed to sign in',
-					isLoading: false
-				}));
-				throw error;
-			}
-		},
+    try {
+      // Dynamically import supabase client to ensure it's properly initialized
+      const { supabase } = await import('$lib/supabaseClient');
+      
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email);
+      
+      if (resetError) throw resetError;
+      
+      return true;
+    } catch (err: any) {
+      console.error('Password reset error:', err);
+      error.set(err.message ?? 'Password reset failed');
+      return false;
+    } finally {
+      loading.set(false);
+    }
+  }
 
-		// Sign up with email and password
-		signUpWithEmail: async (email: string, password: string, full_name: string) => {
-			update(state => ({ ...state, isLoading: true, error: null }));
+  // Update user data
+  async function updateUserProfile(userData: any) {
+    loading.set(true);
+    error.set(null);
 
-			try {
-				// Sign up the user
-				const data = await supabaseService.signUp(email, password, { full_name });
+    try {
+      // Dynamically import supabase client to ensure it's properly initialized
+      const { supabase } = await import('$lib/supabaseClient');
+      
+      const { data, error: updateError } = await supabase.auth.updateUser({
+        data: userData
+      });
+      
+      if (updateError) throw updateError;
+      
+      // Update user store
+      if (data?.user) {
+        user.set(data.user);
+      }
+      
+      return true;
+    } catch (err: any) {
+      console.error('Profile update error:', err);
+      error.set(err.message ?? 'Profile update failed');
+      return false;
+    } finally {
+      loading.set(false);
+    }
+  }
 
-				if (!data) throw new Error('Failed to sign up');
+  // Get current session
+  async function getSession() {
+    const currentUser = get(user);
+    const currentSession = get(session);
+    return { user: currentUser, session: currentSession };
+  }
 
-				// If successful, create an entry in app_users table
-				if (data.user) {
-					try {
-						const insertResult = await supabaseService.insertItem('app_users', {
-							id: data.user.id,
-							email: data.user.email!,
-							full_name,
-							created_at: new Date().toISOString(),
-							updated_at: new Date().toISOString()
-						});
+  // Initialize the store
+  initialize();
 
-						if (!insertResult) {
-							console.warn('Failed to create user profile, but authentication succeeded');
-						}
-					} catch (insertError) {
-						const error = insertError as Error;
-						console.error('Error creating user profile:', error);
-						// Continue with auth as the critical part succeeded
-					}
-				}
-
-				update(state => ({
-					...state,
-					user: data.user,
-					session: data.session,
-					isLoading: false
-				}));
-
-				return data;
-
-			} catch (err) {
-				const error = err as Error;
-				update(state => ({
-					...state,
-					error: error.message ?? 'Failed to sign up',
-					isLoading: false
-				}));
-				throw error;
-			}
-		},
-
-		// Sign out
-		signOut: async () => {
-			update(state => ({ ...state, isLoading: true, error: null }));
-
-			try {
-				await supabaseService.signOut();
-
-				update(state => ({
-					...state,
-					user: null,
-					session: null,
-					isLoading: false
-				}));
-
-			} catch (err) {
-				const error = err as Error;
-				update(state => ({
-					...state,
-					error: error.message ?? 'Failed to sign out',
-					isLoading: false
-				}));
-				throw error;
-			}
-		},
-
-		// Reset password
-		resetPassword: async (email: string) => {
-			update(state => ({ ...state, isLoading: true, error: null }));
-
-			try {
-				const { error } = await supabase.auth.resetPasswordForEmail(email, {
-					redirectTo: `${window.location.origin}/reset-password`
-				});
-
-				if (error) throw error;
-
-				update(state => ({ ...state, isLoading: false }));
-				return true;
-
-			} catch (err) {
-				const error = err as Error;
-				update(state => ({
-					...state,
-					error: error.message ?? 'Failed to reset password',
-					isLoading: false
-				}));
-				throw error;
-			}
-		},
-
-		// Update user profile
-		updateProfile: async (profile: { full_name?: string, avatar_url?: string }) => {
-			update(state => ({ ...state, isLoading: true, error: null }));
-
-			try {
-				// Get current user from state
-				let currentState: AuthState | undefined;
-				update(state => {
-					currentState = state;
-					return state;
-				});
-
-				// Check if user exists
-				if (!currentState?.user?.id) {
-					throw new Error('User not authenticated');
-				}
-
-				// Update auth metadata
-				const { error: updateError } = await supabase.auth.updateUser({
-					data: {
-						full_name: profile.full_name
-					}
-				});
-
-				if (updateError) throw updateError;
-
-				// Update app_users table
-				try {
-					await supabaseService.updateItem('app_users', currentState.user.id, {
-						full_name: profile.full_name,
-						avatar_url: profile.avatar_url,
-						updated_at: new Date().toISOString()
-					});
-				} catch (updateItemError) {
-					const error = updateItemError as Error;
-					console.error('Error updating user profile in database:', error);
-					// Continue with the auth update
-				}
-
-				// Refresh user data
-				const { data, error } = await supabase.auth.getUser();
-
-				if (error) throw error;
-
-				update(state => ({
-					...state,
-					user: data.user,
-					isLoading: false
-				}));
-
-				return data.user;
-
-			} catch (err) {
-				const error = err as Error;
-				update(state => ({
-					...state,
-					error: error.message ?? 'Failed to update profile',
-					isLoading: false
-				}));
-				throw error;
-			}
-		},
-
-		// Cleanup method to handle store destruction
-		cleanup: () => {
-			if (authSubscription) {
-				authSubscription.unsubscribe();
-				authSubscription = null;
-			}
-		}
-	};
+  return {
+    subscribe: derived(
+      [user, session, loading, error, isAuthenticated],
+      ([$user, $session, $loading, $error, $isAuthenticated]) => ({
+        user: $user,
+        session: $session,
+        loading: $loading,
+        error: $error,
+        isAuthenticated: $isAuthenticated
+      })
+    ).subscribe,
+    signIn,
+    signUp,
+    signOut,
+    resetPassword,
+    updateUserProfile,
+    initialize,
+    getSession
+  };
 }
 
+// Create and export the auth store
 export const authStore = createAuthStore();
 
-// Derived stores for convenience
-export const user = derived(authStore, $auth => $auth.user);
-export const isAuthenticated = derived(authStore, $auth => !!$auth.user);
-export const isLoading = derived(authStore, $auth => $auth.isLoading);
-export const authErrorMsg = derived(authStore, $auth => $auth.error);
+// Export individual pieces for convenience
+export const user = derived(authStore, ($store) => $store.user);
+export const session = derived(authStore, ($store) => $store.session);
+export const loading = derived(authStore, ($store) => $store.loading);
+export const error = derived(authStore, ($store) => $store.error);
+export const isAuthenticated = derived(authStore, ($store) => $store.isAuthenticated);
