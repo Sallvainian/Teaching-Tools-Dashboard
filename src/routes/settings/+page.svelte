@@ -59,7 +59,7 @@
       if (useSupabase) {
         // Clear from both Supabase and localStorage
         gradebookStore.clearAllData();
-        observationLogStore.clearLogs();
+        logEntriesStore.clearAll();
         jeopardyStore.clearAllData();
       } else {
         // Clear localStorage only
@@ -83,7 +83,7 @@
           type="checkbox"
           id="toggle-dark-mode"
           checked={darkMode}
-          on:change={handleToggleDarkMode}
+          onchange={handleToggleDarkMode}
           class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
         />
         <label
@@ -110,7 +110,7 @@
           type="checkbox"
           id="toggle-storage"
           checked={useSupabase}
-          on:change={handleToggleDataStorage}
+          onchange={handleToggleDataStorage}
           class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
         />
         <label
@@ -132,7 +132,7 @@
 
     <div class="space-y-4">
       <button
-        onclick={handleClearData}
+        onClick={handleClearData}
         class="py-2 px-4 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
       >
         Clear All Data
