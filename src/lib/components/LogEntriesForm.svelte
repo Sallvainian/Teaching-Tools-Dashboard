@@ -2,8 +2,11 @@
   import { createEventDispatcher } from 'svelte';
   import type { LogEntry } from '$lib/types/log-entries';
   
-  export let editMode = false;
-  export let log: LogEntry | undefined = undefined;
+  // Convert props to Svelte 5 runes
+  const props = $props({
+    editMode: false as boolean,
+    log: undefined as LogEntry | undefined
+  });
   
   const dispatch = createEventDispatcher();
   
@@ -18,19 +21,24 @@
     'Intervention'
   ];
   
-  // Form fields
-  let date = log?.date || new Date().toISOString().slice(0, 10);
-  let student = log?.student || '';
-  let log_entry = log?.log_entry || '';
-  let actions = log?.actions || '';
-  let follow_up = log?.follow_up || '';
-  let selectedTag = log?.tags && log.tags.length > 0 ? log.tags[0] : '';
+  // Form fields with $state
+  let date = $state(props.log?.date || new Date().toISOString().slice(0, 10));
+  let student = $state(props.log?.student || '');
+  let log_entry = $state(props.log?.log_entry || '');
+  let actions = $state(props.log?.actions || '');
+  let follow_up = $state(props.log?.follow_up || '');
+  let selectedTag = $state(props.log?.tags && props.log.tags.length > 0 ? props.log.tags[0] : '');
 
   // Form validation
-  let errors = {
+  type ErrorTypes = {
+    student: string;
+    log_entry: string;
+  }
+  
+  let errors = $state<ErrorTypes>({
     student: '',
     log_entry: ''
-  };
+  });
 
   function validateForm() {
     let isValid = true;
@@ -72,7 +80,7 @@
   }
 </script>
 
-<form onsubmit|preventDefault={handleSave} class="space-y-4">
+<form on:submit|preventDefault={handleSave} class="space-y-4">
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div>
       <label for="date" class="block text-sm font-medium text-dark-muted mb-1">
@@ -118,7 +126,6 @@
       <p class="text-red-500 text-sm mt-1">{errors.log_entry}</p>
     {/if}
   </div>
-
   <div>
     <label for="actions" class="block text-sm font-medium text-dark-muted mb-1">
       Actions Taken (Optional)
@@ -126,7 +133,7 @@
     <textarea
       id="actions"
       bind:value={actions}
-      rows="2"
+      rows="2" 
       class="w-full px-3 py-2 bg-dark-accent border border-dark-border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-dark-purple"
       placeholder="What actions were taken?"
     ></textarea>
@@ -140,7 +147,7 @@
       id="follow_up"
       bind:value={follow_up}
       rows="2"
-      class="w-full px-3 py-2 bg-dark-accent border border-dark-border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-dark-purple"
+      class="w-full px-3 py-2 bg-dark-accent border border-dark-border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-dark-purple"  
       placeholder="Any follow-up needed?"
     ></textarea>
   </div>
@@ -164,7 +171,7 @@
   <div class="flex justify-end gap-3 pt-4">
     <button
       type="button"
-      onclick={handleCancel}
+      on:click={handleCancel}
       class="px-4 py-2 text-gray-300 hover:text-white transition-colors"
     >
       Cancel
@@ -173,7 +180,7 @@
       type="submit"
       class="px-4 py-2 bg-dark-purple text-white rounded-lg hover:bg-dark-purple-hover transition-colors"
     >
-      {editMode ? 'Update' : 'Save'} Entry
+      {props.editMode ? 'Update' : 'Save'} Entry
     </button>
   </div>
 </form>

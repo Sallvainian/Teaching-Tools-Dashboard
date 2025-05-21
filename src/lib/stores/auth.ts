@@ -47,9 +47,9 @@ function createAuthStore() {
       return () => {
         authListener.subscription.unsubscribe();
       };
-    } catch (err: any) {
-      console.error('Error initializing auth store:', err);
-      error.set(err.message ?? 'Authentication check failed');
+    } catch (err) {
+      // Error initializing auth store
+      error.set(err instanceof Error ? err.message : 'Authentication check failed');
     } finally {
       loading.set(false);
     }
@@ -79,9 +79,9 @@ function createAuthStore() {
       }
       
       return false;
-    } catch (err: any) {
-      console.error('Sign in error:', err);
-      error.set(err.message ?? 'Sign in failed');
+    } catch (err) {
+      // Sign in error
+      error.set(err instanceof Error ? err.message : 'Sign in failed');
       return false;
     } finally {
       loading.set(false);
@@ -89,7 +89,7 @@ function createAuthStore() {
   }
 
   // Sign up with email/password
-  async function signUp(email: string, password: string, userData: any = {}) {
+  async function signUp(email: string, password: string, userData: Record<string, unknown> = {}) {
     loading.set(true);
     error.set(null);
 
@@ -116,9 +116,9 @@ function createAuthStore() {
       
       // Email confirmation might be required
       return { needsEmailConfirmation: true };
-    } catch (err: any) {
-      console.error('Sign up error:', err);
-      error.set(err.message ?? 'Sign up failed');
+    } catch (err) {
+      // Sign up error
+      error.set(err instanceof Error ? err.message : 'Sign up failed');
       return false;
     } finally {
       loading.set(false);
@@ -143,16 +143,16 @@ function createAuthStore() {
       user.set(null);
       
       return true;
-    } catch (err: any) {
-      console.error('Sign out error:', err);
-      error.set(err.message ?? 'Sign out failed');
+    } catch (err) {
+      // Sign out error
+      error.set(err instanceof Error ? err.message : 'Sign out failed');
       return false;
     } finally {
       loading.set(false);
     }
   }
 
-  // Rest password
+  // Reset password
   async function resetPassword(email: string) {
     loading.set(true);
     error.set(null);
@@ -166,9 +166,9 @@ function createAuthStore() {
       if (resetError) throw resetError;
       
       return true;
-    } catch (err: any) {
-      console.error('Password reset error:', err);
-      error.set(err.message ?? 'Password reset failed');
+    } catch (err) {
+      // Password reset error
+      error.set(err instanceof Error ? err.message : 'Password reset failed');
       return false;
     } finally {
       loading.set(false);
@@ -176,7 +176,7 @@ function createAuthStore() {
   }
 
   // Update user data
-  async function updateUserProfile(userData: any) {
+  async function updateUserProfile(userData: Record<string, unknown>) {
     loading.set(true);
     error.set(null);
 
@@ -196,9 +196,9 @@ function createAuthStore() {
       }
       
       return true;
-    } catch (err: any) {
-      console.error('Profile update error:', err);
-      error.set(err.message ?? 'Profile update failed');
+    } catch (err) {
+      // Profile update error
+      error.set(err instanceof Error ? err.message : 'Profile update failed');
       return false;
     } finally {
       loading.set(false);
@@ -213,7 +213,7 @@ function createAuthStore() {
   }
 
   // Initialize the store
-  initialize();
+  void initialize(); // void operator to explicitly ignore the promise
 
   return {
     subscribe: derived(

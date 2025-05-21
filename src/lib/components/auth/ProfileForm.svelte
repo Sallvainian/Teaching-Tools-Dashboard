@@ -17,7 +17,7 @@
     success = false;
     
     try {
-      await authStore.updateProfile({
+      await authStore.updateUserProfile({
         full_name: fullName
       });
       success = true;

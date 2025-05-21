@@ -1,10 +1,19 @@
 <script lang="ts">
-  export let frontTitle = "Title";
-  export let frontBadge = "Badge";
-  export let frontFooter = "Footer Info";
-  export let backContent = "Hover Me";
-  export let backIcon = null;
-  // Changed to const since it's not used in the component but might be referenced externally
+  let { 
+    frontTitle = "Title",
+    frontBadge = "Badge",
+    frontFooter = "Footer Info",
+    backContent = "Hover Me",
+    backIcon = null,
+  } = $props<{
+    frontTitle?: string;
+    frontBadge?: string;
+    frontFooter?: string;
+    backContent?: string;
+    backIcon?: any;
+  }>();
+  
+  // Exported constant for external use
   export const gradientColors = ['#8b5cf6', '#a78bfa', '#c4b5fd']; // Purple gradients to match your theme
 </script>
 

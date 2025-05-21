@@ -154,7 +154,7 @@ function createJeopardyStore() {
 
 			games.set(fullGames);
 		} catch (err: any) {
-			console.error('Error loading games:', err);
+			// Error loading games: err
 			error.set(err.message || 'Failed to load games');
 		} finally {
 			loading.set(false);
@@ -259,7 +259,7 @@ function createJeopardyStore() {
 
 			return savedGame.id;
 		} catch (err: any) {
-			console.error('Error saving game:', err);
+			// Error saving game: err
 			throw err;
 		}
 	}
@@ -286,7 +286,9 @@ function createJeopardyStore() {
 		setActiveGame(gameId);
 		
 		// Save to Supabase asynchronously
-		saveGameToSupabase(newGame).catch(console.error);
+		saveGameToSupabase(newGame).catch(err => {
+			// Error saving new game: err
+		});
 		
 		return gameId;
 	}
@@ -300,7 +302,7 @@ function createJeopardyStore() {
 				activeGameId.set(null);
 			}
 		} catch (err: any) {
-			console.error('Error deleting game:', err);
+			// Error deleting game: err
 			error.set(err.message || 'Failed to delete game');
 		}
 	}
@@ -324,7 +326,9 @@ function createJeopardyStore() {
 		// Save to Supabase asynchronously
 		const game = get(games).find(g => g.id === gameId);
 		if (game) {
-			saveGameToSupabase(game).catch(console.error);
+			saveGameToSupabase(game).catch(err => {
+				// Error saving game: err
+			});
 		}
 	}
 
@@ -338,7 +342,9 @@ function createJeopardyStore() {
 		);
 		
 		// Delete from Supabase asynchronously
-		supabaseService.deleteItem('game_categories', categoryId).catch(console.error);
+		supabaseService.deleteItem('game_categories', categoryId).catch(err => {
+			// Error deleting category: err
+		});
 	}
 
 	// Question operations
@@ -363,7 +369,9 @@ function createJeopardyStore() {
 		// Save to Supabase asynchronously
 		const game = get(games).find(g => g.categories.some(c => c.id === categoryId));
 		if (game) {
-			saveGameToSupabase(game).catch(console.error);
+			saveGameToSupabase(game).catch(err => {
+				// Error saving game: err
+			});
 		}
 	}
 
@@ -388,7 +396,9 @@ function createJeopardyStore() {
 		// Update in Supabase asynchronously
 		const game = get(games).find(g => g.categories.some(c => c.id === categoryId));
 		if (game) {
-			saveGameToSupabase(game).catch(console.error);
+			saveGameToSupabase(game).catch(err => {
+				// Error saving game: err
+			});
 		}
 	}
 
@@ -406,7 +416,9 @@ function createJeopardyStore() {
 		);
 		
 		// Delete from Supabase asynchronously
-		supabaseService.deleteItem('questions', questionId).catch(console.error);
+		supabaseService.deleteItem('questions', questionId).catch(err => {
+			// Error deleting question: err
+		});
 	}
 
 	// Team operations
@@ -437,7 +449,9 @@ function createJeopardyStore() {
 		// Save to Supabase asynchronously
 		const game = get(games).find(g => g.id === gameId);
 		if (game) {
-			saveGameToSupabase(game).catch(console.error);
+			saveGameToSupabase(game).catch(err => {
+				// Error saving game: err
+			});
 		}
 	}
 
@@ -451,7 +465,9 @@ function createJeopardyStore() {
 		);
 		
 		// Delete from Supabase asynchronously
-		supabaseService.deleteItem('teams', teamId).catch(console.error);
+		supabaseService.deleteItem('teams', teamId).catch(err => {
+			// Error deleting team: err
+		});
 	}
 
 	function updateTeamScore(teamId: string, points: number): void {
@@ -470,7 +486,9 @@ function createJeopardyStore() {
 		// Update in Supabase asynchronously
 		const game = get(games).find(g => g.teams.some(t => t.id === teamId));
 		if (game) {
-			saveGameToSupabase(game).catch(console.error);
+			saveGameToSupabase(game).catch(err => {
+				// Error saving game: err
+			});
 		}
 	}
 
@@ -487,7 +505,9 @@ function createJeopardyStore() {
 		// Save to Supabase asynchronously
 		const game = get(games).find(g => g.id === gameId);
 		if (game) {
-			saveGameToSupabase(game).catch(console.error);
+			saveGameToSupabase(game).catch(err => {
+				// Error saving game: err
+			});
 		}
 	}
 
@@ -521,7 +541,9 @@ function createJeopardyStore() {
 		// Update in Supabase asynchronously
 		const game = get(games).find(g => g.categories.some(c => c.id === categoryId));
 		if (game) {
-			saveGameToSupabase(game).catch(console.error);
+			saveGameToSupabase(game).catch(err => {
+				// Error saving game: err
+			});
 		}
 	}
 
@@ -542,7 +564,9 @@ function createJeopardyStore() {
 		// Update in Supabase asynchronously
 		const game = get(getActiveGame);
 		if (game) {
-			saveGameToSupabase(game).catch(console.error);
+			saveGameToSupabase(game).catch(err => {
+				// Error saving game: err
+			});
 		}
 	}
 
@@ -562,7 +586,9 @@ function createJeopardyStore() {
 		// Update in Supabase asynchronously
 		const game = get(getActiveGame);
 		if (game) {
-			saveGameToSupabase(game).catch(console.error);
+			saveGameToSupabase(game).catch(err => {
+				// Error saving game: err
+			});
 		}
 	}
 
@@ -571,13 +597,13 @@ function createJeopardyStore() {
 		try {
 			// Validate the required structure
 			if (!jsonData || typeof jsonData !== 'object') {
-				console.error('Invalid JSON format');
+				// Invalid JSON format
 				return false;
 			}
 
 			// Check for categories array
 			if (!Array.isArray(jsonData.categories)) {
-				console.error('Missing or invalid categories array');
+				// Missing or invalid categories array
 				return false;
 			}
 
@@ -585,7 +611,7 @@ function createJeopardyStore() {
 			
 			for (const catData of jsonData.categories) {
 				if (!catData.name || !Array.isArray(catData.questions)) {
-					console.error('Invalid category structure');
+					// Invalid category structure
 					continue;
 				}
 
@@ -593,7 +619,7 @@ function createJeopardyStore() {
 				
 				for (const qData of catData.questions) {
 					if (!qData.text || !qData.answer || typeof qData.pointValue !== 'number') {
-						console.error('Invalid question structure');
+						// Invalid question structure
 						continue;
 					}
 
@@ -627,12 +653,14 @@ function createJeopardyStore() {
 			// Save to Supabase asynchronously
 			const game = get(games).find(g => g.id === gameId);
 			if (game) {
-				saveGameToSupabase(game).catch(console.error);
+				saveGameToSupabase(game).catch(err => {
+				// Error saving game: err
+			});
 			}
 			
 			return true;
 		} catch (error) {
-			console.error('Error importing game data:', error);
+			// Error importing game data: error
 			return false;
 		}
 	}
@@ -734,7 +762,9 @@ function createJeopardyStore() {
 		// Save to Supabase asynchronously
 		const game = get(games).find(g => g.id === gameId);
 		if (game) {
-			saveGameToSupabase(game).catch(console.error);
+			saveGameToSupabase(game).catch(err => {
+				// Error saving game: err
+			});
 		}
 	}
 

@@ -28,6 +28,9 @@ pnpm check          # Run svelte-check
 pnpm check:watch    # Run svelte-check in watch mode
 pnpm validate       # Run both lint and check
 
+# Maintenance
+./archive-xml-reports.sh  # Archive IDE inspection XML files
+
 # Single Test File
 pnpm test -- path/to/file.test.ts
 ```
@@ -89,6 +92,7 @@ Key tables with RLS (Row Level Security):
 - Tailwind CSS with custom dark theme
 - DaisyUI component library
 - AG-Grid for complex data tables
+- Handsontable for spreadsheet-like interfaces
 
 ## Critical Implementation Details
 
@@ -124,6 +128,26 @@ Layout handles authentication state:
   <Redirect to="/auth/login" />
 {/if}
 ```
+
+### Feature Modules
+The codebase is organized into distinct feature modules:
+
+1. **Authentication** - User signup, login, profile management
+   - Components: `LoginForm.svelte`, `SignupForm.svelte`, `ProfileForm.svelte`
+   - Store: `auth.ts`
+
+2. **Gradebook** - Class and assignment management
+   - Components: `ClassList.svelte`, `StudentRoster.svelte`
+   - Store: `gradebook.ts`
+
+3. **Jeopardy** - Interactive game management
+   - Routes: `/jeopardy/editor/[gameId]`, `/jeopardy/play/[gameId]`
+   - Store: `jeopardy.ts`
+   - Components: `GameSharingModal.svelte`, `JeopardyTimer.svelte`
+
+4. **Observation Logs** - Student behavior tracking
+   - Components: `LogEntriesList.svelte`, `LogEntriesForm.svelte`, `LogEntriesSearch.svelte`
+   - Store: `log-entries.ts`
 
 ## Development Guidelines
 
@@ -175,12 +199,20 @@ Development uses hardcoded credentials (see `src/lib/supabaseClient.ts`).
 src/
 ├── lib/
 │   ├── components/     # Reusable components
+│   │   ├── auth/       # Authentication components
+│   │   └── ...         # Feature-specific components
 │   ├── services/       # Data access layer
-│   ├── stores/         # State management
+│   ├── stores/         # State management 
 │   ├── types/          # TypeScript types
 │   └── utils/          # Utilities
-├── routes/            # SvelteKit routes
-└── app.css           # Global styles
+├── routes/             # SvelteKit routes
+│   ├── auth/           # Authentication routes
+│   ├── dashboard/      # Main dashboard view
+│   ├── gradebook/      # Gradebook feature routes
+│   ├── jeopardy/       # Jeopardy game routes
+│   ├── log-entries/    # Observation log routes
+│   └── settings/       # User settings
+└── app.css            # Global styles
 ```
 
 ## Testing Strategy
@@ -202,6 +234,17 @@ src/
 1. **Supabase Connection**: Falls back to localStorage if unavailable
 2. **Auth State**: May need refresh on session timeout
 3. **Type Generation**: Run `supabase gen types` for database changes
+4. **Tailwind CSS Custom Properties**: Defined `--tw-empty` in app.css to fix inspection warnings
+5. **IDE Inspection Reports**: Use `archive-xml-reports.sh` to manage IntelliJ inspection reports
+
+## Library Dependencies
+
+- **UI Framework**: Svelte 5 with SvelteKit 2
+- **Data Grid**: AG-Grid with Svelte 5 wrappers
+- **Spreadsheet UI**: Handsontable for Excel-like interfaces
+- **Styling**: TailwindCSS with DaisyUI components
+- **Backend/Auth**: Supabase for database and authentication
+- **Icons**: Heroicons via @steeze-ui/heroicons
 
 ## Future Roadmap
 

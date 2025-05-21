@@ -50,7 +50,7 @@ function createLogEntriesStore() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
       }
     } catch (error) {
-      console.error('Failed to load log entries from Supabase:', error);
+      // Failed to load log entries from Supabase: error
       
       // Fall back to localStorage if Supabase fails
       if (typeof window !== 'undefined') {
@@ -68,7 +68,7 @@ function createLogEntriesStore() {
             return; // Exit early if we have localStorage data
           }
         } catch (localError) {
-          console.error('Failed to load log entries from localStorage:', localError);
+          // Failed to load log entries from localStorage: localError
         }
       }
       
@@ -86,7 +86,7 @@ function createLogEntriesStore() {
     
     // Initialize the store
     init: () => {
-      loadFromSupabase();
+      void loadFromSupabase(); // void operator to explicitly ignore the promise
     },
     
     // Get all logs
@@ -151,7 +151,7 @@ function createLogEntriesStore() {
         unsubscribe();
         
       } catch (error) {
-        console.error('Failed to add log entry to Supabase:', error);
+        // Failed to add log entry to Supabase: error
         // Keep the optimistic update for UX
         
         // Make sure localStorage is updated
@@ -194,7 +194,7 @@ function createLogEntriesStore() {
         unsubscribe();
         
       } catch (error) {
-        console.error('Failed to update log entry in Supabase:', error);
+        // Failed to update log entry in Supabase: error
         // Keep the optimistic update
         
         // Make sure localStorage is updated
@@ -235,7 +235,7 @@ function createLogEntriesStore() {
         unsubscribe();
         
       } catch (error) {
-        console.error('Failed to delete log entry from Supabase:', error);
+        // Failed to delete log entry from Supabase: error
         // Keep the optimistic update
         
         // Make sure localStorage is updated
@@ -365,7 +365,7 @@ function createLogEntriesStore() {
           localStorage.removeItem(STORAGE_KEY);
         }
       } catch (error) {
-        console.error('Failed to clear log entries from Supabase:', error);
+        // Failed to clear log entries from Supabase: error
         
         // Make sure localStorage is cleared anyway
         if (typeof window !== 'undefined') {
@@ -376,7 +376,7 @@ function createLogEntriesStore() {
     
     // Reload logs from Supabase
     refresh: () => {
-      loadFromSupabase();
+      void loadFromSupabase(); // void operator to explicitly ignore the promise
     }
   };
 }

@@ -300,7 +300,7 @@
       <div class="text-center">
         <p class="text-gray-400 mb-4">Game not found</p>
         <button
-          onclick={() => goto('/jeopardy')}
+          on:click={() => goto('/jeopardy')}
           class="btn-primary"
         >
           Back to Games

@@ -1,11 +1,11 @@
 <script lang="ts">
   import ProfileForm from '$lib/components/auth/ProfileForm.svelte';
-  import { user } from '$lib/stores/auth';
+  import { authStore, user } from '$lib/stores/auth';
   import { goto } from '$app/navigation';
   
   // Redirect if not authenticated
   $effect(() => {
-    if (!$user) {
+    if (!$authStore.user) {
       goto('/auth/login');
     }
   });

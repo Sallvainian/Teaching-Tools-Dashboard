@@ -1,9 +1,20 @@
 <script lang="ts">
-  import type { Category } from '$lib/types/gradebook';
   
-  export let classes = [];
-  export let selectedClassId: string | null = null;
-  export let onSelectClass: (classId: string) => void;
+  interface ClassItem {
+    id: string;
+    name: string;
+    studentIds: string[];
+  }
+
+  let { 
+    classes = [], 
+    selectedClassId = null, 
+    onSelectClass 
+  } = $props<{
+    classes: ClassItem[];
+    selectedClassId: string | null;
+    onSelectClass: (classId: string) => void;
+  }>();
 </script>
 
 <div class="bg-gray-800 border border-gray-700 rounded-lg p-4">
@@ -12,7 +23,7 @@
   <div class="space-y-2">
     {#each classes as classItem}
       <button
-        onclick={() => onSelectClass(classItem.id)}
+        on:click={() => onSelectClass(classItem.id)}
         class="w-full p-3 rounded-lg text-left transition-all duration-200 {
           selectedClassId === classItem.id
             ? 'bg-dark-purple text-white'

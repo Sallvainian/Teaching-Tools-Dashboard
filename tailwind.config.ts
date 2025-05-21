@@ -2,7 +2,7 @@ import type { Config } from 'tailwindcss';
 import typography from '@tailwindcss/typography';
 import forms from '@tailwindcss/forms';
 
-import daisyui0 from 'daisyui';
+import daisyui from 'daisyui';
 
 const config: Config = {
   content: ['./src/**/*.{html,js,svelte,ts}'],
@@ -47,13 +47,14 @@ const config: Config = {
       },
     },
   },
-  plugins: [typography, forms, daisyui0],
+  plugins: [typography, forms, daisyui],
   daisyui: {
     themes: ["dark", "light"],
     darkTheme: "dark",
     base: false, // Don't apply DaisyUI's base styles
     styled: true, // Include DaisyUI's component styles
     utils: true, // Include DaisyUI's utility classes
+    logs: false, // Disable console logs
   },
 };
 

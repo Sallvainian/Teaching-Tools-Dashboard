@@ -39,7 +39,7 @@ export class SupabaseService {
       const stored = localStorage.getItem(`${this.storagePrefix}_${key}`);
       return stored ? JSON.parse(stored) : defaultValue;
     } catch (e) {
-      console.error(`Error loading ${key} from localStorage:`, e);
+      // Error loading ${key} from localStorage: e
       return defaultValue;
     }
   }
@@ -50,7 +50,7 @@ export class SupabaseService {
     try {
       localStorage.setItem(`${this.storagePrefix}_${key}`, JSON.stringify(value));
     } catch (e) {
-      console.error(`Error saving ${key} to localStorage:`, e);
+      // Error saving ${key} to localStorage: e
     }
   }
 
@@ -60,7 +60,7 @@ export class SupabaseService {
     try {
       localStorage.removeItem(`${this.storagePrefix}_${key}`);
     } catch (e) {
-      console.error(`Error removing ${key} from localStorage:`, e);
+      // Error removing ${key} from localStorage: e
     }
   }
 
@@ -101,7 +101,7 @@ export class SupabaseService {
         
         return (data as unknown) as Tables<T>[];
       } catch (err) {
-        console.error(`Error fetching data from ${String(table)}:`, err);
+        // Error fetching data from ${String(table)}: err
         // Return localStorage data as fallback
         return this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []);
       }
@@ -140,7 +140,7 @@ export class SupabaseService {
         
         return (data as unknown) as Tables<T>;
       } catch (err) {
-        console.error(`Error fetching item from ${String(table)}:`, err);
+        // Error fetching item from ${String(table)}: err
         // Fallback to localStorage - search for the item with matching ID
         const items = this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []);
         return items.find(item => (item as any).id === id) ?? null;
@@ -175,7 +175,7 @@ export class SupabaseService {
         
         return insertedData as Tables<T>;
       } catch (err) {
-        console.error(`Error inserting into ${String(table)}:`, err);
+        // Error inserting into ${String(table)}: err
         // Fallback to localStorage only
         const existingItems = this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []);
         // For localStorage we need an ID - use the one provided or generate a random one
@@ -229,7 +229,7 @@ export class SupabaseService {
         
         return updatedData as Tables<T>;
       } catch (err) {
-        console.error(`Error updating in ${String(table)}:`, err);
+        // Error updating in ${String(table)}: err
         // Fallback to localStorage only
         const existingItems = this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []);
         const item = existingItems.find(item => (item as any).id === id);
@@ -315,7 +315,7 @@ export class SupabaseService {
       
       return false; // Item didn't exist
     } catch (err) {
-      console.error(`Error deleting from ${String(table)}:`, err);
+      // Error deleting from ${String(table)}: err
       return false; // Return false on error
     }
   }
@@ -341,7 +341,7 @@ export class SupabaseService {
         
         return (data as unknown) as Tables<T>[];
       } catch (err) {
-        console.error(`Error fetching related data from ${String(table)}:`, err);
+        // Error fetching related data from ${String(table)}: err
         // Fallback to localStorage - this is harder with relations
         // A proper implementation would require understanding the schema
         return [];
@@ -364,7 +364,7 @@ export class SupabaseService {
       if (error) throw error;
       return data.user;
     } catch (err) {
-      console.error('Error getting current user:', err);
+      // Error getting current user: err
       return null;
     }
   }
@@ -384,7 +384,7 @@ export class SupabaseService {
       if (error) throw error;
       return data;
     } catch (err) {
-      console.error('Error signing in:', err);
+      // Error signing in: err
       throw err;
     }
   }
@@ -407,7 +407,7 @@ export class SupabaseService {
       if (error) throw error;
       return data;
     } catch (err) {
-      console.error('Error signing up:', err);
+      // Error signing up: err
       throw err;
     }
   }
@@ -422,7 +422,7 @@ export class SupabaseService {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     } catch (err) {
-      console.error('Error signing out:', err);
+      // Error signing out: err
       throw err;
     }
   }

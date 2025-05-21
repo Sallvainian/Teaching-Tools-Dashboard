@@ -4,7 +4,7 @@
   import { gradebookStore } from '$lib/stores/gradebook';
   import { writable, derived } from 'svelte/store';
   
-  export let selectedClass: Category;
+  let { selectedClass } = $props<{ selectedClass: Category }>();
   
   // Create a writable store for student name
   const newStudentName = writable('');
@@ -45,17 +45,17 @@
     <h2 class="text-xl font-semibold text-gray-100 mb-6">{selectedClass.name} - Student Roster</h2>
   
   <div class="mb-6">
-    <form class="flex gap-2" onsubmit|preventDefault={addStudent}>
+    <form class="flex gap-2" on:submit|preventDefault={addStudent}>
       <input
         type="text"
         placeholder="Student name"
         bind:value={$newStudentName}
-        class="flex-1 px-3 py-2 bg-gray-700 text-gray-100 border border-gray-600 rounded-lg focus:outline-none focus:border-dark-purple"
+        class="flex-1 px-3 py-2 bg-gray-700 text-gray-100 border border-gray-600 rounded-lg focus:outline-none focus:border-purple"
         required
       />
       <button
         type="submit"
-        class="px-4 py-2 bg-dark-purple text-white rounded-lg hover:bg-dark-purple-hover transition-all duration-200"
+        class="px-4 py-2 bg-purple text-white rounded-lg hover:bg-purple-hover transition-all duration-200"
       >
         Add Student
       </button>
@@ -78,7 +78,7 @@
             <td class="p-3 text-gray-100">{student.name}</td>
             <td class="p-3">
               <button
-                onclick={() => removeStudent(student.id)}
+                on:click={() => removeStudent(student.id)}
                 class="px-3 py-1 text-red-400 hover:text-white hover:bg-red-500 rounded-md transition-colors"
                 aria-label={`Remove ${student.name} from class`}
                 title={`Remove ${student.name} from class`}

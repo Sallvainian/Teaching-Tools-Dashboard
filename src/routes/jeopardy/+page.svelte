@@ -1,16 +1,15 @@
 <script lang="ts">
   import { jeopardyStore } from '$lib/stores/jeopardy';
   import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
   import LoadingBounce from '$lib/components/LoadingBounce.svelte';
 
   const { getGames, createGame, deleteGame } = jeopardyStore;
 
-  let newGameName = '';
-  let isLoading = true;
-  let showCreateModal = false;
+  let newGameName = $state('');
+  let isLoading = $state(true);
+  let showCreateModal = $state(false);
 
-  onMount(async () => {
+  $effect(async () => {
     await jeopardyStore.ensureDataLoaded();
     isLoading = false;
   });
@@ -60,7 +59,7 @@
           <p class="text-gray-400 text-sm mt-1">Start fresh with a blank Jeopardy game</p>
         </div>
         <button
-          onclick={() => showCreateModal = true}
+          on:click={() => showCreateModal = true}
           class="btn-primary"
         >
           Create Game
@@ -93,19 +92,19 @@
             
             <div class="flex gap-2">
               <button
-                onclick={() => handlePlayGame(game.id)}
+                on:click={() => handlePlayGame(game.id)}
                 class="flex-1 py-2 px-3 bg-dark-purple text-white rounded-lg hover:bg-dark-purple-hover transition-all duration-200"
               >
                 Play
               </button>
               <button
-                onclick={() => handleEditGame(game.id)}
+                on:click={() => handleEditGame(game.id)}
                 class="flex-1 py-2 px-3 bg-dark-purple-bg text-dark-purple-light rounded-lg hover:bg-dark-purple-hover hover:text-white transition-all duration-200"
               >
                 Edit
               </button>
               <button
-                onclick={() => handleDeleteGame(game.id)}
+                on:click={() => handleDeleteGame(game.id)}
                 class="py-2 px-3 bg-dark-error text-white rounded-lg hover:bg-dark-error-hover transition-all duration-200"
               >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -134,7 +133,7 @@
     <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div class="bg-gradient-card border border-dark-border rounded-lg p-6 w-full max-w-md mx-4 shadow-dark-dropdown">
         <h2 class="text-xl font-bold text-gray-200 mb-4">Create New Game</h2>
-        <form onsubmit={handleCreateGame}>
+        <form on:submit={handleCreateGame}>
           <div class="mb-4">
             <label for="gameName" class="block text-sm font-medium text-gray-300 mb-2">
               Game Name
@@ -151,7 +150,7 @@
           <div class="flex gap-3">
             <button
               type="button"
-              onclick={() => { showCreateModal = false; newGameName = ''; }}
+              on:click={() => { showCreateModal = false; newGameName = ''; }}
               class="flex-1 py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200"
             >
               Cancel

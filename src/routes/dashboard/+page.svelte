@@ -6,10 +6,11 @@
   // Store references
   const { games } = jeopardyStore;
   
-  // Get some stats
-  let logEntryCount = 0;
-  $: logEntryCount = $logEntriesStore.logs.length;
-  $: gameCount = $games.length;
+  // Get some stats using Svelte 5 runes with null checks
+  const logEntryCount = $derived($logEntriesStore.logs?.length ?? 0);
+  const gameCount = $derived($games?.length ?? 0);
+  const studentCount = $derived($gradebookStore.students?.length ?? 0);
+  const categoryCount = $derived($gradebookStore.categories?.length ?? 0);
 </script>
 
 <div class="container mx-auto px-4 py-8">
@@ -43,7 +44,7 @@
         </div>
         <div>
           <p class="text-gray-200 font-medium">Total Students</p>
-          <p class="text-gray-400 text-sm">{$gradebookStore.students.length} students enrolled</p>
+          <p class="text-gray-400 text-sm">{studentCount} students enrolled</p>
         </div>
       </div>
     </div>
@@ -70,7 +71,7 @@
         </div>
         <div>
           <p class="text-gray-200 font-medium">Classes</p>
-          <p class="text-gray-400 text-sm">{$gradebookStore.categories.length} active classes</p>
+          <p class="text-gray-400 text-sm">{categoryCount} active classes</p>
         </div>
       </div>
     </div>

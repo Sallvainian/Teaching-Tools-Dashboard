@@ -1,13 +1,14 @@
 <script lang="ts">
-  import SignupForm from '$lib/components/auth/SignupForm.svelte';
+  import RoleSignupForm from '$lib/components/auth/RoleSignupForm.svelte';
   import { goto } from '$app/navigation';
-  import { isAuthenticated } from '$lib/stores/auth';
+  import { authStore } from '$lib/stores/auth';
   import { page } from '$app/stores';
   
   // Redirect if already authenticated
   $effect(() => {
-    if ($isAuthenticated && $page.url) {
-      const redirectTo = $page.url.searchParams.get('redirectTo') || '/dashboard';
+    if ($authStore.isAuthenticated && $page.url) {
+      const role = $authStore.role;
+      const redirectTo = role === 'student' ? '/student/dashboard' : '/dashboard';
       goto(redirectTo);
     }
   });
@@ -20,7 +21,7 @@
       <p class="text-gray-400 mt-2">Create your account</p>
     </div>
     
-    <SignupForm />
+    <RoleSignupForm />
     
     <div class="text-center mt-6">
       <p class="text-gray-400">

@@ -2,7 +2,6 @@
   import { page } from '$app/stores';
   import { jeopardyStore } from '$lib/stores/jeopardy';
   import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
   import LoadingBounce from '$lib/components/LoadingBounce.svelte';
   import type { Question } from '$lib/types/jeopardy';
 
@@ -25,12 +24,12 @@
   } = jeopardyStore;
 
   let gameId = $page.params.gameId;
-  let isLoading = true;
-  let activeTab = 'categories';
-  let showTemplateModal = false;
+  let isLoading = $state(true);
+  let activeTab = $state('categories');
+  let showTemplateModal = $state(false);
   
   // Category management
-  let newCategoryName = '';
+  let newCategoryName = $state('');
   
   // Question management
   interface EditingQuestionState {
@@ -43,7 +42,7 @@
     timeLimit: number;
   }
   
-  let editingQuestion: EditingQuestionState = {
+  let editingQuestion = $state<EditingQuestionState>({
     categoryId: '',
     questionId: '',
     text: '',
@@ -51,16 +50,19 @@
     pointValue: 100,
     isDoubleJeopardy: false,
     timeLimit: 30
-  };
+  });
   
   // Team management
-  let newTeamName = '';
-  let newTeamColor = '#3B82F6';
+  let newTeamName = $state('');
+  let newTeamColor = $state('#3B82F6');
   
-  onMount(async () => {
-    await jeopardyStore.ensureDataLoaded();
-    setActiveGame(gameId);
-    isLoading = false;
+  $effect(() => {
+    const loadData = async () => {
+      await jeopardyStore.ensureDataLoaded();
+      setActiveGame(gameId);
+      isLoading = false;
+    };
+    loadData();
   });
 
   function handleAddCategory(e: Event) {
@@ -182,8 +184,9 @@
     <div class="mb-8">
       <div class="flex items-center gap-4 mb-2">
         <button
-          onclick={() => goto('/jeopardy')}
+          on:click={() => goto('/jeopardy')}
           class="text-dark-purple hover:text-dark-purple-hover transition-colors"
+          aria-label="Back to Jeopardy games"
         >
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -197,25 +200,25 @@
     <!-- Tab Navigation -->
     <div class="tabs mb-6">
       <button
-        onclick={() => activeTab = 'categories'}
+        on:click={() => activeTab = 'categories'}
         class="px-4 py-2 {activeTab === 'categories' ? 'bg-dark-purple text-white' : 'bg-dark-purple-bg text-dark-purple-light'} rounded-lg mr-2 hover:bg-dark-purple-hover hover:text-white transition-all duration-200"
       >
         Categories & Questions
       </button>
       <button
-        onclick={() => activeTab = 'teams'}
+        on:click={() => activeTab = 'teams'}
         class="px-4 py-2 {activeTab === 'teams' ? 'bg-dark-purple text-white' : 'bg-dark-purple-bg text-dark-purple-light'} rounded-lg mr-2 hover:bg-dark-purple-hover hover:text-white transition-all duration-200"
       >
         Teams
       </button>
       <button
-        onclick={() => activeTab = 'settings'}
+        on:click={() => activeTab = 'settings'}
         class="px-4 py-2 {activeTab === 'settings' ? 'bg-dark-purple text-white' : 'bg-dark-purple-bg text-dark-purple-light'} rounded-lg mr-2 hover:bg-dark-purple-hover hover:text-white transition-all duration-200"
       >
         Settings
       </button>
       <button
-        onclick={() => activeTab = 'import-export'}
+        on:click={() => activeTab = 'import-export'}
         class="px-4 py-2 {activeTab === 'import-export' ? 'bg-dark-purple text-white' : 'bg-dark-purple-bg text-dark-purple-light'} rounded-lg hover:bg-dark-purple-hover hover:text-white transition-all duration-200"
       >
         Import/Export
@@ -228,7 +231,7 @@
         <!-- Add Category -->
         <div class="card-dark">
           <h3 class="text-lg font-semibold text-gray-200 mb-4">Add Category</h3>
-          <form onsubmit={handleAddCategory} class="flex gap-3">
+          <form on:submit={handleAddCategory} class="flex gap-3">
             <input
               type="text"
               bind:value={newCategoryName}
@@ -246,8 +249,9 @@
             <div class="flex justify-between items-center mb-4">
               <h3 class="text-lg font-semibold text-gray-200">{category.name}</h3>
               <button
-                onclick={() => deleteCategory(category.id)}
+                on:click={() => deleteCategory(category.id)}
                 class="text-dark-error hover:text-dark-error-hover transition-colors"
+                aria-label="Delete category"
               >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
@@ -269,13 +273,13 @@
                   <p class="text-gray-400 text-xs mb-3 line-clamp-1">Answer: {question.answer}</p>
                   <div class="flex gap-2">
                     <button
-                      onclick={() => startEditingQuestion(category.id, question)}
+                      on:click={() => startEditingQuestion(category.id, question)}
                       class="flex-1 text-xs py-1 px-2 bg-dark-purple-bg text-dark-purple-light rounded hover:bg-dark-purple-hover hover:text-white transition-all duration-200"
                     >
                       Edit
                     </button>
                     <button
-                      onclick={() => deleteQuestion(category.id, question.id)}
+                      on:click={() => deleteQuestion(category.id, question.id)}
                       class="text-xs py-1 px-2 bg-dark-error text-white rounded hover:bg-dark-error-hover transition-all duration-200"
                     >
                       Delete
@@ -286,8 +290,9 @@
               
               <!-- Add Question Button -->
               <button
-                onclick={() => startEditingQuestion(category.id)}
+                on:click={() => startEditingQuestion(category.id)}
                 class="bg-dark-bg border-2 border-dashed border-dark-border rounded-lg p-3 flex items-center justify-center hover:border-dark-purple transition-colors"
+                aria-label="Add question"
               >
                 <svg class="w-8 h-8 text-dark-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
@@ -304,7 +309,7 @@
         <!-- Add Team -->
         <div class="card-dark">
           <h3 class="text-lg font-semibold text-gray-200 mb-4">Add Team</h3>
-          <form onsubmit={handleAddTeam} class="flex gap-3">
+          <form on:submit={handleAddTeam} class="flex gap-3">
             <input
               type="text"
               bind:value={newTeamName}
@@ -330,8 +335,9 @@
                 <span class="text-gray-200 font-medium">{team.name}</span>
               </div>
               <button
-                onclick={() => deleteTeam(team.id)}
+                on:click={() => deleteTeam(team.id)}
                 class="text-dark-error hover:text-dark-error-hover transition-colors"
+                aria-label={`Delete team ${team.name}`}
               >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
@@ -346,13 +352,13 @@
     {#if activeTab === 'settings'}
       <div class="card-dark">
         <h3 class="text-lg font-semibold text-gray-200 mb-4">Game Settings</h3>
-        <form onsubmit={(e) => e.preventDefault()} class="space-y-4">
+        <form on:submit={(e) => e.preventDefault()} class="space-y-4">
           <div>
             <label class="flex items-center gap-3">
               <input
                 type="checkbox"
                 checked={$getActiveGame.settings?.useTimer || false}
-                onchange={(e) => updateGameSettings($getActiveGame.id, { ...$getActiveGame.settings, useTimer: e.currentTarget.checked })}
+                on:change={(e) => updateGameSettings($getActiveGame.id, { ...$getActiveGame.settings, useTimer: e.currentTarget.checked })}
                 class="w-4 h-4 text-dark-purple bg-dark-bg border-gray-600 rounded focus:ring-dark-purple"
               />
               <span class="text-gray-200">Use Timer</span>
@@ -361,10 +367,11 @@
           
           {#if $getActiveGame.settings?.useTimer}
             <div>
-              <label class="block text-sm font-medium text-gray-300 mb-2">Timer Size</label>
+              <label for="timer-size" class="block text-sm font-medium text-gray-300 mb-2">Timer Size</label>
               <select
+                id="timer-size"
                 value={$getActiveGame.settings?.timerSize || 'large'}
-                onchange={(e) => updateGameSettings($getActiveGame.id, { ...$getActiveGame.settings, timerSize: e.currentTarget.value })}
+                on:change={(e) => updateGameSettings($getActiveGame.id, { ...$getActiveGame.settings, timerSize: e.currentTarget.value })}
                 class="w-full px-3 py-2 bg-dark-bg text-gray-200 border border-dark-border rounded-lg focus:outline-none focus:border-dark-purple"
               >
                 <option value="small">Small</option>
@@ -374,11 +381,12 @@
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-300 mb-2">Default Time Limit (seconds)</label>
+              <label for="default-time-limit" class="block text-sm font-medium text-gray-300 mb-2">Default Time Limit (seconds)</label>
               <input
+                id="default-time-limit"
                 type="number"
                 value={$getActiveGame.settings?.defaultTimeLimit || 30}
-                onchange={(e) => updateGameSettings($getActiveGame.id, { ...$getActiveGame.settings, defaultTimeLimit: parseInt(e.currentTarget.value) })}
+                on:change={(e) => updateGameSettings($getActiveGame.id, { ...$getActiveGame.settings, defaultTimeLimit: parseInt(e.currentTarget.value) })}
                 min="10"
                 max="300"
                 class="w-full px-3 py-2 bg-dark-bg text-gray-200 border border-dark-border rounded-lg focus:outline-none focus:border-dark-purple"
@@ -386,11 +394,12 @@
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-300 mb-2">Reading Time (seconds)</label>
+              <label for="reading-time" class="block text-sm font-medium text-gray-300 mb-2">Reading Time (seconds)</label>
               <input
+                id="reading-time"
                 type="number"
                 value={$getActiveGame.settings?.readingTime || 5}
-                onchange={(e) => updateGameSettings($getActiveGame.id, { ...$getActiveGame.settings, readingTime: parseInt(e.currentTarget.value) })}
+                on:change={(e) => updateGameSettings($getActiveGame.id, { ...$getActiveGame.settings, readingTime: parseInt(e.currentTarget.value) })}
                 min="0"
                 max="30"
                 class="w-full px-3 py-2 bg-dark-bg text-gray-200 border border-dark-border rounded-lg focus:outline-none focus:border-dark-purple"
@@ -402,7 +411,7 @@
                 <input
                   type="checkbox"
                   checked={$getActiveGame.settings?.autoShowAnswer || false}
-                  onchange={(e) => updateGameSettings($getActiveGame.id, { ...$getActiveGame.settings, autoShowAnswer: e.currentTarget.checked })}
+                  on:change={(e) => updateGameSettings($getActiveGame.id, { ...$getActiveGame.settings, autoShowAnswer: e.currentTarget.checked })}
                   class="w-4 h-4 text-dark-purple bg-dark-bg border-gray-600 rounded focus:ring-dark-purple"
                 />
                 <span class="text-gray-200">Auto Show Answer When Timer Expires</span>
@@ -419,7 +428,7 @@
         <div class="card-dark">
           <h3 class="text-lg font-semibold text-gray-200 mb-4">Export Game</h3>
           <p class="text-gray-400 mb-4">Download your game configuration as a JSON file</p>
-          <button onclick={handleExportGame} class="btn-primary">
+          <button on:click={handleExportGame} class="btn-primary">
             Export Game
           </button>
         </div>
@@ -431,7 +440,7 @@
           <input
             type="file"
             accept=".json"
-            onchange={handleImportGame}
+            on:change={handleImportGame}
             class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-dark-purple file:text-white hover:file:bg-dark-purple-hover"
           />
         </div>
@@ -440,7 +449,7 @@
         <div class="card-dark">
           <h3 class="text-lg font-semibold text-gray-200 mb-4">Apply Template</h3>
           <p class="text-gray-400 mb-4">Choose a pre-made template to apply to your game</p>
-          <button onclick={() => showTemplateModal = true} class="btn-primary">
+          <button on:click={() => showTemplateModal = true} class="btn-primary">
             Browse Templates
           </button>
         </div>
@@ -455,10 +464,11 @@
         <h2 class="text-xl font-bold text-gray-200 mb-4">
           {editingQuestion.questionId ? 'Edit Question' : 'Add Question'}
         </h2>
-        <form onsubmit={handleSaveQuestion} class="space-y-4">
+        <form on:submit={handleSaveQuestion} class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-300 mb-2">Question Text</label>
+            <label for="question-text" class="block text-sm font-medium text-gray-300 mb-2">Question Text</label>
             <textarea
+              id="question-text"
               bind:value={editingQuestion.text}
               rows="3"
               class="w-full px-3 py-2 bg-dark-bg text-gray-200 border border-dark-border rounded-lg focus:outline-none focus:border-dark-purple"
@@ -467,8 +477,9 @@
           </div>
           
           <div>
-            <label class="block text-sm font-medium text-gray-300 mb-2">Answer</label>
+            <label for="question-answer" class="block text-sm font-medium text-gray-300 mb-2">Answer</label>
             <input
+              id="question-answer"
               type="text"
               bind:value={editingQuestion.answer}
               class="w-full px-3 py-2 bg-dark-bg text-gray-200 border border-dark-border rounded-lg focus:outline-none focus:border-dark-purple"
@@ -478,8 +489,9 @@
           
           <div class="grid gap-4 md:grid-cols-2">
             <div>
-              <label class="block text-sm font-medium text-gray-300 mb-2">Point Value</label>
+              <label for="point-value" class="block text-sm font-medium text-gray-300 mb-2">Point Value</label>
               <input
+                id="point-value"
                 type="number"
                 bind:value={editingQuestion.pointValue}
                 min="100"
@@ -490,8 +502,8 @@
             </div>
             
             <div>
-              <label class="block text-sm font-medium text-gray-300 mb-2">Time Limit (seconds)</label>
-              <input
+              <label for="time-limit" class="block text-sm font-medium text-gray-300 mb-2">Time Limit (seconds)</label>
+              <input id="time-limit"
                 type="number"
                 bind:value={editingQuestion.timeLimit}
                 min="10"
@@ -515,7 +527,7 @@
           <div class="flex gap-3">
             <button
               type="button"
-              onclick={cancelEditingQuestion}
+              on:click={cancelEditingQuestion}
               class="flex-1 py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200"
             >
               Cancel
@@ -548,7 +560,7 @@
                 <span>Questions: {template.categories.reduce((sum, cat) => sum + cat.questions.length, 0)}</span>
               </div>
               <button
-                onclick={() => handleApplyTemplate(template)}
+                on:click={() => handleApplyTemplate(template)}
                 class="btn-primary"
               >
                 Apply Template
@@ -558,7 +570,7 @@
         </div>
         <div class="mt-4">
           <button
-            onclick={() => showTemplateModal = false}
+            on:click={() => showTemplateModal = false}
             class="w-full py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200"
           >
             Cancel

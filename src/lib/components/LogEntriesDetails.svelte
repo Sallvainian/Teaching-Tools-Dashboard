@@ -1,27 +1,35 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import { logEntriesStore } from '$lib/stores/log-entries';
   import type { LogEntry } from '$lib/types/log-entries';
   
-  export let logId: string;
+  interface Props {
+    logId: string;
+    onclose?: () => void;
+    onedit?: () => void;
+    ondelete?: () => void;
+  }
   
-  const dispatch = createEventDispatcher();
+  let { logId, onclose, onedit, ondelete }: Props = $props();
   
-  let log: LogEntry | undefined;
-  $: log = logEntriesStore.getLog(logId);
+  // Use derived for reactive log lookup
+  const log = $derived(logEntriesStore.getLog(logId));
   
   function handleClose() {
-    dispatch('close');
+    onclose?.();
   }
   
   function handleEdit() {
-    dispatch('edit');
+    onedit?.();
   }
   
-  function handleDelete() {
+  async function handleDelete() {
     if (confirm('Are you sure you want to delete this log entry?')) {
-      logEntriesStore.deleteLog(logId);
-      dispatch('delete');
+      try {
+        await logEntriesStore.deleteLog(logId);
+        ondelete?.();
+      } catch (error) {
+        alert('Failed to delete log entry. Please try again.');
+      }
     }
   }
   
@@ -45,7 +53,7 @@
           <p class="text-dark-muted">{formatDate(log.date)}</p>
         </div>
         <button
-          onclick={handleClose}
+          on:click={handleClose}
           class="text-gray-400 hover:text-white transition-colors"
           aria-label="Close"
         >
@@ -93,13 +101,13 @@
       <!-- Actions -->
       <div class="sticky bottom-0 bg-dark-surface p-6 border-t border-dark-border flex justify-end gap-3">
         <button
-          onclick={handleEdit}
+          on:click={handleEdit}
           class="px-4 py-2 bg-dark-accent text-white rounded-lg hover:bg-dark-accent-hover transition-colors"
         >
           Edit
         </button>
         <button
-          onclick={handleDelete}
+          on:click={handleDelete}
           class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
         >
           Delete

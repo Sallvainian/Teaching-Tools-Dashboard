@@ -5,6 +5,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Fix for Tailwind CSS custom properties */
+:root {
+  --tw-empty: ;
+}
+
 /* Your custom styles and AG Grid overrides come after */
 
 /* Gradient backgrounds */

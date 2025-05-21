@@ -1,13 +1,14 @@
 <script lang="ts">
   import LoginForm from '$lib/components/auth/LoginForm.svelte';
   import { goto } from '$app/navigation';
-  import { isAuthenticated } from '$lib/stores/auth';
+  import { authStore } from '$lib/stores/auth';
   import { page } from '$app/stores';
   
   // Redirect if already authenticated
   $effect(() => {
-    if ($isAuthenticated) {
-      const redirectTo = $page.url.searchParams.get('redirectTo') || '/dashboard';
+    if ($authStore.isAuthenticated) {
+      const role = $authStore.role;
+      const redirectTo = role === 'student' ? '/student/dashboard' : '/dashboard';
       goto(redirectTo);
     }
   });

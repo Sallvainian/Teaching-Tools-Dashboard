@@ -1,5 +1,6 @@
 <script lang="ts">
   import { authStore } from '$lib/stores/auth';
+  import { goto } from '$app/navigation';
   
   let email = $state('');
   let password = $state('');
@@ -16,10 +17,26 @@
     error = '';
     
     try {
-      await authStore.signInWithEmail(email, password);
-      // Success - no need to do anything as the auth store will update
-    } catch (err: any) {
-      error = err.message || 'Failed to sign in';
+      const success = await authStore.signIn(email, password);
+      if (success) {
+        // Redirect based on role
+        const unsubscribe = authStore.subscribe(state => {
+          if (state.isStudent) {
+            goto('/student/dashboard');
+          } else if (state.isTeacher) {
+            goto('/dashboard');
+          }
+          unsubscribe();
+        });
+      } else {
+        // Get error from auth store
+        const unsubscribe = authStore.error.subscribe(authError => {
+          error = authError || 'Failed to sign in';
+          unsubscribe();
+        });
+      }
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Failed to sign in';
     } finally {
       loading = false;
     }
@@ -27,8 +44,8 @@
 </script>
 
 <div class="w-full max-w-md">
-  <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="bg-base-200 rounded-lg px-8 pt-6 pb-8 mb-4 shadow-md">
-    <h2 class="text-2xl font-bold mb-6 text-center">Sign In</h2>
+  <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="bg-dark-surface rounded-lg px-8 pt-6 pb-8 mb-4 shadow-dark">
+    <h2 class="text-2xl font-bold mb-6 text-center text-dark-highlight">Sign In</h2>
     
     {#if error}
       <div class="bg-error/20 text-error px-4 py-3 rounded mb-4" role="alert">
@@ -37,12 +54,12 @@
     {/if}
     
     <div class="mb-4">
-      <label class="block text-sm font-medium mb-2" for="email">
+      <label class="block text-sm font-medium mb-2 text-dark-text" for="email">
         Email
       </label>
       <input
         bind:value={email}
-        class="input input-bordered w-full"
+        class="input input-bordered w-full bg-dark-surface-light border-dark-border"
         id="email"
         type="email"
         placeholder="Email"
@@ -51,12 +68,12 @@
     </div>
     
     <div class="mb-6">
-      <label class="block text-sm font-medium mb-2" for="password">
+      <label class="block text-sm font-medium mb-2 text-dark-text" for="password">
         Password
       </label>
       <input
         bind:value={password}
-        class="input input-bordered w-full"
+        class="input input-bordered w-full bg-dark-surface-light border-dark-border"
         id="password"
         type="password"
         placeholder="Password"
@@ -66,24 +83,16 @@
     
     <div class="flex items-center justify-between">
       <button
-        class="btn btn-primary w-full {loading ? 'loading' : ''}"
+        class="btn btn-primary w-full"
         type="submit"
         disabled={loading}
       >
-        Sign In
+        {#if loading}
+          <span class="loading loading-spinner loading-md"></span>
+        {:else}
+          Sign In
+        {/if}
       </button>
-    </div>
-    
-    <div class="text-center mt-4">
-      <a href="/auth/signup" class="link link-hover text-sm">
-        Need an account? Sign up
-      </a>
-    </div>
-    
-    <div class="text-center mt-2">
-      <a href="/auth/reset-password" class="link link-hover text-sm">
-        Forgot your password?
-      </a>
     </div>
   </form>
 </div>

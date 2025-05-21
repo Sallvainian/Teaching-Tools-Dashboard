@@ -1,16 +1,17 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import type { LogEntryFilters } from '$lib/types/log-entries';
   import { logEntriesStore } from '$lib/stores/log-entries';
   
-  const dispatch = createEventDispatcher();
+  const { onfilter } = $props<{
+    onfilter?: (filters: LogEntryFilters) => void;
+  }>();
   
-  // Filter values
-  let searchQuery = '';
-  let dateFrom = '';
-  let dateTo = '';
-  let selectedStudent = '';
-  let selectedTags: string[] = [];
+  // Filter values using Svelte 5 state
+  let searchQuery = $state('');
+  let dateFrom = $state('');
+  let dateTo = $state('');
+  let selectedStudent = $state('');
+  let selectedTags = $state<string[]>([]);
   
   // Get unique values for dropdowns
   const students = logEntriesStore.getUniqueStudents();
@@ -25,7 +26,7 @@
       tags: selectedTags.length > 0 ? selectedTags : undefined
     };
     
-    dispatch('filter', filters);
+    onfilter?.(filters);
   }
   
   function clearFilters() {
@@ -37,11 +38,10 @@
     applyFilters();
   }
   
-  // Apply filters on any change
-  $: {
-    searchQuery, dateFrom, dateTo, selectedStudent, selectedTags;
+  // Apply filters on any change using Svelte 5 effect
+  $effect(() => {
     applyFilters();
-  }
+  });
 </script>
 
 <div class="bg-dark-card border border-dark-border rounded-xl p-4">
@@ -59,7 +59,7 @@
     <!-- Clear Filters Button -->
     <div class="flex items-end">
       <button
-        onclick={clearFilters}
+        on:click={clearFilters}
         class="w-full px-4 py-2 bg-dark-accent text-gray-300 rounded-lg hover:bg-dark-accent-hover hover:text-white transition-colors"
       >
         Clear Filters
