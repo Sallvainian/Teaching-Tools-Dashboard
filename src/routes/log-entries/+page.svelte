@@ -115,7 +115,7 @@
     </div>
     <button
       class="px-4 py-2 bg-dark-purple text-white rounded-lg hover:bg-dark-purple-hover transition-colors"
-      on:click={() => {
+      onclick={() => {
         editMode = false;
         selectedLogId = null;
         showNewLogForm = true;

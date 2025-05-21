@@ -93,7 +93,7 @@
         <div class="mb-6 flex justify-between items-center">
           <div class="flex items-center gap-4">
             <button
-              on:click={() => goto('/jeopardy')}
+              onclick={() => goto('/jeopardy')}
               class="text-gray-400 hover:text-gray-200 transition-colors"
               title="Back to Games"
             >
@@ -105,13 +105,13 @@
           </div>
           <div class="flex gap-2">
             <button
-              on:click={handleResetScores}
+              onclick={handleResetScores}
               class="px-3 py-1 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 text-sm"
             >
               Reset Scores
             </button>
             <button
-              on:click={handleResetBoard}
+              onclick={handleResetBoard}
               class="px-3 py-1 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 text-sm"
             >
               Reset Board
@@ -147,7 +147,7 @@
               </div>
               {#each category.questions.sort((a, b) => a.pointValue - b.pointValue) as question}
                 <button
-                  on:click={() => handleSelectQuestion(category.id, question.id)}
+                  onclick={() => handleSelectQuestion(category.id, question.id)}
                   disabled={question.answered}
                   class="w-full card-dark py-8 text-center transition-all duration-200 
                          {question.answered 
@@ -229,13 +229,13 @@
               
               <div class="flex justify-center gap-4">
                 <button
-                  on:click={() => showAnswer = !showAnswer}
+                  onclick={() => showAnswer = !showAnswer}
                   class="px-6 py-3 bg-dark-purple-bg text-dark-purple-light rounded-lg hover:bg-dark-purple-hover hover:text-white transition-all duration-200"
                 >
                   {showAnswer ? 'Hide Answer' : 'Show Answer'}
                 </button>
                 <button
-                  on:click={handleBackToBoard}
+                  onclick={handleBackToBoard}
                   class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200"
                 >
                   Back to Board
@@ -255,7 +255,7 @@
                     class="w-32 px-3 py-2 bg-dark-bg text-gray-200 border border-dark-border rounded-lg focus:outline-none focus:border-dark-purple text-center"
                   />
                   <button
-                    on:click={handleWagerSubmit}
+                    onclick={handleWagerSubmit}
                     class="px-4 py-2 bg-dark-purple text-white rounded-lg hover:bg-dark-purple-hover transition-all duration-200"
                   >
                     Set Wager
@@ -274,14 +274,14 @@
                 {#each $getActiveGame.teams as team}
                   <div class="text-center">
                     <button
-                      on:click={() => handleAwardPoints(team.id, $getActiveQuestion.isDoubleJeopardy ? $wagerAmount : $getActiveQuestion.pointValue)}
+                      onclick={() => handleAwardPoints(team.id, $getActiveQuestion.isDoubleJeopardy ? $wagerAmount : $getActiveQuestion.pointValue)}
                       class="w-full px-4 py-2 rounded-lg transition-all duration-200 hover:scale-105"
                       style="background-color: {team.color}; color: white;"
                     >
                       +${$getActiveQuestion.isDoubleJeopardy ? $wagerAmount : $getActiveQuestion.pointValue}
                     </button>
                     <button
-                      on:click={() => handleAwardPoints(team.id, -($getActiveQuestion.isDoubleJeopardy ? $wagerAmount : $getActiveQuestion.pointValue))}
+                      onclick={() => handleAwardPoints(team.id, -($getActiveQuestion.isDoubleJeopardy ? $wagerAmount : $getActiveQuestion.pointValue))}
                       class="w-full mt-2 px-4 py-2 bg-dark-error text-white rounded-lg hover:bg-dark-error-hover transition-all duration-200"
                     >
                       -${$getActiveQuestion.isDoubleJeopardy ? $wagerAmount : $getActiveQuestion.pointValue}
@@ -300,7 +300,7 @@
       <div class="text-center">
         <p class="text-gray-400 mb-4">Game not found</p>
         <button
-          on:click={() => goto('/jeopardy')}
+          onclick={() => goto('/jeopardy')}
           class="btn-primary"
         >
           Back to Games

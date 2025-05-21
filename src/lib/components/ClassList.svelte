@@ -12,7 +12,7 @@
   <div class="space-y-2">
     {#each classes as classItem}
       <button
-        on:click={() => onSelectClass(classItem.id)}
+        onclick={() => onSelectClass(classItem.id)}
         class="w-full p-3 rounded-lg text-left transition-all duration-200 {
           selectedClassId === classItem.id
             ? 'bg-dark-purple text-white'
