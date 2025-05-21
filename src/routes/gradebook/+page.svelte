@@ -219,7 +219,7 @@
           {/each}
         </select>
         <button
-          onclick={toggleNewClassModal}
+          on:click={toggleNewClassModal}
           class="bg-dark-purple hover:bg-dark-accent text-white px-4 rounded-lg text-sm transition whitespace-nowrap"
         >
           New Class
@@ -332,7 +332,7 @@
         </div>
         <div class="col-span-2">
           <button
-            onclick={handleAddAssignment}
+            on:click={handleAddAssignment}
             class="w-full bg-dark-purple hover:bg-dark-accent text-white p-2 rounded-lg text-sm transition"
           >
             Add Assignment
@@ -357,7 +357,7 @@
         </div>
         <div class="flex items-end">
           <button
-            onclick={handleAddStudent}
+            on:click={handleAddStudent}
             class="w-full bg-dark-purple hover:bg-dark-accent text-white p-2 rounded-lg text-sm transition"
           >
             Add
@@ -404,7 +404,7 @@
         <div class="bg-dark-surface px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
           <button 
             type="button" 
-            onclick={() => {
+            on:click={() => {
               handleAddClass();
               toggleNewClassModal();
             }}
@@ -414,7 +414,7 @@
           </button>
           <button 
             type="button" 
-            onclick={toggleNewClassModal}
+            on:click={toggleNewClassModal}
             class="mt-3 w-full inline-flex justify-center rounded-md border border-dark-border shadow-sm px-4 py-2 bg-dark-surface text-base font-medium text-white hover:bg-dark-accent/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dark-purple sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
           >
             Cancel

@@ -175,12 +175,12 @@
             readingTime={$getActiveGame.settings.readingTime || 5}
             totalTime={$getActiveQuestion.timeLimit || $getActiveGame.settings.defaultTimeLimit || 30}
             size={$getActiveGame.settings.timerSize || 'large'}
-            onTimeExpired={() => {
+            on:timeExpired={() => {
               if ($getActiveGame.settings?.autoShowAnswer) {
                 showAnswer = true;
               }
             }}
-            onReadingComplete={() => {
+            on:readingComplete={() => {
               // Reading phase complete, main timer starts
             }}
           />
@@ -195,12 +195,12 @@
                   totalTime={$getActiveQuestion.timeLimit || $getActiveGame.settings.defaultTimeLimit || 30}
                   size="small"
                   position="corner"
-                  onTimeExpired={() => {
+                  on:timeExpired={() => {
                     if ($getActiveGame.settings?.autoShowAnswer) {
                       showAnswer = true;
                     }
                   }}
-                  onReadingComplete={() => {
+                  on:readingComplete={() => {
                     // Reading phase complete, main timer starts
                   }}
                 />
