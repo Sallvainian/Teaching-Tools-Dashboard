@@ -60,7 +60,7 @@
           <p class="text-gray-400 text-sm mt-1">Start fresh with a blank Jeopardy game</p>
         </div>
         <button
-          on:click={() => showCreateModal = true}
+          onclick={() => showCreateModal = true}
           class="btn-primary"
         >
           Create Game
@@ -93,19 +93,19 @@
             
             <div class="flex gap-2">
               <button
-                on:click={() => handlePlayGame(game.id)}
+                onclick={() => handlePlayGame(game.id)}
                 class="flex-1 py-2 px-3 bg-dark-purple text-white rounded-lg hover:bg-dark-purple-hover transition-all duration-200"
               >
                 Play
               </button>
               <button
-                on:click={() => handleEditGame(game.id)}
+                onclick={() => handleEditGame(game.id)}
                 class="flex-1 py-2 px-3 bg-dark-purple-bg text-dark-purple-light rounded-lg hover:bg-dark-purple-hover hover:text-white transition-all duration-200"
               >
                 Edit
               </button>
               <button
-                on:click={() => handleDeleteGame(game.id)}
+                onclick={() => handleDeleteGame(game.id)}
                 class="py-2 px-3 bg-dark-error text-white rounded-lg hover:bg-dark-error-hover transition-all duration-200"
               >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -134,7 +134,7 @@
     <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div class="bg-gradient-card border border-dark-border rounded-lg p-6 w-full max-w-md mx-4 shadow-dark-dropdown">
         <h2 class="text-xl font-bold text-gray-200 mb-4">Create New Game</h2>
-        <form on:submit={handleCreateGame}>
+        <form onsubmit={handleCreateGame}>
           <div class="mb-4">
             <label for="gameName" class="block text-sm font-medium text-gray-300 mb-2">
               Game Name
@@ -151,7 +151,7 @@
           <div class="flex gap-3">
             <button
               type="button"
-              on:click={() => { showCreateModal = false; newGameName = ''; }}
+              onclick={() => { showCreateModal = false; newGameName = ''; }}
               class="flex-1 py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200"
             >
               Cancel

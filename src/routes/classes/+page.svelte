@@ -54,7 +54,7 @@
           require authentication to view and create classes.
         </p>
         <button
-          on:click={handleLogin}
+          onclick={handleLogin}
           class="px-4 py-2 bg-dark-purple text-white rounded-lg hover:bg-dark-purple-hover transition-all duration-200"
         >
           Sign In
@@ -67,8 +67,8 @@
         <h2 class="text-xl font-bold text-red-400 mb-4">Error Loading Classes</h2>
         <p class="text-gray-300 mb-6">{error}</p>
         <div class="flex justify-end">
-          <button 
-            on:click={() => location.reload()}
+          <button
+            onclick={() => location.reload()}
             class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200"
           >
             Retry
@@ -81,14 +81,14 @@
       <h1 class="text-3xl font-bold text-gray-100">Classes</h1>
       {#if $isAuthenticated}
         <button
-          on:click={() => showImportWizard = true}
+          onclick={() => showImportWizard = true}
           class="px-4 py-2 bg-dark-purple text-white rounded-lg hover:bg-dark-purple-hover transition-all duration-200"
         >
           Import New Class
         </button>
       {:else}
         <button
-          on:click={handleLogin}
+          onclick={handleLogin}
           class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200"
         >
           Sign In to Create Classes

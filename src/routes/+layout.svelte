@@ -96,8 +96,8 @@
 
         <div class="relative user-menu">
           {#if $isAuthenticated}
-            <button 
-              on:click={toggleUserMenu}
+            <button
+              onclick={toggleUserMenu}
               class="flex items-center gap-3 hover:bg-dark-accent/20 p-1 rounded-lg"
             >
               <div class="w-8 h-8 bg-dark-purple rounded-full flex items-center justify-center text-white font-medium">
@@ -112,13 +112,13 @@
             {#if userMenuOpen}
               <div class="absolute right-0 mt-2 w-48 bg-gradient-card border border-dark-border rounded-lg shadow-dark-dropdown z-50">
                 <div class="py-1">
-                  <a href="/settings/profile" class="menu-item text-sm" on:click={() => userMenuOpen = false}>
+                  <a href="/settings/profile" class="menu-item text-sm" onclick={() => userMenuOpen = false}>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                     </svg>
                     <span>Profile</span>
                   </a>
-                  <a href="/settings" class="menu-item text-sm" on:click={() => userMenuOpen = false}>
+                  <a href="/settings" class="menu-item text-sm" onclick={() => userMenuOpen = false}>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -126,8 +126,8 @@
                     <span>Settings</span>
                   </a>
                   <div class="separator mx-2 my-1"></div>
-                  <button 
-                    on:click={() => {
+                  <button
+                    onclick={() => {
                       userMenuOpen = false;
                       handleSignOut();
                     }}
@@ -157,8 +157,8 @@
            class:collapsed={sidebarCollapsed}
            style="width: {sidebarCollapsed ? '3.5rem' : '14rem'}">
       <!-- Toggle button -->
-      <button 
-        on:click={() => sidebarCollapsed = !sidebarCollapsed}
+      <button
+        onclick={() => sidebarCollapsed = !sidebarCollapsed}
         class="absolute -right-3 top-6 z-10 w-6 h-6 bg-dark-surface border border-dark-border rounded-md text-dark-muted hover:text-dark-highlight hover:border-dark-highlight transition-all duration-200"
         aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
@@ -320,7 +320,7 @@
             <div class="space-y-1">
               {#each $gradebookStore.getCategories as category (category.id)}
                 <button
-                  on:click={() => handleSelectClass(category.id)}
+                  onclick={() => handleSelectClass(category.id)}
                   class="w-full menu-item text-left relative group"
                   title={category.name}
                 >
@@ -352,7 +352,7 @@
                       class="w-full bg-dark-bg text-dark-text-hover border border-dark-border rounded-lg p-2 text-sm focus:ring-2 focus:ring-dark-accent-hover focus:border-dark-accent-hover transition-all duration-200 placeholder:text-dark-muted"
                     />
                     <button
-                      on:click={handleAddClass}
+                      onclick={handleAddClass}
                       class="bg-dark-purple text-white p-2 rounded-lg text-sm hover:bg-dark-purple-hover transition-all duration-300"
                       aria-label="Add new class"
                     >

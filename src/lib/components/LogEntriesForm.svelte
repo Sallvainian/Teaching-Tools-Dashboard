@@ -72,7 +72,7 @@
   }
 </script>
 
-<form on:submit|preventDefault={handleSave} class="space-y-4">
+<form onsubmit|preventDefault={handleSave} class="space-y-4">
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div>
       <label for="date" class="block text-sm font-medium text-dark-muted mb-1">
@@ -164,7 +164,7 @@
   <div class="flex justify-end gap-3 pt-4">
     <button
       type="button"
-      on:click={handleCancel}
+      onclick={handleCancel}
       class="px-4 py-2 text-gray-300 hover:text-white transition-colors"
     >
       Cancel

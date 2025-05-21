@@ -2,6 +2,6 @@
   let count = 0;
 </script>
 
-<button on:click={() => count++}>
+<button onclick={() => count++}>
   Click me: {count}
 </button>

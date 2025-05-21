@@ -5,6 +5,6 @@
   }
 </script>
 
-<button on:click={handleClick}>
+<button onclick={handleClick}>
   Count: {count}
 </button>
