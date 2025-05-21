@@ -59,7 +59,7 @@
       if (useSupabase) {
         // Clear from both Supabase and localStorage
         gradebookStore.clearAllData();
-        observationLogStore.clearLogs();
+        logEntriesStore.clearAll();
         jeopardyStore.clearAllData();
       } else {
         // Clear localStorage only
@@ -83,7 +83,7 @@
           type="checkbox"
           id="toggle-dark-mode"
           checked={darkMode}
-          on:change={handleToggleDarkMode}
+          onchange={handleToggleDarkMode}
           class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
         />
         <label
@@ -110,7 +110,7 @@
           type="checkbox"
           id="toggle-storage"
           checked={useSupabase}
-          on:change={handleToggleDataStorage}
+          onchange={handleToggleDataStorage}
           class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"
         />
         <label

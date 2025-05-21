@@ -1,4 +1,4 @@
-// src/lib/stores/gradebook-simplified.ts
+// src/lib/stores/gradebook.ts
 import { writable, derived, get } from 'svelte/store';
 import type { Student, Category, Assignment, Grade } from '$lib/types/gradebook';
 import { gradebookService } from '$lib/services/supabaseService';
