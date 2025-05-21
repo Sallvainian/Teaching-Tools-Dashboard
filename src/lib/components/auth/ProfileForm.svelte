@@ -30,7 +30,7 @@
 </script>
 
 <div class="w-full max-w-md">
-  <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="bg-base-200 rounded-lg px-8 pt-6 pb-8 mb-4 shadow-md">
+  <form on:submit={(e) => { e.preventDefault(); handleSubmit(); }} class="bg-base-200 rounded-lg px-8 pt-6 pb-8 mb-4 shadow-md">
     <h2 class="text-2xl font-bold mb-6 text-center">Profile</h2>
     
     {#if error}

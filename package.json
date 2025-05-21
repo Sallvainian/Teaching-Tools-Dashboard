@@ -14,7 +14,7 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "test:unit": "vitest",
-    "test": "pnpm run test:unit -- --run --coverage",
+    "test": "pnpm run test:coverage",
     "test:coverage": "vitest run --coverage",
     "test:coverage:qodana": "pnpm run test:coverage && bash ./copy-coverage.sh",
     "lint": "eslint .",

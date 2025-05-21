@@ -142,7 +142,7 @@
         <input 
           type="checkbox" 
           checked={selectAll} 
-          onchange={handleSelectAll}
+          on:change={handleSelectAll}
           class="h-4 w-4 rounded border-dark-border text-dark-purple"
         />
         <span class="text-white">Select All</span>
@@ -150,13 +150,13 @@
       <div class="flex space-x-2">
         <button
           class="px-3 py-1 text-gray-300 hover:text-white transition-colors"
-          onclick={toggleBulkMode}
+          on:click={toggleBulkMode}
         >
           Cancel
         </button>
         <button
           class="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-          onclick={handleBulkDelete}
+          on:click={handleBulkDelete}
         >
           Delete Selected
         </button>
@@ -166,7 +166,7 @@
     <div class="flex justify-end mb-4">
       <button
         class="px-3 py-1 text-gray-300 hover:text-white transition-colors"
-        onclick={toggleBulkMode}
+        on:click={toggleBulkMode}
       >
         Select Multiple
       </button>
@@ -176,10 +176,10 @@
   {#each logs as log}
     <div
       class="bg-dark-card border border-dark-border rounded-xl p-4 hover:border-dark-highlight transition-colors cursor-pointer relative {selectedItems[log.id] ? 'border-dark-purple' : ''}"
-      onclick={() => handleSelectLog(log.id)}
+      on:click={() => handleSelectLog(log.id)}
       role="button"
       tabindex="0"
-      onkeydown={(e) => e.key === 'Enter' && handleSelectLog(log.id)}
+      on:keydown={(e) => e.key === 'Enter' && handleSelectLog(log.id)}
     >
       <!-- Content area with conditional padding -->
       <div class={showBulkActions ? "ml-8" : ""}>
@@ -189,8 +189,8 @@
             <input 
               type="checkbox" 
               checked={selectedItems[log.id] || false} 
-              onchange={() => toggleSelection(log.id)} 
-              onclick={(e) => e.stopPropagation()}
+              on:change={() => toggleSelection(log.id)} 
+              on:click={(e) => e.stopPropagation()}
               class="h-5 w-5 rounded border-dark-border text-dark-purple"
             />
           </div>
@@ -220,8 +220,8 @@
             {#if !showBulkActions}
               <button 
                 class="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full" 
-                onclick={(e) => handleDeleteLog(e, log.id, log)}
-                onkeydown={(e) => {}}
+                on:click={(e) => handleDeleteLog(e, log.id, log)}
+                on:keydown={(e) => {}}
                 title={itemsToConfirmDelete[log.id] ? "Click to confirm deletion" : "Delete log entry"}
               >
                 {#if itemsToConfirmDelete[log.id]}
@@ -258,7 +258,7 @@
     <span class="text-white">Entry deleted</span>
     <button
       class="px-3 py-1 bg-dark-purple text-white rounded-lg hover:bg-dark-purple-hover transition-colors"
-      onclick={handleUndo}
+      on:click={handleUndo}
     >
       Undo
     </button>

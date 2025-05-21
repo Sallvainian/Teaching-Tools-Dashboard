@@ -102,7 +102,7 @@
           <ClassList 
             classes={$gradebookStore.categories}
             selectedClassId={selectedClassId}
-            onSelectClass={handleClassSelect}
+            on:selectClass={handleClassSelect}
           />
         {:else}
           <div class="bg-gray-800 border border-gray-700 rounded-lg p-6">
@@ -134,8 +134,8 @@
   
   {#if showImportWizard}
     <ImportWizard 
-      onClose={() => showImportWizard = false}
-      onComplete={handleImportComplete}
+      on:close={() => showImportWizard = false}
+      on:complete={handleImportComplete}
     />
   {/if}
 </div>
