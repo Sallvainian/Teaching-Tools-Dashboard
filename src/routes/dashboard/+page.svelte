@@ -16,8 +16,8 @@
 <div class="container mx-auto px-4 py-8">
   <!-- Page header -->
   <div class="mb-8">
-    <h1 class="text-3xl font-bold text-dark-highlight mb-1">Teacher Dashboard</h1>
-    <p class="text-dark-text">Welcome back! Here's an overview of your teaching tools</p>
+    <h1 class="text-3xl font-bold text-highlight mb-1">Teacher Dashboard</h1>
+    <p class="text-text-base">Welcome back! Here's an overview of your teaching tools</p>
   </div>
 
   <!-- Stats Cards -->
@@ -25,7 +25,7 @@
     <div class="card-dark">
       <div class="flex items-center gap-3">
         <div
-          class="w-10 h-10 rounded-lg bg-dark-purple-bg flex items-center justify-center text-dark-purple-light"
+          class="w-10 h-10 rounded-lg bg-purple-bg flex items-center justify-center text-purple-light"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -52,7 +52,7 @@
     <div class="card-dark">
       <div class="flex items-center gap-3">
         <div
-          class="w-10 h-10 rounded-lg bg-dark-purple-bg flex items-center justify-center text-dark-purple-light"
+          class="w-10 h-10 rounded-lg bg-purple-bg flex items-center justify-center text-purple-light"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -79,7 +79,7 @@
     <div class="card-dark">
       <div class="flex items-center gap-3">
         <div
-          class="w-10 h-10 rounded-lg bg-dark-purple-bg flex items-center justify-center text-dark-purple-light"
+          class="w-10 h-10 rounded-lg bg-purple-bg flex items-center justify-center text-purple-light"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -106,7 +106,7 @@
     <div class="card-dark">
       <div class="flex items-center gap-3">
         <div
-          class="w-10 h-10 rounded-lg bg-dark-purple-bg flex items-center justify-center text-dark-purple-light"
+          class="w-10 h-10 rounded-lg bg-purple-bg flex items-center justify-center text-purple-light"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -133,15 +133,15 @@
 
   <!-- Quick Actions -->
   <div class="mb-8">
-    <h2 class="text-xl font-bold text-dark-highlight mb-4">Quick Actions</h2>
+    <h2 class="text-xl font-bold text-highlight mb-4">Quick Actions</h2>
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       <a
         href="/gradebook"
-        class="card-dark hover:border-dark-purple hover:shadow-dark-glow transition-all duration-300"
+        class="card-dark hover:border-purple hover:shadow-glow transition-all duration-300"
       >
         <div class="flex items-center gap-3">
           <div
-            class="w-10 h-10 rounded-lg bg-dark-purple-bg flex items-center justify-center text-dark-purple-light"
+            class="w-10 h-10 rounded-lg bg-purple-bg flex items-center justify-center text-purple-light"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -167,11 +167,11 @@
 
       <a
         href="/jeopardy"
-        class="card-dark hover:border-dark-purple hover:shadow-dark-glow transition-all duration-300"
+        class="card-dark hover:border-purple hover:shadow-glow transition-all duration-300"
       >
         <div class="flex items-center gap-3">
           <div
-            class="w-10 h-10 rounded-lg bg-dark-purple-bg flex items-center justify-center text-dark-purple-light"
+            class="w-10 h-10 rounded-lg bg-purple-bg flex items-center justify-center text-purple-light"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -197,11 +197,11 @@
 
       <a
         href="/lesson-planner"
-        class="card-dark hover:border-dark-purple hover:shadow-dark-glow transition-all duration-300"
+        class="card-dark hover:border-purple hover:shadow-glow transition-all duration-300"
       >
         <div class="flex items-center gap-3">
           <div
-            class="w-10 h-10 rounded-lg bg-dark-purple-bg flex items-center justify-center text-dark-purple-light"
+            class="w-10 h-10 rounded-lg bg-purple-bg flex items-center justify-center text-purple-light"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -227,11 +227,11 @@
 
       <a
         href="/log-entries"
-        class="card-dark hover:border-dark-purple hover:shadow-dark-glow transition-all duration-300"
+        class="card-dark hover:border-purple hover:shadow-glow transition-all duration-300"
       >
         <div class="flex items-center gap-3">
           <div
-            class="w-10 h-10 rounded-lg bg-dark-purple-bg flex items-center justify-center text-dark-purple-light"
+            class="w-10 h-10 rounded-lg bg-purple-bg flex items-center justify-center text-purple-light"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -259,7 +259,7 @@
 
   <!-- Recent Activity -->
   <div class="card-dark p-6">
-    <h2 class="text-xl font-bold text-dark-highlight mb-4">Recent Activity</h2>
-    <p class="text-dark-text">No recent activity to display.</p>
+    <h2 class="text-xl font-bold text-highlight mb-4">Recent Activity</h2>
+    <p class="text-text-base">No recent activity to display.</p>
   </div>
 </div>

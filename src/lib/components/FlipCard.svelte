@@ -5,12 +5,14 @@
     frontFooter = "Footer Info",
     backContent = "Hover Me",
     backIcon = null,
+    iconSnippet
   } = $props<{
     frontTitle?: string;
     frontBadge?: string;
     frontFooter?: string;
     backContent?: string;
-    backIcon?: any;
+    backIcon?: string;
+    iconSnippet?: any;
   }>();
   
   // Exported constant for external use
@@ -22,7 +24,8 @@
     <div class="back">
       <div class="back-content">
         {#if backIcon}
-          {@html backIcon}
+          <!-- Note: Using innerHTML for icon content - ensure backIcon is sanitized -->
+          <div>{@html backIcon}</div>
         {:else}
           <svg stroke="#ffffff" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" height="50px" width="50px" fill="#ffffff">
             <g stroke-width="0" id="SVGRepo_bgCarrier"></g>
@@ -50,7 +53,9 @@
             <p class="title">
               <strong>{frontTitle}</strong>
             </p>
-            <slot name="icon">
+            {#if iconSnippet}
+              {@render iconSnippet()}
+            {:else}
               <svg fill-rule="nonzero" height="15px" width="15px" viewBox="0,0,256,256" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg">
                 <g style="mix-blend-mode: normal" text-anchor="none" font-size="none" font-weight="none" font-family="none" stroke-dashoffset="0" stroke-dasharray="" stroke-miterlimit="10" stroke-linejoin="miter" stroke-linecap="butt" stroke-width="1" stroke="none" fill-rule="nonzero" fill="#8b5cf6">
                   <g transform="scale(8,8)">
@@ -58,7 +63,7 @@
                   </g>
                 </g>
               </svg>
-            </slot>
+            {/if}
           </div>
           <p class="card-footer">
             {frontFooter}

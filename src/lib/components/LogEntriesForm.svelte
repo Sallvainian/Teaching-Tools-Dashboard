@@ -1,14 +1,18 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import type { LogEntry } from '$lib/types/log-entries';
   
   // Convert props to Svelte 5 runes
-  const props = $props({
-    editMode: false as boolean,
-    log: undefined as LogEntry | undefined
-  });
-  
-  const dispatch = createEventDispatcher();
+  const {
+    editMode = false,
+    log,
+    onsave,
+    oncancel
+  } = $props<{
+    editMode?: boolean;
+    log?: LogEntry;
+    onsave?: (logEntry: Omit<LogEntry, 'id'>) => void;
+    oncancel?: () => void;
+  }>();
   
   // Define available tag options
   const tagOptions = [
@@ -22,12 +26,12 @@
   ];
   
   // Form fields with $state
-  let date = $state(props.log?.date || new Date().toISOString().slice(0, 10));
-  let student = $state(props.log?.student || '');
-  let log_entry = $state(props.log?.log_entry || '');
-  let actions = $state(props.log?.actions || '');
-  let follow_up = $state(props.log?.follow_up || '');
-  let selectedTag = $state(props.log?.tags && props.log.tags.length > 0 ? props.log.tags[0] : '');
+  let date = $state(log?.date || new Date().toISOString().slice(0, 10));
+  let student = $state(log?.student || '');
+  let log_entry = $state(log?.log_entry || '');
+  let actions = $state(log?.actions || '');
+  let follow_up = $state(log?.follow_up || '');
+  let selectedTag = $state(log?.tags && log.tags.length > 0 ? log.tags[0] : '');
 
   // Form validation
   type ErrorTypes = {
@@ -60,7 +64,8 @@
     return isValid;
   }
 
-  function handleSave() {
+  function handleSave(event: SubmitEvent) {
+    event.preventDefault();
     if (!validateForm()) return;
 
     const logEntry: Omit<LogEntry, 'id'> = {
@@ -72,15 +77,15 @@
       tags: selectedTag ? [selectedTag] : []
     };
 
-    dispatch('save', logEntry);
+    onsave?.(logEntry);
   }
 
   function handleCancel() {
-    dispatch('cancel');
+    oncancel?.();
   }
 </script>
 
-<form on:submit|preventDefault={handleSave} class="space-y-4">
+<form onsubmit={handleSave} class="space-y-4">
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div>
       <label for="date" class="block text-sm font-medium text-dark-muted mb-1">
@@ -162,7 +167,7 @@
       class="w-full px-3 py-2 bg-dark-accent border border-dark-border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-dark-purple"
     >
       <option value="">Select a tag</option>
-      {#each tagOptions as tag}
+      {#each tagOptions as tag (tag)}
         <option value={tag}>{tag}</option>
       {/each}
     </select>
@@ -171,7 +176,7 @@
   <div class="flex justify-end gap-3 pt-4">
     <button
       type="button"
-      on:click={handleCancel}
+      onclick={handleCancel}
       class="px-4 py-2 text-gray-300 hover:text-white transition-colors"
     >
       Cancel
@@ -180,7 +185,7 @@
       type="submit"
       class="px-4 py-2 bg-dark-purple text-white rounded-lg hover:bg-dark-purple-hover transition-colors"
     >
-      {props.editMode ? 'Update' : 'Save'} Entry
+      {editMode ? 'Update' : 'Save'} Entry
     </button>
   </div>
 </form>

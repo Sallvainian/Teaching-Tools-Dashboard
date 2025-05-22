@@ -35,6 +35,18 @@ pnpm validate       # Run both lint and check
 pnpm test -- path/to/file.test.ts
 ```
 
+## GitHub Actions & Claude Code
+
+This repository includes Claude Code GitHub Actions for automated code reviews, PR management, and issue triage:
+
+- **Interactive Assistant**: Tag `@claude` in issues/PRs for AI assistance
+- **Automated Code Reviews**: Thorough analysis of all PRs to main branch
+- **Issue Triage**: Automatic categorization and priority assessment
+- **Documentation Sync**: Updates docs when code changes
+- **PR Validation**: Quality checks and compliance verification
+
+See `docs/CLAUDE_GITHUB_ACTIONS_SETUP.md` for complete setup instructions.
+
 ## High-Level Architecture
 
 ### Dual Storage System

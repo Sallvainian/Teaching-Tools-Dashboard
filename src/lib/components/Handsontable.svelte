@@ -1,21 +1,23 @@
-<script>
+<script lang="ts">
   import { onMount, onDestroy, createEventDispatcher } from 'svelte';
 
-  // Props
-  export let data = [];
-  export let colHeaders = true;
-  export let rowHeaders = true;
-  export let height = 400;
-  export let width = '100%';
-  export let licenseKey = 'non-commercial-and-evaluation';
-  export let settings = {};
+  // Define props with $props
+  let { 
+    data = [], 
+    colHeaders = true,
+    rowHeaders = true,
+    height = 400,
+    width = '100%',
+    licenseKey = 'non-commercial-and-evaluation',
+    settings = {}
+  } = $props();
   
   // Create Svelte event dispatcher
   const dispatch = createEventDispatcher();
   
   // Container reference
-  let container;
-  let hotInstance = null;
+  let container: HTMLDivElement;
+  let hotInstance = $state(null);
   
   onMount(async () => {
     // Dynamically import Handsontable to avoid SSR issues
@@ -71,12 +73,12 @@
       licenseKey,
       width,
       height,
-      afterChange: (changes, source) => {
+      afterChange: (changes: any[], source: string) => {
         if (source !== 'loadData') {
           dispatch('afterChange', { changes, source });
         }
       },
-      afterSelection: (row, column, row2, column2) => {
+      afterSelection: (row: number, column: number, row2: number, column2: number) => {
         dispatch('afterSelection', { row, column, row2, column2 });
       },
       ...settings
@@ -99,8 +101,8 @@
     }
   });
   
-  // Method to update data from outside
-  export function updateData(newData) {
+  // Method to update data from outside  
+  export function updateData(newData: any[]) {
     if (hotInstance) {
       hotInstance.loadData(newData);
     }

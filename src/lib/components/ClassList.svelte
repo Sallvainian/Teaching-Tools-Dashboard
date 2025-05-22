@@ -21,9 +21,9 @@
   <h2 class="text-xl font-semibold text-gray-100 mb-4">All Classes</h2>
   
   <div class="space-y-2">
-    {#each classes as classItem}
+    {#each classes as classItem (classItem.id)}
       <button
-        on:click={() => onSelectClass(classItem.id)}
+        onclick={() => onSelectClass(classItem.id)}
         class="w-full p-3 rounded-lg text-left transition-all duration-200 {
           selectedClassId === classItem.id
             ? 'bg-dark-purple text-white'

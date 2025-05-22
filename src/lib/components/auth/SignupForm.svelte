@@ -14,9 +14,14 @@
     error = '';
     
     try {
-      await authStore.resendConfirmationEmail(email);
-      error = 'Confirmation email sent! Please check your inbox.';
-      showResendConfirmation = false;
+      // Use resetPassword as a way to send a new confirmation email
+      const success = await authStore.resetPassword(email);
+      if (success) {
+        error = 'Confirmation email sent! Please check your inbox.';
+        showResendConfirmation = false;
+      } else {
+        error = 'Failed to resend confirmation email';
+      }
     } catch (err: any) {
       error = err.message || 'Failed to resend confirmation email';
     } finally {
@@ -44,7 +49,7 @@
     error = '';
     
     try {
-      await authStore.signUpWithEmail(email, password, fullName);
+      await authStore.signUp(email, password, { full_name: fullName });
       // Success - no need to do anything as the auth store will update
     } catch (err: any) {
       error = err.message || 'Failed to sign up';
@@ -60,7 +65,7 @@
 </script>
 
 <div class="w-full max-w-md">
-  <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="bg-base-200 rounded-lg px-8 pt-6 pb-8 mb-4 shadow-md">
+  <form on:submit|preventDefault={handleSubmit} class="bg-surface rounded-lg px-8 pt-6 pb-8 mb-4 shadow-themed-card">
     <h2 class="text-2xl font-bold mb-6 text-center">Create an Account</h2>
     
     {#if error}
@@ -71,7 +76,7 @@
           <div class="mt-3">
             <p class="text-sm mb-2">This email is already registered but hasn't been confirmed.</p>
             <button
-              onclick={resendConfirmation}
+              on:click={resendConfirmation}
               class="btn btn-sm btn-outline {loading ? 'loading' : ''}"
               disabled={loading}
             >

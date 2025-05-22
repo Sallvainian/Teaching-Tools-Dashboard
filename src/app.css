@@ -1,10 +1,82 @@
 /* AG Grid CSS imports are in +layout.svelte */
-
-/* Tailwind directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    @apply bg-white dark:bg-bg-base text-gray-900 dark:text-text-base;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply dark:text-highlight;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 dark:bg-purple dark:hover:bg-purple-hover text-white px-4 py-2 rounded-lg transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-gray-200 hover:bg-gray-300 dark:bg-surface dark:hover:bg-muted text-gray-800 dark:text-text-hover px-4 py-2 rounded-lg transition-colors;
+  }
+
+  .card {
+    @apply bg-white dark:bg-card rounded-xl shadow-card dark:shadow-themed-card p-6;
+  }
+
+  .input {
+    @apply bg-white dark:bg-surface border border-gray-300 dark:border-border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 dark:focus:ring-purple focus:border-transparent outline-none transition;
+  }
+
+  /* Navigation */
+  .nav-link {
+    @apply px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent text-gray-700 dark:text-text-base hover:text-gray-900 dark:hover:text-text-hover transition-colors;
+  }
+
+  .nav-link.active {
+    @apply bg-blue-50 dark:bg-purple-bg text-blue-700 dark:text-purple font-medium;
+  }
+
+  /* Form elements */
+  .label {
+    @apply block text-sm font-medium text-gray-700 dark:text-text-base mb-1;
+  }
+
+  .select {
+    @apply bg-white dark:bg-surface border border-gray-300 dark:border-border rounded-lg px-4 py-2 pr-8 appearance-none;
+  }
+
+  /* Tables */
+  .table-container {
+    @apply overflow-x-auto rounded-lg border border-gray-200 dark:border-border;
+  }
+
+  .table {
+    @apply min-w-full divide-y divide-gray-200 dark:divide-separator;
+  }
+
+  .table-header {
+    @apply bg-gray-50 dark:bg-surface;
+  }
+
+  .table-header-cell {
+    @apply px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-text-base uppercase tracking-wider;
+  }
+
+  .table-body {
+    @apply bg-white dark:bg-card divide-y divide-gray-200 dark:divide-separator;
+  }
+
+  .table-row {
+    @apply hover:bg-gray-50 dark:hover:bg-surface transition-colors;
+  }
+
+  .table-cell {
+    @apply px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-text-base;
+  }
+}
 /* Fix for Tailwind CSS custom properties */
 :root {
   --tw-empty: ;
@@ -14,11 +86,22 @@
 
 /* Gradient backgrounds */
 .bg-gradient-dark {
-  background: linear-gradient(139deg, rgb(36, 40, 50) 0%, rgb(36, 40, 50) 40%, rgb(37, 28, 40) 100%);
+  background: linear-gradient(139deg, var(--bg-base, rgb(36, 40, 50)) 0%, var(--bg-base, rgb(36, 40, 50)) 40%, var(--bg-gradient, rgb(37, 28, 40)) 100%);
 }
 
 .bg-gradient-card {
-  background: linear-gradient(135deg, rgb(36, 40, 50) 0%, rgb(36, 40, 50) 40%, rgb(37, 28, 40) 100%);
+  background: linear-gradient(135deg, var(--card, rgb(36, 40, 50)) 0%, var(--card, rgb(36, 40, 50)) 40%, var(--bg-gradient, rgb(37, 28, 40)) 100%);
+}
+
+/* Enhanced purple hover effect for navigation */
+.nav-button {
+  @apply text-gray-300 hover:text-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-purple-bg hover:shadow-md;
+}
+
+.nav-button:hover {
+  background-color: rgba(142, 87, 209, 0.15);
+  box-shadow: 0 0 8px rgba(142, 87, 209, 0.3);
+  transform: translateY(-1px);
 }
 
 /* Custom form styles */
@@ -27,39 +110,46 @@
 }
 
 /* Custom button styles */
-.btn-primary {
-  @apply bg-dark-purple text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-dark-purple-hover hover:shadow-dark-glow;
+.btn-primary-custom {
+  @apply bg-purple text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-purple-hover;
 }
 
-.btn-secondary {
-  @apply bg-dark-purple-bg text-dark-purple px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-dark-purple-hover hover:text-white;
+.btn-secondary-custom {
+  @apply bg-purple-bg text-purple px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-purple-hover hover:text-white;
 }
 
 .btn-danger {
-  @apply bg-dark-error text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-dark-error-hover;
+  @apply bg-error text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-error-hover;
 }
 
 /* Card styles */
 .card-dark {
-  @apply bg-gradient-card rounded-lg p-4 border border-dark-border shadow-dark-card transition-all duration-300 hover:shadow-dark-dropdown;
+  @apply bg-gradient-card rounded-lg p-4 border border-border shadow-card transition-all duration-300;
+}
+
+/* Enhanced dashboard cards */
+.card-dark:hover {
+  border-color: rgba(142, 87, 209, 0.6);
+  box-shadow: 0 0 12px rgba(142, 87, 209, 0.4);
+  transform: translateY(-2px);
 }
 
 /* Menu item styles (inspired by dropdown) */
 .menu-item {
-  @apply flex items-center gap-3 px-3 py-2 rounded-md text-gray-300 transition-all duration-200 cursor-pointer hover:bg-dark-purple-bg hover:text-dark-text-hover active:scale-[0.99] active:translate-y-[0px];
+  @apply flex items-center gap-3 px-3 py-2 rounded-md text-gray-300 transition-all duration-200 cursor-pointer hover:bg-purple-bg hover:text-highlight active:scale-[0.99] active:translate-y-[0px];
 }
 
 .menu-item.danger {
-  @apply hover:bg-dark-error hover:text-dark-text-hover;
+  @apply hover:bg-error hover:text-highlight;
 }
 
 .menu-item.special {
-  @apply text-dark-purple hover:bg-dark-purple-hover;
+  @apply text-purple hover:bg-purple-hover;
 }
 
 /* Separator */
 .separator {
-  @apply border-t border-dark-separator;
+  @apply border-t border-separator;
 }
 
 /* AG Grid styling with CSS variables */
@@ -126,7 +216,6 @@
 .ag-theme-material .editable-cell {
   background-color: rgba(83, 83, 255, 0.05);
 }
-
 /* Ensure proper sizing of the grid */
 .ag-theme-material.ag-root-wrapper {
   border: 1px solid #42434a;

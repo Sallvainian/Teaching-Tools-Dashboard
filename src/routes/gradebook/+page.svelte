@@ -4,25 +4,25 @@
   import LoadingBounce from '$lib/components/LoadingBounce.svelte';
   import Handsontable from '$lib/components/Handsontable.svelte';
 
-  // State variables
-  let categoryId = '';
-  let assignmentName = '';
-  let maxPoints = 100;
-  let newStudentName = '';
-  let newClassName = '';
-  let showNewClassModal = false;
-  let hotInstance;
+  // State variables using $state
+  let categoryId = $state('');
+  let assignmentName = $state('');
+  let maxPoints = $state(100);
+  let newStudentName = $state('');
+  let newClassName = $state('');
+  let showNewClassModal = $state(false);
+  let hotInstance = $state(null);
   
-  // Reactive values
-  $: selectedCategory = $gradebookStore.getSelectedCategory;
-  $: categoryStudents = $gradebookStore.getStudentsInSelectedCategory;
-  $: categoryAssignments = $gradebookStore.getAssignmentsForSelectedCategory;
-  $: allGrades = $gradebookStore.grades || [];
+  // Reactive values using $derived
+  let selectedCategory = $derived($gradebookStore.getSelectedCategory);
+  let categoryStudents = $derived($gradebookStore.getStudentsInSelectedCategory);
+  let categoryAssignments = $derived($gradebookStore.getAssignmentsForSelectedCategory);
+  let allGrades = $derived($gradebookStore.grades || []);
   
   // Create reactive data and headers for Handsontable
-  $: hotData = createTableData();
-  $: columnHeaders = createColumnHeaders();
-  $: columnSettings = createColumnSettings();
+  let hotData = $derived(createTableData());
+  let columnHeaders = $derived(createColumnHeaders());
+  let columnSettings = $derived(createColumnSettings());
   
   // Table functions
   function createTableData() {
@@ -153,11 +153,13 @@
     console.log('Gradebook data loaded');
   });
 
-  // Handle initial category selection
-  $: if ($gradebookStore.categories?.length > 0 && !categoryId) {
-    console.log('Setting initial category reactively');
-    gradebookStore.selectCategory($gradebookStore.categories[0].id);
-  }
+  // Handle initial category selection with $effect
+  $effect(() => {
+    if ($gradebookStore.categories?.length > 0 && !categoryId) {
+      console.log('Setting initial category reactively');
+      gradebookStore.selectCategory($gradebookStore.categories[0].id);
+    }
+  });
 
   function handleAddAssignment() {
     if (categoryId && assignmentName.trim()) {

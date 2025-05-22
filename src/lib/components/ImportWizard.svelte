@@ -18,8 +18,8 @@
     { name: "Emily Johnson" }
   ], null, 2);
   
-  async function handleImport(e?: Event) {
-    if (e) e.preventDefault();
+  async function handleImport(e: SubmitEvent) {
+    e.preventDefault();
     
     error.set(null);
     
@@ -107,7 +107,7 @@
   <div class="bg-gray-800 border border-gray-700 rounded-lg p-6 w-full max-w-2xl mx-4">
     <h2 class="text-2xl font-bold text-gray-100 mb-6">Import New Class</h2>
     
-    <form on:submit={(e) => { e.preventDefault(); handleImport(e); }} class="space-y-4">
+    <form onsubmit={handleImport} class="space-y-4">
       <div>
         <label for="className" class="block text-sm font-medium text-gray-300 mb-2">
           Class Name
@@ -147,7 +147,7 @@
       <div class="flex justify-end gap-3 mt-6">
         <button
           type="button"
-          on:click={onClose}
+          onclick={onClose}
           class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200"
         >
           Cancel

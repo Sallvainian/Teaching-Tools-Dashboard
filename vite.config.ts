@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => {
   plugins: [sveltekit()],
   
   css: {
-    postcss: './postcss.config.ts',
+    // Let Vite auto-discover the PostCSS config
   },
   optimizeDeps: {
     exclude: ['@ag-grid-community/core', '@ag-grid-community/client-side-row-model']

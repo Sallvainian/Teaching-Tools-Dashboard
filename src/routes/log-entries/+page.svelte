@@ -6,19 +6,19 @@
   import LogEntriesList from '$lib/components/LogEntriesList.svelte';
   import LogEntriesDetails from '$lib/components/LogEntriesDetails.svelte';
   import LoadingBounce from '$lib/components/LoadingBounce.svelte';
-  import { onMount } from 'svelte';
   
-  let showNewLogForm = false;
-  let showDetailsView = false;
-  let editMode = false;
-  let selectedLogId: string | null = null;
+  let showNewLogForm = $state(false);
+  let showDetailsView = $state(false);
+  let editMode = $state(false);
+  let selectedLogId = $state<string | null>(null);
   
   // Current filtered logs
-  let filteredLogs: LogEntry[] = [];
-  let isLoading = true;
+  let filteredLogs = $state<LogEntry[]>([]);
+  let isLoading = $state(true);
   
-  // Subscribe to the store for changes
-  logEntriesStore.subscribe(state => {
+  // Use $effect instead of subscribe
+  $effect(() => {
+    const state = $logEntriesStore;
     filteredLogs = state.logs.sort((a, b) => 
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );
@@ -86,23 +86,27 @@
     );
   }
   
-  onMount(async () => {
-    try {
-      // Dynamically import supabase client
-      const { initializeDB } = await import('$lib/supabaseClient');
+  $effect(() => {
+    async function initializeData() {
+      try {
+        // Dynamically import supabase client
+        const { initializeDB } = await import('$lib/supabaseClient');
+        
+        // Initialize database tables and functions
+        await initializeDB();
+      } catch (err) {
+        console.warn("Could not initialize Supabase DB:", err);
+      }
       
-      // Initialize database tables and functions
-      await initializeDB();
-    } catch (err) {
-      console.warn("Could not initialize Supabase DB:", err);
+      // Initialize the log entries store
+      logEntriesStore.init();
+      
+      setTimeout(() => {
+        isLoading = false;
+      }, 500);
     }
     
-    // Initialize the log entries store
-    logEntriesStore.init();
-    
-    setTimeout(() => {
-      isLoading = false;
-    }, 500);
+    initializeData();
   });
 </script>
 
@@ -131,7 +135,7 @@
     </div>
   {:else}
     <!-- Search and Filter Bar -->
-    <LogEntriesSearch on:filter={handleFilter} />
+    <LogEntriesSearch onfilter={handleFilter} />
 
     <!-- Main Content -->
     <div class="mt-6">
@@ -142,10 +146,10 @@
       {:else}
         <LogEntriesList 
           logs={filteredLogs} 
-          on:select={handleSelectLog}
-          on:delete={handleListDelete}
-          on:restore={handleRestoreLog}
-          on:bulkDelete={handleBulkDelete}
+          onselect={handleSelectLog}
+          ondelete={handleListDelete}
+          onrestore={handleRestoreLog}
+          onbulkdelete={handleBulkDelete}
         />
       {/if}
     </div>
@@ -164,8 +168,8 @@
           <LogEntriesForm
             {editMode}
             log={editMode && selectedLogId ? logEntriesStore.getLog(selectedLogId) : undefined}
-            on:save={handleSaveLog}
-            on:cancel={() => {
+            onsave={handleSaveLog}
+            oncancel={() => {
               showNewLogForm = false;
               editMode = false;
               selectedLogId = null;
@@ -180,9 +184,9 @@
   {#if showDetailsView && selectedLogId}
     <LogEntriesDetails
       logId={selectedLogId}
-      on:close={handleCloseDetails}
-      on:edit={handleEditLog}
-      on:delete={handleDeleteLog}
+      onclose={handleCloseDetails}
+      onedit={handleEditLog}
+      ondelete={handleDeleteLog}
     />
   {/if}
 </div>

@@ -15,7 +15,7 @@
   let currentTime = $state(0);
   let isReading = $state(true);
   let timerInterval: number | null = null;
-  let isActive = $state(false);
+  let _isActive = $state(false);
   
   let progress = $derived(
     isReading 
@@ -32,7 +32,7 @@
   function startTimer() {
     if (timerInterval) return;
     
-    isActive = true;
+    _isActive = true;
     currentTime = 0;
     isReading = true;
     
@@ -55,10 +55,10 @@
       clearInterval(timerInterval);
       timerInterval = null;
     }
-    isActive = false;
+    _isActive = false;
   }
   
-  function reset() {
+  function _reset() {
     stopTimer();
     currentTime = 0;
     isReading = true;

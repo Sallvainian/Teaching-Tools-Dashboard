@@ -36,7 +36,7 @@
   function handleSelectQuestion(categoryId: string, questionId: string) {
     const category = $getActiveGame?.categories.find(c => c.id === categoryId);
     const question = category?.questions.find(q => q.id === questionId);
-    if (question && !question.answered) {
+    if (question && !question.isAnswered) {
       setActiveQuestion({
         ...question,
         categoryId,
@@ -127,7 +127,7 @@
 
         <!-- Team Scores -->
         <div class="mb-8 flex flex-wrap gap-4 justify-center">
-          {#each $getActiveGame.teams as team}
+          {#each $getActiveGame.teams as team (team.id)}
             <div 
               class="card-dark px-6 py-3 {$getLeadingTeam?.id === team.id ? 'border-dark-purple ring-2 ring-dark-purple' : ''}"
               style="border-color: {team.color};"
@@ -140,21 +140,21 @@
 
         <!-- Game Board -->
         <div class="grid gap-4 max-w-6xl mx-auto" style="grid-template-columns: repeat({$getActiveGame.categories.length}, minmax(0, 1fr));">
-          {#each $getActiveGame.categories as category}
+          {#each $getActiveGame.categories as category (category.id)}
             <div class="space-y-4">
               <div class="card-dark text-center py-3">
                 <h3 class="text-lg font-bold text-gray-200">{category.name}</h3>
               </div>
-              {#each category.questions.sort((a, b) => a.pointValue - b.pointValue) as question}
+              {#each category.questions.sort((a, b) => a.pointValue - b.pointValue) as question (question.id)}
                 <button
                   onclick={() => handleSelectQuestion(category.id, question.id)}
-                  disabled={question.answered}
+                  disabled={question.isAnswered}
                   class="w-full card-dark py-8 text-center transition-all duration-200 
-                         {question.answered 
+                         {question.isAnswered 
                            ? 'opacity-30 cursor-not-allowed' 
                            : 'hover:border-dark-purple hover:shadow-dark-glow cursor-pointer'}"
                 >
-                  {#if question.answered}
+                  {#if question.isAnswered}
                     <span class="text-gray-600">-</span>
                   {:else}
                     <span class="text-2xl font-bold text-dark-purple-light">
@@ -175,12 +175,12 @@
             readingTime={$getActiveGame.settings.readingTime || 5}
             totalTime={$getActiveQuestion.timeLimit || $getActiveGame.settings.defaultTimeLimit || 30}
             size={$getActiveGame.settings.timerSize || 'large'}
-            on:timeExpired={() => {
+            onTimeExpired={() => {
               if ($getActiveGame.settings?.autoShowAnswer) {
                 showAnswer = true;
               }
             }}
-            on:readingComplete={() => {
+            onReadingComplete={() => {
               // Reading phase complete, main timer starts
             }}
           />
@@ -195,12 +195,12 @@
                   totalTime={$getActiveQuestion.timeLimit || $getActiveGame.settings.defaultTimeLimit || 30}
                   size="small"
                   position="corner"
-                  on:timeExpired={() => {
+                  onTimeExpired={() => {
                     if ($getActiveGame.settings?.autoShowAnswer) {
                       showAnswer = true;
                     }
                   }}
-                  on:readingComplete={() => {
+                  onReadingComplete={() => {
                     // Reading phase complete, main timer starts
                   }}
                 />
@@ -271,7 +271,7 @@
             <div class="card-dark mt-6 p-6">
               <h3 class="text-lg font-semibold text-gray-200 mb-4 text-center">Award Points</h3>
               <div class="grid grid-cols-2 gap-3" style="grid-template-columns: repeat(min({$getActiveGame.teams.length}, 4), minmax(0, 1fr));">
-                {#each $getActiveGame.teams as team}
+                {#each $getActiveGame.teams as team (team.id)}
                   <div class="text-center">
                     <button
                       onclick={() => handleAwardPoints(team.id, $getActiveQuestion.isDoubleJeopardy ? $wagerAmount : $getActiveQuestion.pointValue)}

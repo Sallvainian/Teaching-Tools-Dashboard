@@ -1,11 +1,24 @@
 <script lang="ts">
-  import { authStore } from '$lib/stores/auth';
+  import { authStore, error as authError } from '$lib/stores/auth';
   import { goto } from '$app/navigation';
+  import { onMount, onDestroy } from 'svelte';
   
   let email = $state('');
   let password = $state('');
   let loading = $state(false);
   let error = $state('');
+  let unsubscribe;
+  
+  onMount(() => {
+    // Set up subscription to auth errors
+    unsubscribe = authError.subscribe(err => {
+      if (err) error = err;
+    });
+  });
+  
+  onDestroy(() => {
+    if (unsubscribe) unsubscribe();
+  });
   
   async function handleSubmit() {
     if (!email || !password) {
@@ -19,21 +32,11 @@
     try {
       const success = await authStore.signIn(email, password);
       if (success) {
-        // Redirect based on role
-        const unsubscribe = authStore.subscribe(state => {
-          if (state.isStudent) {
-            goto('/student/dashboard');
-          } else if (state.isTeacher) {
-            goto('/dashboard');
-          }
-          unsubscribe();
-        });
+        // Simple redirect to dashboard for now
+        goto('/dashboard');
       } else {
-        // Get error from auth store
-        const unsubscribe = authStore.error.subscribe(authError => {
-          error = authError || 'Failed to sign in';
-          unsubscribe();
-        });
+        // Error will be set via subscription
+        if (!error) error = 'Failed to sign in';
       }
     } catch (err) {
       error = err instanceof Error ? err.message : 'Failed to sign in';
@@ -44,8 +47,8 @@
 </script>
 
 <div class="w-full max-w-md">
-  <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="bg-dark-surface rounded-lg px-8 pt-6 pb-8 mb-4 shadow-dark">
-    <h2 class="text-2xl font-bold mb-6 text-center text-dark-highlight">Sign In</h2>
+  <form on:submit|preventDefault={handleSubmit} class="bg-surface rounded-lg px-8 pt-6 pb-8 mb-4 shadow-themed-card">
+    <h2 class="text-2xl font-bold mb-6 text-center text-highlight">Sign In</h2>
     
     {#if error}
       <div class="bg-error/20 text-error px-4 py-3 rounded mb-4" role="alert">
@@ -54,12 +57,12 @@
     {/if}
     
     <div class="mb-4">
-      <label class="block text-sm font-medium mb-2 text-dark-text" for="email">
+      <label class="block text-sm font-medium mb-2 text-text-base" for="email">
         Email
       </label>
       <input
         bind:value={email}
-        class="input input-bordered w-full bg-dark-surface-light border-dark-border"
+        class="input input-bordered w-full bg-surface border-border"
         id="email"
         type="email"
         placeholder="Email"
@@ -68,12 +71,12 @@
     </div>
     
     <div class="mb-6">
-      <label class="block text-sm font-medium mb-2 text-dark-text" for="password">
+      <label class="block text-sm font-medium mb-2 text-text-base" for="password">
         Password
       </label>
       <input
         bind:value={password}
-        class="input input-bordered w-full bg-dark-surface-light border-dark-border"
+        class="input input-bordered w-full bg-surface border-border"
         id="password"
         type="password"
         placeholder="Password"

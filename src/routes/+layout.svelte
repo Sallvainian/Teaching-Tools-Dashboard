@@ -7,8 +7,8 @@
   import '$lib/ag-grid-modules';
   import '@ag-grid-community/styles/ag-grid.css';
   import '@ag-grid-community/styles/ag-theme-material.css';
+  import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 
-  import { onMount } from 'svelte';
   import { goto } from '$app/navigation';
   import { navigating } from '$app/stores';
   import LoadingBounce from '$lib/components/LoadingBounce.svelte';
@@ -17,12 +17,13 @@
   import { authStore, isAuthenticated } from '$lib/stores/auth';
   import { gradebookStore } from '$lib/stores/gradebook';
 
-  // Remove children prop - using slot instead
+  // Get children prop for Svelte 5
+  let { children } = $props();
 
-  // Local state
-  let newClassName = '';
-  let sidebarCollapsed = false;
-  let userMenuOpen = false;
+  // Local state using $state
+  let newClassName = $state('');
+  let sidebarCollapsed = $state(false);
+  let userMenuOpen = $state(false);
 
   function handleAddClass() {
     if (newClassName.trim()) {
@@ -45,8 +46,8 @@
     goto('/auth/login');
   }
 
-  // Setup with onMount (we'll convert to $effect later)
-  onMount(() => {
+  // Setup with $effect instead of onMount
+  $effect(() => {
     // Set dark mode
     document.documentElement.classList.add('dark');
     document.documentElement.setAttribute('data-ag-theme-mode', 'dark');
@@ -67,85 +68,89 @@
   });
 
   // Ensure data is loaded
-  onMount(() => {
+  $effect(() => {
     gradebookStore.ensureDataLoaded();
   });
 </script>
 
-<div class="min-h-screen bg-gradient-dark text-dark-text flex flex-col transition-colors">
-  <nav class="bg-dark-surface border-b border-dark-border backdrop-blur-sm">
+<div class="min-h-screen bg-gradient-dark text-text-base flex flex-col transition-colors">
+  <nav class="bg-surface border-b border-border backdrop-blur-sm">
     <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
       <div class="flex items-center gap-3">
-        <div class="h-8 w-8 bg-gradient-card border border-dark-border rounded-md flex items-center justify-center shadow-dark-card">
-          <span class="text-dark-purple font-bold text-lg">T</span>
+        <div class="h-8 w-8 bg-gradient-card border border-border rounded-md flex items-center justify-center shadow-themed-card">
+          <span class="text-purple font-bold text-lg">T</span>
         </div>
-        <h1 class="text-xl font-bold tracking-wide text-dark-highlight">
-          Teacher <span class="text-dark-purple">Dashboard</span>
+        <h1 class="text-xl font-bold tracking-wide text-highlight">
+          Teacher <span class="text-purple">Dashboard</span>
         </h1>
       </div>
 
       <div class="flex items-center gap-8">
         <div class="flex gap-6">
-          <a href="/dashboard" class="text-gray-300 hover:text-dark-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-dark-purple-bg">Dashboard</a>
-          <a href="/gradebook" class="text-gray-300 hover:text-dark-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-dark-purple-bg">Gradebook</a>
-          <a href="/jeopardy" class="text-gray-300 hover:text-dark-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-dark-purple-bg">Jeopardy</a>
-          <a href="/lesson-planner" class="text-gray-300 hover:text-dark-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-dark-purple-bg">Planner</a>
-          <a href="/class-dojo-remake" class="text-gray-300 hover:text-dark-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-dark-purple-bg">Dojo</a>
-          <a href="/log-entries" class="text-gray-300 hover:text-dark-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-dark-purple-bg">Log Entries</a>
+          <a href="/dashboard" class="nav-button">Dashboard</a>
+          <a href="/gradebook" class="nav-button">Gradebook</a>
+          <a href="/jeopardy" class="nav-button">Jeopardy</a>
+          <a href="/lesson-planner" class="nav-button">Planner</a>
+          <a href="/class-dojo-remake" class="nav-button">Dojo</a>
+          <a href="/log-entries" class="nav-button">Log Entries</a>
         </div>
 
-        <div class="relative user-menu">
-          {#if $isAuthenticated}
-            <button
-              onclick={toggleUserMenu}
-              class="flex items-center gap-3 hover:bg-dark-accent/20 p-1 rounded-lg"
-            >
-              <div class="w-8 h-8 bg-dark-purple rounded-full flex items-center justify-center text-white font-medium">
-                {$authStore.user?.user_metadata?.full_name?.[0] || $authStore.user?.email?.[0]?.toUpperCase() || 'T'}
-              </div>
-              <span class="text-sm text-gray-300">{$authStore.user?.user_metadata?.full_name || 'Teacher'}</span>
-              <svg class="w-4 h-4 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            
-            {#if userMenuOpen}
-              <div class="absolute right-0 mt-2 w-48 bg-gradient-card border border-dark-border rounded-lg shadow-dark-dropdown z-50">
-                <div class="py-1">
-                  <a href="/settings/profile" class="menu-item text-sm" onclick={() => userMenuOpen = false}>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                    </svg>
-                    <span>Profile</span>
-                  </a>
-                  <a href="/settings" class="menu-item text-sm" onclick={() => userMenuOpen = false}>
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    </svg>
-                    <span>Settings</span>
-                  </a>
-                  <div class="separator mx-2 my-1"></div>
-                  <button
-                    onclick={() => {
-                      userMenuOpen = false;
-                      handleSignOut();
-                    }}
-                    class="menu-item danger text-sm w-full text-left"
-                  >
-                    <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                    </svg>
-                    <span>Sign out</span>
-                  </button>
+        <div class="flex items-center gap-3">
+          <ThemeToggle />
+          
+          <div class="relative user-menu">
+            {#if $isAuthenticated}
+              <button
+                on:click={toggleUserMenu}
+                class="flex items-center gap-3 hover:bg-accent/20 p-1 rounded-lg"
+              >
+                <div class="w-8 h-8 bg-purple rounded-full flex items-center justify-center text-white font-medium">
+                  {$authStore.user?.user_metadata?.full_name?.[0] || $authStore.user?.email?.[0]?.toUpperCase() || 'T'}
                 </div>
-              </div>
+                <span class="text-sm text-gray-300">{$authStore.user?.user_metadata?.full_name || 'Teacher'}</span>
+                <svg class="w-4 h-4 text-gray-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {#if userMenuOpen}
+                <div class="absolute right-0 mt-2 w-48 bg-gradient-card border border-border rounded-lg shadow-dropdown z-50">
+                  <div class="py-1">
+                    <a href="/settings/profile" class="menu-item text-sm" on:click={() => userMenuOpen = false}>
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                      </svg>
+                      <span>Profile</span>
+                    </a>
+                    <a href="/settings" class="menu-item text-sm" on:click={() => userMenuOpen = false}>
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                      </svg>
+                      <span>Settings</span>
+                    </a>
+                    <div class="separator mx-2 my-1"></div>
+                    <button
+                      on:click={() => {
+                        userMenuOpen = false;
+                        handleSignOut();
+                      }}
+                      class="menu-item danger text-sm w-full text-left"
+                    >
+                      <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                      </svg>
+                      <span>Sign out</span>
+                    </button>
+                  </div>
+                </div>
+              {/if}
+            {:else}
+              <a href="/auth/login" class="text-gray-300 hover:text-dark-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-dark-accent">
+                Sign in
+              </a>
             {/if}
-          {:else}
-            <a href="/auth/login" class="text-gray-300 hover:text-dark-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-dark-accent">
-              Sign in
-            </a>
-          {/if}
+          </div>
         </div>
       </div>
     </div>
@@ -153,13 +158,13 @@
 
   <div class="flex flex-grow relative">
     <!-- Left sidebar - hidden on smaller screens -->
-    <aside class="hidden md:block bg-dark-surface border-r border-dark-border transition-[width] duration-150 relative"
+    <aside class="hidden md:block bg-surface border-r border-border transition-[width] duration-150 relative"
            class:collapsed={sidebarCollapsed}
            style="width: {sidebarCollapsed ? '3.5rem' : '14rem'}">
       <!-- Toggle button -->
       <button
-        onclick={() => sidebarCollapsed = !sidebarCollapsed}
-        class="absolute -right-3 top-6 z-10 w-6 h-6 bg-dark-surface border border-dark-border rounded-md text-dark-muted hover:text-dark-highlight hover:border-dark-highlight transition-all duration-200"
+        on:click={() => sidebarCollapsed = !sidebarCollapsed}
+        class="absolute -right-3 top-6 z-10 w-6 h-6 bg-surface border border-border rounded-md text-muted hover:text-highlight hover:border-highlight transition-all duration-200"
         aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         <svg class="w-full h-full p-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
@@ -175,7 +180,7 @@
           <div class="space-y-1">
             <a
               href="/dashboard"
-              class="menu-item relative group"
+              class="menu-item relative group hover:bg-purple-bg"
               class:px-3={!sidebarCollapsed}
               class:px-1={sidebarCollapsed}
               class:justify-center={sidebarCollapsed}
@@ -204,7 +209,7 @@
             
             <a
               href="/classes"
-              class="menu-item relative group"
+              class="menu-item relative group hover:bg-purple-bg"
               class:px-3={!sidebarCollapsed}
               class:px-1={sidebarCollapsed}
               class:justify-center={sidebarCollapsed}
@@ -222,7 +227,7 @@
             
             <a
               href="/gradebook"
-              class="menu-item relative group"
+              class="menu-item relative group hover:bg-purple-bg"
               class:px-3={!sidebarCollapsed}
               class:px-1={sidebarCollapsed}
               class:justify-center={sidebarCollapsed}
@@ -320,18 +325,18 @@
             <div class="space-y-1">
               {#each $gradebookStore.getCategories as category (category.id)}
                 <button
-                  onclick={() => handleSelectClass(category.id)}
+                  on:click={() => handleSelectClass(category.id)}
                   class="w-full menu-item text-left relative group"
                   title={category.name}
                 >
                   {#if !sidebarCollapsed}
                     <span>{category.name}</span>
-                    <span class="bg-dark-purple text-white text-xs rounded-full px-2 py-1"
+                    <span class="bg-purple text-white text-xs rounded-full px-2 py-1"
                       >{category.studentIds.length}</span
                     >
                   {:else}
                     <span class="text-xs">{category.name.slice(0, 2).toUpperCase()}</span>
-                    <span class="absolute left-full ml-2 px-2 py-1 bg-gradient-card border border-dark-border rounded-lg text-sm text-dark-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dark-dropdown">
+                    <span class="absolute left-full ml-2 px-2 py-1 bg-gradient-card border border-border rounded-lg text-sm text-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dropdown">
                       {category.name} ({category.studentIds.length} students)
                     </span>
                   {/if}
@@ -349,11 +354,11 @@
                       type="text"
                       bind:value={newClassName}
                       placeholder="New class name"
-                      class="w-full bg-dark-bg text-dark-text-hover border border-dark-border rounded-lg p-2 text-sm focus:ring-2 focus:ring-dark-accent-hover focus:border-dark-accent-hover transition-all duration-200 placeholder:text-dark-muted"
+                      class="w-full bg-bg-base text-text-hover border border-border rounded-lg p-2 text-sm focus:ring-2 focus:ring-accent-hover focus:border-accent-hover transition-all duration-200 placeholder:text-muted"
                     />
                     <button
-                      onclick={handleAddClass}
-                      class="bg-dark-purple text-white p-2 rounded-lg text-sm hover:bg-dark-purple-hover transition-all duration-300"
+                      on:click={handleAddClass}
+                      class="bg-purple text-white p-2 rounded-lg text-sm hover:bg-purple-hover transition-all duration-300"
                       aria-label="Add new class"
                     >
                       +
@@ -374,12 +379,12 @@
           <LoadingBounce />
         </div>
       {/if}
-      <slot></slot>
+      {@render children?.()}
     </main>
   </div>
 
   <footer
-    class="bg-gradient-card text-center text-dark-muted text-xs py-4 border-t border-dark-border px-6"
+    class="bg-gradient-card text-center text-muted text-xs py-4 border-t border-border px-6"
   >
     Teacher Dashboard • {new Date().getFullYear()}
   </footer>

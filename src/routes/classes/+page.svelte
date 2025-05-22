@@ -8,23 +8,29 @@
   import { goto } from '$app/navigation';
   import { isAuthenticated } from '$lib/stores/auth';
   
-  // State variables
-  let showImportWizard = false;
-  let selectedClassId = null;
-  let isLoading = true;
-  let error = null;
+  // State variables with $state
+  let showImportWizard = $state(false);
+  let selectedClassId = $state(null);
+  let isLoading = $state(true);
+  let error = $state(null);
   
-  // Reactive values
-  $: selectedClass = selectedClassId ? $gradebookStore.categories.find((c) => c.id === selectedClassId) : null;
+  // Reactive values with $derived
+  let selectedClass = $derived(
+    selectedClassId ? $gradebookStore.categories.find((c) => c.id === selectedClassId) : null
+  );
   
-  onMount(async () => {
-    try {
-      await gradebookStore.ensureDataLoaded();
-      isLoading = false;
-    } catch (e) {
-      error = e instanceof Error ? e.message : 'An error occurred';
-      isLoading = false;
-    }
+  $effect(() => {
+    const initializeData = async () => {
+      try {
+        await gradebookStore.ensureDataLoaded();
+        isLoading = false;
+      } catch (e) {
+        error = e instanceof Error ? e.message : 'An error occurred';
+        isLoading = false;
+      }
+    };
+    
+    initializeData();
   });
   
   function handleClassSelect(classId) {
