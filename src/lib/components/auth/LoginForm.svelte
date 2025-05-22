@@ -20,7 +20,8 @@
     if (unsubscribe) unsubscribe();
   });
   
-  async function handleSubmit() {
+  async function handleSubmit(e: SubmitEvent) {
+    e.preventDefault();
     if (!email || !password) {
       error = 'Please fill out all fields';
       return;
@@ -47,7 +48,7 @@
 </script>
 
 <div class="w-full max-w-md">
-  <form on:submit|preventDefault={handleSubmit} class="bg-surface rounded-lg px-8 pt-6 pb-8 mb-4 shadow-themed-card">
+  <form onsubmit={handleSubmit} class="bg-surface rounded-lg px-8 pt-6 pb-8 mb-4 shadow-themed-card">
     <h2 class="text-2xl font-bold mb-6 text-center text-highlight">Sign In</h2>
     
     {#if error}

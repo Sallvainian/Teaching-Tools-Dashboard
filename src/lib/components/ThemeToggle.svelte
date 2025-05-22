@@ -53,7 +53,7 @@
 </script>
 
 <button
-  on:click={toggleTheme}
+  onclick={toggleTheme}
   class="p-2 rounded-full hover:bg-accent transition-colors dark:text-highlight"
   aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
 >

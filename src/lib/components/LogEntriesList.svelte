@@ -2,19 +2,21 @@
   import type { LogEntry } from '$lib/types/log-entries';
   
   // Using $props() for component props
-  const { 
-    logs,
-    onselect,
-    ondelete,
-    onrestore,
-    onbulkdelete
-  } = $props<{ 
+  interface Props {
     logs: LogEntry[];
     onselect?: (logId: string) => void;
     ondelete?: (logId: string) => void;
     onrestore?: (log: LogEntry) => void;
     onbulkdelete?: (logIds: string[]) => void;
-  }>({ logs: [] });
+  }
+  
+  let { 
+    logs = [],
+    onselect,
+    ondelete,
+    onrestore,
+    onbulkdelete
+  }: Props = $props();
   
   // State for handling deletion confirmation and selection
   let itemsToConfirmDelete = $state<Record<string, boolean>>({});
@@ -183,6 +185,14 @@
     <div 
       class="bg-dark-card border border-dark-border rounded-xl p-4 mb-2 relative cursor-pointer"
       onclick={() => handleSelectLog(log.id)}
+      onkeydown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleSelectLog(log.id);
+        }
+      }}
+      role="button"
+      tabindex="0"
     >
       <!-- Content area with conditional padding -->
       <div class={showBulkActions ? "ml-8" : ""}>

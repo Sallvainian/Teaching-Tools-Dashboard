@@ -53,7 +53,7 @@
           <p class="text-dark-muted">{formatDate(log.date)}</p>
         </div>
         <button
-          on:click={handleClose}
+          onclick={handleClose}
           class="text-gray-400 hover:text-white transition-colors"
           aria-label="Close"
         >
@@ -101,13 +101,13 @@
       <!-- Actions -->
       <div class="sticky bottom-0 bg-dark-surface p-6 border-t border-dark-border flex justify-end gap-3">
         <button
-          on:click={handleEdit}
+          onclick={handleEdit}
           class="px-4 py-2 bg-dark-accent text-white rounded-lg hover:bg-dark-accent-hover transition-colors"
         >
           Edit
         </button>
         <button
-          on:click={handleDelete}
+          onclick={handleDelete}
           class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
         >
           Delete

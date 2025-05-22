@@ -59,7 +59,7 @@
           <p class="text-gray-400 text-sm mt-1">Start fresh with a blank Jeopardy game</p>
         </div>
         <button
-          on:click={() => showCreateModal = true}
+          onclick={() => showCreateModal = true}
           class="btn-primary"
         >
           Create Game
@@ -92,20 +92,21 @@
             
             <div class="flex gap-2">
               <button
-                on:click={() => handlePlayGame(game.id)}
+                onclick={() => handlePlayGame(game.id)}
                 class="flex-1 py-2 px-3 bg-dark-purple text-white rounded-lg hover:bg-dark-purple-hover transition-all duration-200"
               >
                 Play
               </button>
               <button
-                on:click={() => handleEditGame(game.id)}
+                onclick={() => handleEditGame(game.id)}
                 class="flex-1 py-2 px-3 bg-dark-purple-bg text-dark-purple-light rounded-lg hover:bg-dark-purple-hover hover:text-white transition-all duration-200"
               >
                 Edit
               </button>
               <button
-                on:click={() => handleDeleteGame(game.id)}
+                onclick={() => handleDeleteGame(game.id)}
                 class="py-2 px-3 bg-dark-error text-white rounded-lg hover:bg-dark-error-hover transition-all duration-200"
+                aria-label="Delete game"
               >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
@@ -133,7 +134,7 @@
     <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div class="bg-gradient-card border border-dark-border rounded-lg p-6 w-full max-w-md mx-4 shadow-dark-dropdown">
         <h2 class="text-xl font-bold text-gray-200 mb-4">Create New Game</h2>
-        <form on:submit={handleCreateGame}>
+        <form onsubmit={handleCreateGame}>
           <div class="mb-4">
             <label for="gameName" class="block text-sm font-medium text-gray-300 mb-2">
               Game Name
@@ -143,14 +144,14 @@
               type="text"
               bind:value={newGameName}
               placeholder="Enter game name"
-              class="w-full px-3 py-2 bg-dark-bg text-gray-200 border border-dark-border rounded-lg focus:outline-none focus:border-dark-purple"
+              class="w-full px-3 py-2 bg-surface text-highlight border border-border rounded-lg focus:outline-none focus:border-purple"
               required
             />
           </div>
           <div class="flex gap-3">
             <button
               type="button"
-              on:click={() => { showCreateModal = false; newGameName = ''; }}
+              onclick={() => { showCreateModal = false; newGameName = ''; }}
               class="flex-1 py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200"
             >
               Cancel

@@ -59,7 +59,7 @@
     <!-- Clear Filters Button -->
     <div class="flex items-end">
       <button
-        on:click={clearFilters}
+        onclick={clearFilters}
         class="w-full px-4 py-2 bg-dark-accent text-gray-300 rounded-lg hover:bg-dark-accent-hover hover:text-white transition-colors"
       >
         Clear Filters

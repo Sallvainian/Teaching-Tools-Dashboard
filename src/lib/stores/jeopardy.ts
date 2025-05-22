@@ -178,17 +178,38 @@ function createJeopardyStore() {
 			const gameData = {
 				name: game.name,
 				settings: game.settings,
-				updated_at: new Date().toISOString()
+				last_modified: new Date().toISOString(),
+				is_public: false, // Default to private
+				owner_role: 'teacher' as const // Default to teacher
 			};
+			
+			console.log('🔍 Saving game data:', JSON.stringify(gameData, null, 2));
 
 			let savedGame;
+			
+			// Check if game exists in database first
+			let gameExistsInDb = false;
 			if (game.id && game.id !== 'new') {
+				try {
+					const existingGame = await supabaseService.getItems('games', { 
+						filters: { id: game.id } 
+					});
+					gameExistsInDb = existingGame.length > 0;
+				} catch (e) {
+					// If error checking, assume it doesn't exist and insert
+					gameExistsInDb = false;
+				}
+			}
+			
+			if (gameExistsInDb) {
+				// Update existing game
 				savedGame = await supabaseService.updateItem('games', game.id, gameData);
 			} else {
+				// Insert new game
 				const newGameData = {
 					...gameData,
 					user_id: user.id,
-					id: uuidv4()
+					id: game.id || uuidv4() // Use existing ID or generate new one
 				};
 				savedGame = await supabaseService.insertItem('games', newGameData);
 			}
@@ -200,17 +221,31 @@ function createJeopardyStore() {
 				const cat = game.categories[i];
 				const categoryData = {
 					game_id: savedGame.id,
-					name: cat.name,
+					category_name: cat.name,
 					order_index: i
 				};
 
 				let savedCategory;
+				
+				// Check if category exists in database
+				let categoryExistsInDb = false;
 				if (cat.id && cat.id !== 'new') {
+					try {
+						const existingCategory = await supabaseService.getItems('game_categories', { 
+							filters: { id: cat.id } 
+						});
+						categoryExistsInDb = existingCategory.length > 0;
+					} catch (e) {
+						categoryExistsInDb = false;
+					}
+				}
+				
+				if (categoryExistsInDb) {
 					savedCategory = await supabaseService.updateItem('game_categories', cat.id, categoryData);
 				} else {
 					savedCategory = await supabaseService.insertItem('game_categories', {
 						...categoryData,
-						id: uuidv4()
+						id: cat.id || uuidv4()
 					});
 				}
 
@@ -221,18 +256,31 @@ function createJeopardyStore() {
 					const q = cat.questions[j];
 					const questionData = {
 						category_id: savedCategory.id,
-						question: q.text,
-						answer: q.answer,
-						points: q.pointValue,
+						question_text: q.text,
+						answer_text: q.answer,
+						point_value: q.pointValue,
 						order_index: j
 					};
 
+					// Check if question exists in database
+					let questionExistsInDb = false;
 					if (q.id && q.id !== 'new') {
+						try {
+							const existingQuestion = await supabaseService.getItems('questions', { 
+								filters: { id: q.id } 
+							});
+							questionExistsInDb = existingQuestion.length > 0;
+						} catch (e) {
+							questionExistsInDb = false;
+						}
+					}
+					
+					if (questionExistsInDb) {
 						await supabaseService.updateItem('questions', q.id, questionData);
 					} else {
 						await supabaseService.insertItem('questions', {
 							...questionData,
-							id: uuidv4()
+							id: q.id || uuidv4()
 						});
 					}
 				}
@@ -247,19 +295,33 @@ function createJeopardyStore() {
 					color: team.color
 				};
 
+				// Check if team exists in database
+				let teamExistsInDb = false;
 				if (team.id && team.id !== 'new') {
+					try {
+						const existingTeam = await supabaseService.getItems('teams', { 
+							filters: { id: team.id } 
+						});
+						teamExistsInDb = existingTeam.length > 0;
+					} catch (e) {
+						teamExistsInDb = false;
+					}
+				}
+				
+				if (teamExistsInDb) {
 					await supabaseService.updateItem('teams', team.id, teamData);
 				} else {
 					await supabaseService.insertItem('teams', {
 						...teamData,
-						id: uuidv4()
+						id: team.id || uuidv4()
 					});
 				}
 			}
 
 			return savedGame.id;
 		} catch (err: any) {
-			// Error saving game: err
+			console.error('🚨 Error saving game:', err);
+			console.error('🚨 Error details:', JSON.stringify(err, null, 2));
 			throw err;
 		}
 	}

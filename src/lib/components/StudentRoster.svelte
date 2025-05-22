@@ -20,8 +20,8 @@
     }
   );
   
-  async function addStudent(e?: Event): Promise<void> {
-    if (e) e.preventDefault();
+  async function addStudent(e: SubmitEvent): Promise<void> {
+    e.preventDefault();
     
     if ($newStudentName.trim()) {
       const studentId = await gradebookStore.addGlobalStudent($newStudentName.trim());
@@ -45,7 +45,7 @@
     <h2 class="text-xl font-semibold text-gray-100 mb-6">{selectedClass.name} - Student Roster</h2>
   
   <div class="mb-6">
-    <form class="flex gap-2" on:submit|preventDefault={addStudent}>
+    <form class="flex gap-2" onsubmit={addStudent}>
       <input
         type="text"
         placeholder="Student name"
@@ -78,7 +78,7 @@
             <td class="p-3 text-gray-100">{student.name}</td>
             <td class="p-3">
               <button
-                on:click={() => removeStudent(student.id)}
+                onclick={() => removeStudent(student.id)}
                 class="px-3 py-1 text-red-400 hover:text-white hover:bg-red-500 rounded-md transition-colors"
                 aria-label={`Remove ${student.name} from class`}
                 title={`Remove ${student.name} from class`}

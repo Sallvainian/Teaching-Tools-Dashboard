@@ -218,7 +218,12 @@ export class SupabaseService {
           .select()
           .single();
         
-        if (error) throw error;
+        if (error) {
+          console.error('🚨 Supabase updateItem error:', error);
+          console.error('🚨 Update data sent:', JSON.stringify(data, null, 2));
+          console.error('🚨 Table:', table, 'ID:', id);
+          throw error;
+        }
         
         // Also update localStorage for fallback
         const existingItems = this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []);
