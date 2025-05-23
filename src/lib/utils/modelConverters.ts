@@ -1,4 +1,4 @@
-import type { Tables } from '../../supabase';
+import type { Tables } from '$lib/types/database';
 import type { 
   Student, 
   Category, 
@@ -17,8 +17,19 @@ import type {
   LogEntry
 } from '$lib/types/log-entries';
 
+// Type aliases for better readability and to fix type inference
+type DBStudent = Tables<'students'>;
+type DBCategory = Tables<'categories'>;
+type DBCategoryStudent = Tables<'category_students'>;
+type DBAssignment = Tables<'assignments'>;
+type DBGrade = Tables<'grades'>;
+type DBObservationLog = Tables<'log_entries'>;
+type DBGame = Tables<'games'>;
+type DBGameCategory = Tables<'game_categories'>;
+type DBQuestion = Tables<'questions'>;
+
 // Gradebook model converters
-export function dbStudentToAppStudent(dbStudent: Tables<'students'>): Student {
+export function dbStudentToAppStudent(dbStudent: DBStudent): Student {
   return {
     id: dbStudent.id,
     name: dbStudent.name
@@ -26,8 +37,8 @@ export function dbStudentToAppStudent(dbStudent: Tables<'students'>): Student {
 }
 
 export function dbCategoryToAppCategory(
-  dbCategory: Tables<'categories'>, 
-  categoryStudents: Tables<'category_students'>[]
+  dbCategory: DBCategory, 
+  categoryStudents: DBCategoryStudent[]
 ): Category {
   // Handle categories from both schema versions
   return {
@@ -40,7 +51,7 @@ export function dbCategoryToAppCategory(
   };
 }
 
-export function dbAssignmentToAppAssignment(dbAssignment: Tables<'assignments'>): Assignment {
+export function dbAssignmentToAppAssignment(dbAssignment: DBAssignment): Assignment {
   return {
     id: dbAssignment.id,
     name: dbAssignment.name,
@@ -49,11 +60,11 @@ export function dbAssignmentToAppAssignment(dbAssignment: Tables<'assignments'>)
   };
 }
 
-export function dbGradeToAppGrade(dbGrade: Tables<'grades'>): Grade {
+export function dbGradeToAppGrade(dbGrade: DBGrade): Grade {
   return {
     studentId: dbGrade.student_id,
     assignmentId: dbGrade.assignment_id,
-    points: dbGrade.points
+    points: dbGrade.points ?? 0 // Handle null as 0 for Grade type compatibility
   };
 }
 
@@ -230,29 +241,26 @@ export function appGameToDbModels(game: JeopardyGame, userId: string): {
 }
 
 // Log entries model converters
-export function dbLogToAppLog(dbLog: Tables<'observation_logs'>): LogEntry {
+export function dbLogToAppLog(dbLog: DBObservationLog): LogEntry {
   return {
     id: dbLog.id,
-    observer: dbLog.observer,
+    observer: '', // Not in database, needs to be added or derived
     date: dbLog.date,
     student: dbLog.student,
-    subject: dbLog.subject,
-    objective: dbLog.objective,
-    observation: dbLog.observation,
+    subject: null, // Not in database
+    objective: null, // Not in database
+    observation: dbLog.log_entry, // Database uses 'log_entry' field
     actions: dbLog.actions,
     follow_up: dbLog.follow_up,
-    tags: dbLog.tags
+    tags: dbLog.tags ?? null
   };
 }
 
-export function appLogToDbLog(log: Partial<LogEntry>): any {
+export function appLogToDbLog(log: Partial<LogEntry>): Partial<DBObservationLog> {
   return {
-    observer: log.observer,
     date: log.date,
     student: log.student,
-    subject: log.subject ?? null,
-    objective: log.objective ?? null,
-    observation: log.observation,
+    log_entry: log.observation || '', // Map 'observation' to 'log_entry'
     actions: log.actions ?? null,
     follow_up: log.follow_up ?? null,
     tags: log.tags ?? []

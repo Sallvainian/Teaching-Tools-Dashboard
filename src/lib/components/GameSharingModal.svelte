@@ -55,7 +55,7 @@
       if (fetchError) throw fetchError;
       
       if (data) {
-        students = data.map(d => d.app_users).filter(Boolean) as Student[];
+        students = data.flatMap(d => d.app_users).filter(Boolean) as Student[];
       }
       
       // Get currently shared students

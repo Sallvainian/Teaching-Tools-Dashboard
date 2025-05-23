@@ -74,7 +74,7 @@
 </script>
 
 <div class="min-h-screen bg-gradient-dark text-text-base flex flex-col transition-colors">
-  <nav class="bg-surface border-b border-border backdrop-blur-sm">
+  <nav class="bg-surface border-b border-border backdrop-blur-sm relative z-50">
     <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
       <div class="flex items-center gap-3">
         <div class="h-8 w-8 bg-gradient-card border border-border rounded-md flex items-center justify-center shadow-themed-card">
@@ -114,7 +114,7 @@
               </button>
               
               {#if userMenuOpen}
-                <div class="absolute right-0 mt-2 w-48 bg-gradient-card border border-border rounded-lg shadow-dropdown z-50">
+                <div class="absolute right-0 mt-2 w-48 bg-gradient-card border border-border rounded-lg shadow-dropdown z-[100]">
                   <div class="py-1">
                     <a href="/settings/profile" class="menu-item text-sm" onclick={() => userMenuOpen = false}>
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -373,7 +373,7 @@
     </aside>
 
     <!-- Main content area -->
-    <main class="flex-grow p-6 overflow-y-auto relative">
+    <main class="flex-grow p-6 overflow-y-auto relative z-0">
       {#if $navigating}
         <div class="absolute inset-0 bg-dark-bg/80 backdrop-blur-sm flex items-center justify-center z-50">
           <LoadingBounce />

@@ -103,6 +103,32 @@ jobs:
       - name: Run unit tests with coverage
         run: pnpm test:coverage
         
+      - name: Copy coverage for Qodana
+        run: |
+          mkdir -p .qodana
+          cp -f coverage/lcov.info .qodana/ || true
+          cp -f coverage/coverage-final.json .qodana/ || true
+          cp -f coverage/coverage-summary.json .qodana/ || true
+        
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          
+      - name: Upload Qodana coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: qodana-coverage
+          path: |
+            .qodana/lcov.info
+            .qodana/coverage-final.json
+            .qodana/coverage-summary.json
+            .qodana/coverage.json
+          if-no-files-found: ignore
+        
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:

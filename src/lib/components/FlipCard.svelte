@@ -24,8 +24,8 @@
     <div class="back">
       <div class="back-content">
         {#if backIcon}
-          <!-- Note: Using innerHTML for icon content - ensure backIcon is sanitized -->
-          <div>{@html backIcon}</div>
+          <!-- Displaying icon as text to prevent XSS -->
+          <div>{backIcon}</div>
         {:else}
           <svg stroke="#ffffff" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50" height="50px" width="50px" fill="#ffffff">
             <g stroke-width="0" id="SVGRepo_bgCarrier"></g>

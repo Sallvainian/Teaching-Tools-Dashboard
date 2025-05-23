@@ -1,7 +1,7 @@
 <script lang="ts">
   import { v4 as uuidv4 } from 'uuid';
   import { Icon } from '@steeze-ui/svelte-icon';
-  import { PlusCircle, TrashBin } from '@steeze-ui/heroicons';
+  import { PlusCircle, Trash } from '@steeze-ui/heroicons';
 
   type LessonSection = {
     id: string;

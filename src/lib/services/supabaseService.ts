@@ -1,4 +1,10 @@
-import type { Database, Tables, Inserts, Updates } from '../../supabase';
+import type { Database, Tables, Inserts, Updates } from '$lib/types/database';
+
+// Type helpers
+type TableRecord = Record<string, unknown>;
+type FilterOptions = Record<string, unknown>;
+type CompositeKey = Record<string, unknown>;
+type UserMetadata = Record<string, unknown>;
 
 // Main service class to handle all Supabase operations
 export class SupabaseService {
@@ -38,8 +44,8 @@ export class SupabaseService {
     try {
       const stored = localStorage.getItem(`${this.storagePrefix}_${key}`);
       return stored ? JSON.parse(stored) : defaultValue;
-    } catch (e) {
-      // Error loading ${key} from localStorage: e
+    } catch (_e) {
+      // Error loading ${key} from localStorage: _e
       return defaultValue;
     }
   }
@@ -49,8 +55,8 @@ export class SupabaseService {
 
     try {
       localStorage.setItem(`${this.storagePrefix}_${key}`, JSON.stringify(value));
-    } catch (e) {
-      // Error saving ${key} to localStorage: e
+    } catch (_e) {
+      // Error saving ${key} to localStorage: _e
     }
   }
 
@@ -59,8 +65,8 @@ export class SupabaseService {
     
     try {
       localStorage.removeItem(`${this.storagePrefix}_${key}`);
-    } catch (e) {
-      // Error removing ${key} from localStorage: e
+    } catch (_e) {
+      // Error removing ${key} from localStorage: _e
     }
   }
 
@@ -70,7 +76,7 @@ export class SupabaseService {
     options: {
       columns?: string,
       joins?: string,
-      filters?: Record<string, any>
+      filters?: FilterOptions
     } = {}
   ): Promise<Tables<T>[]> {
     // Only try Supabase if enabled
@@ -100,8 +106,8 @@ export class SupabaseService {
         if (error) throw error;
         
         return (data as unknown) as Tables<T>[];
-      } catch (err) {
-        // Error fetching data from ${String(table)}: err
+      } catch (_err) {
+        // Error fetching data from ${String(table)}: _err
         // Return localStorage data as fallback
         return this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []);
       }
@@ -139,16 +145,16 @@ export class SupabaseService {
         if (error) throw error;
         
         return (data as unknown) as Tables<T>;
-      } catch (err) {
-        // Error fetching item from ${String(table)}: err
+      } catch (_err) {
+        // Error fetching item from ${String(table)}: _err
         // Fallback to localStorage - search for the item with matching ID
         const items = this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []);
-        return items.find(item => (item as any).id === id) ?? null;
+        return items.find(item => (item as TableRecord).id === id) ?? null;
       }
     } else {
       // Just use localStorage if Supabase is disabled
       const items = this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []);
-      return items.find(item => (item as any).id === id) ?? null;
+      return items.find(item => (item as TableRecord).id === id) ?? null;
     }
   }
 
@@ -174,14 +180,14 @@ export class SupabaseService {
         this.saveToStorage(`${String(table)}`, [...existingItems, insertedData]);
         
         return insertedData as Tables<T>;
-      } catch (err) {
-        // Error inserting into ${String(table)}: err
+      } catch (_err) {
+        // Error inserting into ${String(table)}: _err
         // Fallback to localStorage only
         const existingItems = this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []);
         // For localStorage we need an ID - use the one provided or generate a random one
         const itemWithId = {
           ...data,
-          id: (data as any).id ?? crypto.randomUUID()
+          id: (data as TableRecord).id ?? crypto.randomUUID()
         };
         const newItems = [...existingItems, itemWithId];
         this.saveToStorage(`${String(table)}`, newItems);
@@ -193,7 +199,7 @@ export class SupabaseService {
       // For localStorage we need an ID - use the one provided or generate a random one
       const itemWithId = {
         ...data,
-        id: (data as any).id ?? crypto.randomUUID()
+        id: (data as TableRecord).id ?? crypto.randomUUID()
       };
       const newItems = [...existingItems, itemWithId];
       this.saveToStorage(`${String(table)}`, newItems);
@@ -228,22 +234,22 @@ export class SupabaseService {
         // Also update localStorage for fallback
         const existingItems = this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []);
         const updatedItems = existingItems.map(item => 
-          (item as any).id === id ? updatedData : item
+          (item as TableRecord).id === id ? updatedData : item
         );
         this.saveToStorage(`${String(table)}`, updatedItems);
         
         return updatedData as Tables<T>;
-      } catch (err) {
-        // Error updating in ${String(table)}: err
+      } catch (_err) {
+        // Error updating in ${String(table)}: _err
         // Fallback to localStorage only
         const existingItems = this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []);
-        const item = existingItems.find(item => (item as any).id === id);
+        const item = existingItems.find(item => (item as TableRecord).id === id);
         
         if (!item) return null;
         
         const updatedItem = { ...item, ...data };
         const updatedItems = existingItems.map(item => 
-          (item as any).id === id ? updatedItem : item
+          (item as TableRecord).id === id ? updatedItem : item
         );
         this.saveToStorage(`${String(table)}`, updatedItems);
         return updatedItem as Tables<T>;
@@ -251,13 +257,13 @@ export class SupabaseService {
     } else {
       // Just use localStorage if Supabase is disabled
       const existingItems = this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []);
-      const item = existingItems.find(item => (item as any).id === id);
+      const item = existingItems.find(item => (item as TableRecord).id === id);
       
       if (!item) return null;
       
       const updatedItem = { ...item, ...data };
       const updatedItems = existingItems.map(item => 
-        (item as any).id === id ? updatedItem : item
+        (item as TableRecord).id === id ? updatedItem : item
       );
       this.saveToStorage(`${String(table)}`, updatedItems);
       return updatedItem as Tables<T>;
@@ -294,10 +300,10 @@ export class SupabaseService {
       if (typeof id === 'string') {
         // Regular id-based deletion from localStorage
         const existingItems = this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []);
-        const itemExists = existingItems.some(item => (item as any).id === id);
+        const itemExists = existingItems.some(item => (item as TableRecord).id === id);
         
         if (itemExists) {
-          const filteredItems = existingItems.filter(item => (item as any).id !== id);
+          const filteredItems = existingItems.filter(item => (item as TableRecord).id !== id);
           this.saveToStorage(`${String(table)}`, filteredItems);
           return true;
         }
@@ -307,7 +313,7 @@ export class SupabaseService {
         const filteredItems = existingItems.filter(item => {
           // Only keep items that don't match ALL of the composite key values
           for (const [key, value] of Object.entries(id)) {
-            if ((item as any)[key] !== value) {
+            if ((item as TableRecord)[key] !== value) {
               return true; // Keep this item if any key doesn't match
             }
           }
@@ -319,7 +325,7 @@ export class SupabaseService {
       }
       
       return false; // Item didn't exist
-    } catch (err) {
+    } catch (_err) {
       // Error deleting from ${String(table)}: err
       return false; // Return false on error
     }
@@ -345,7 +351,7 @@ export class SupabaseService {
         if (error) throw error;
         
         return (data as unknown) as Tables<T>[];
-      } catch (err) {
+      } catch (_err) {
         // Error fetching related data from ${String(table)}: err
         // Fallback to localStorage - this is harder with relations
         // A proper implementation would require understanding the schema
@@ -368,7 +374,7 @@ export class SupabaseService {
       const { data, error } = await supabase.auth.getUser();
       if (error) throw error;
       return data.user;
-    } catch (err) {
+    } catch (_err) {
       // Error getting current user: err
       return null;
     }
@@ -377,59 +383,64 @@ export class SupabaseService {
   public async signIn(email: string, password: string) {
     if (!this.useSupabase) return null;
     
-    try {
-      // Dynamically import supabase client to ensure it's properly initialized
-      const { supabase } = await import('$lib/supabaseClient');
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (error) throw error;
-      return data;
-    } catch (err) {
-      // Error signing in: err
-      throw err;
-    }
+    // Dynamically import supabase client to ensure it's properly initialized
+    const { supabase } = await import('$lib/supabaseClient');
+    
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    
+    if (error) throw error;
+    return data;
   }
 
-  public async signUp(email: string, password: string, userData: any) {
+  public async signUp(email: string, password: string, userData: UserMetadata) {
     if (!this.useSupabase) return null;
     
-    try {
-      // Dynamically import supabase client to ensure it's properly initialized
-      const { supabase } = await import('$lib/supabaseClient');
-      
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: userData
-        }
-      });
-      
-      if (error) throw error;
-      return data;
-    } catch (err) {
-      // Error signing up: err
-      throw err;
-    }
+    // Dynamically import supabase client to ensure it's properly initialized
+    const { supabase } = await import('$lib/supabaseClient');
+    
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: userData
+      }
+    });
+    
+    if (error) throw error;
+    return data;
   }
 
   public async signOut() {
     if (!this.useSupabase) return;
     
-    try {
-      // Dynamically import supabase client to ensure it's properly initialized
-      const { supabase } = await import('$lib/supabaseClient');
-      
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-    } catch (err) {
-      // Error signing out: err
-      throw err;
-    }
+    // Dynamically import supabase client to ensure it's properly initialized
+    const { supabase } = await import('$lib/supabaseClient');
+    
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+  }
+
+  public async resetPassword(email: string) {
+    if (!this.useSupabase) return;
+    
+    const { supabase } = await import('$lib/supabaseClient');
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    if (error) throw error;
+  }
+
+  public async getProfile(userId: string): Promise<Tables<'app_users'> | null> {
+    return this.getItemById('app_users', userId);
+  }
+
+  public async createProfile(profile: Inserts<'app_users'>): Promise<Tables<'app_users'> | null> {
+    return this.insertItem('app_users', profile);
+  }
+
+  public async updateProfile(userId: string, updates: Updates<'app_users'>): Promise<Tables<'app_users'> | null> {
+    return this.updateItem('app_users', userId, updates);
   }
 }
 

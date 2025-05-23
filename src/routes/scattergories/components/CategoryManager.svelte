@@ -106,5 +106,5 @@
 			<button class="btn btn-primary w-full" onclick={onclose}>Done</button>
 		</div>
 	</div>
-	<div class="modal-backdrop" onclick={onclose}></div>
+	<button class="modal-backdrop" onclick={onclose} aria-label="Close modal"></button>
 </div>

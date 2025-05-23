@@ -17,7 +17,7 @@
   
   // Container reference
   let container: HTMLDivElement;
-  let hotInstance = $state(null);
+  let hotInstance = $state<any>(null);
   
   onMount(async () => {
     // Dynamically import Handsontable to avoid SSR issues
@@ -73,8 +73,8 @@
       licenseKey,
       width,
       height,
-      afterChange: (changes: any[], source: string) => {
-        if (source !== 'loadData') {
+      afterChange: (changes: any[] | null, source: string) => {
+        if (source !== 'loadData' && changes) {
           dispatch('afterChange', { changes, source });
         }
       },

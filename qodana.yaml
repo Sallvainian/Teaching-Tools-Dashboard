@@ -1,17 +1,23 @@
 version: "1.0"
 linter: jetbrains/qodana-js:2025.1
-
-# Configure quality gates
 failThreshold: 0
-
-# Include essential inspections
 include:
   - name: Qodana.JavaScript
-
-# Exclude directories from analysis
 exclude:
   - name: All
     paths:
       - node_modules
       - .svelte-kit
+      - build
+      - dist
       - coverage
+      - .git
+      - .github
+      - public
+      - static
+      - .idea
+      - .vscode
+      - "**/*.min.js"
+      - "**/*.min.css"
+      - "**/vendor/**"
+      - "**/test-results/**"

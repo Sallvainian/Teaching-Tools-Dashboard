@@ -12,22 +12,39 @@ on:
 jobs:
   qodana:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: write
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Use Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
 
       - name: Install pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v3
         with:
-          version: 10.x
+          version: 8
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+          
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
@@ -46,13 +63,49 @@ jobs:
             echo "No coverage data found. Creating empty file."
             touch .qodana/code-coverage/lcov.info
           fi
+          
+          # Copy additional coverage formats
+          if [ -f "coverage/coverage-final.json" ]; then
+            cp coverage/coverage-final.json .qodana/code-coverage/
+          fi
+          
+          if [ -f "coverage/coverage-summary.json" ]; then
+            cp coverage/coverage-summary.json .qodana/code-coverage/
+          fi
+          
+          # Copy our coverage config
+          if [ -f ".qodana/coverage.json" ]; then
+            cp .qodana/coverage.json .qodana/code-coverage/
+          fi
 
       - name: Qodana Scan
-        uses: JetBrains/qodana-action@latest
+        uses: JetBrains/qodana-action@v2024.2
         continue-on-error: true
         env:
           # Use the existing GitHub Secret with the correct name
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN_724674951 }}
         with:
-          args: "--coverage-dir,.qodana/code-coverage"
-
+          args: |
+            --source-directory,.
+            --linter,jetbrains/qodana-js:latest
+            --coverage-dir,.qodana/code-coverage
+          pr-mode: true
+          use-annotations: true
+          
+      - name: Upload Qodana Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qodana-report
+          path: ${{ runner.temp }}/qodana/results
+          retention-days: 30
+          
+      - name: Upload Test Coverage Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-coverage
+          path: |
+            coverage/
+            .qodana/code-coverage/
+          retention-days: 30

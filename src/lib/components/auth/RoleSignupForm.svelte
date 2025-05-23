@@ -2,7 +2,7 @@
   import { authStore } from '$lib/stores/auth';
   import { goto } from '$app/navigation';
   import type { StudentSignupData, TeacherSignupData } from '$lib/types/auth';
-  import type { UserRole } from '$lib/types/database-updated';
+  import type { UserRole } from '$lib/types/database';
   
   let step: 'role' | 'details' = $state('role');
   let selectedRole: UserRole | null = $state(null);
@@ -70,7 +70,7 @@
         }, 3000);
       } else {
         // Get error from store
-        const { error: authError } = await authStore;
+        const { error: authError } = await $authStore;
         error = authError || 'Signup failed';
       }
     } catch (err) {
@@ -100,7 +100,7 @@
     {#if step === 'role'}
       <div class="space-y-4">
         <button
-          on:click={() => selectRole('teacher')}
+          onclick={() => selectRole('teacher')}
           class="w-full flex flex-col items-center px-6 py-4 border border-dark-border rounded-lg hover:bg-dark-surface transition-colors"
         >
           <svg class="w-12 h-12 text-dark-purple-light mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -113,7 +113,7 @@
         </button>
 
         <button
-          on:click={() => selectRole('student')}
+          onclick={() => selectRole('student')}
           class="w-full flex flex-col items-center px-6 py-4 border border-dark-border rounded-lg hover:bg-dark-surface transition-colors"
         >
           <svg class="w-12 h-12 text-dark-purple-light mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -127,7 +127,7 @@
         </button>
       </div>
     {:else if step === 'details'}
-      <form on:submit={handleSubmit} class="mt-8 space-y-6">
+      <form onsubmit={handleSubmit} class="mt-8 space-y-6">
         <div class="rounded-md shadow-sm -space-y-px">
           <div>
             <label for="full-name" class="sr-only">Full name</label>
@@ -217,7 +217,7 @@
         <div class="flex gap-4">
           <button
             type="button"
-            on:click={goBack}
+            onclick={goBack}
             class="flex-1 flex justify-center py-2 px-4 border border-dark-border rounded-md shadow-sm text-sm font-medium text-dark-text bg-dark-surface hover:bg-dark-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dark-purple-light"
           >
             Back
@@ -235,7 +235,7 @@
 
     <div class="text-center">
       <span class="text-sm text-dark-text">
-        Already have an account?{' '}
+        Already have an account? 
         <a href="/auth/login" class="font-medium text-dark-purple-light hover:text-dark-purple">
           Sign in
         </a>

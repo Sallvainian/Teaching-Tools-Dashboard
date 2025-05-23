@@ -24,30 +24,27 @@
     );
   });
   
-  function handleFilter(event: CustomEvent<LogEntryFilters>) {
-    filteredLogs = logEntriesStore.filterLogs(event.detail).sort((a, b) => 
+  function handleFilter(filters: LogEntryFilters) {
+    filteredLogs = logEntriesStore.filterLogs(filters).sort((a, b) => 
       new Date(b.date).getTime() - new Date(a.date).getTime()
     );
   }
   
-  function handleSelectLog(event: CustomEvent<string>) {
-    selectedLogId = event.detail;
+  function handleSelectLog(logId: string) {
+    selectedLogId = logId;
     showDetailsView = true;
   }
   
-  function handleListDelete(event: CustomEvent<string>) {
-    const logId = event.detail;
+  function handleListDelete(logId: string) {
     logEntriesStore.deleteLog(logId);
     // No need to update filteredLogs as we're now using a subscription
   }
   
-  function handleRestoreLog(event: CustomEvent<LogEntry>) {
-    const logToRestore = event.detail;
-    logEntriesStore.addLog(logToRestore);
+  function handleRestoreLog(log: LogEntry) {
+    logEntriesStore.addLog(log);
   }
   
-  function handleBulkDelete(event: CustomEvent<string[]>) {
-    const logIds = event.detail;
+  function handleBulkDelete(logIds: string[]) {
     logIds.forEach(id => {
       logEntriesStore.deleteLog(id);
     });
@@ -69,12 +66,12 @@
     selectedLogId = null;
   }
   
-  function handleSaveLog(event: CustomEvent) {
-    console.log("Saving log entry:", event.detail);
+  function handleSaveLog(logEntry: Omit<LogEntry, 'id'>) {
+    console.log("Saving log entry:", logEntry);
     if (editMode && selectedLogId) {
-      logEntriesStore.updateLog(selectedLogId, event.detail);
+      logEntriesStore.updateLog(selectedLogId, logEntry);
     } else {
-      logEntriesStore.addLog(event.detail);
+      logEntriesStore.addLog(logEntry as LogEntry);
     }
     showNewLogForm = false;
     editMode = false;
@@ -114,11 +111,11 @@
   <!-- Page Header -->
   <div class="flex justify-between items-center mb-6">
     <div>
-      <h1 class="text-3xl font-bold text-white">Log Entries</h1>
-      <p class="text-dark-muted">Track and manage student interactions</p>
+      <h1 class="text-3xl font-bold text-highlight">Log Entries</h1>
+      <p class="text-muted">Track and manage student interactions</p>
     </div>
     <button
-      class="px-4 py-2 bg-dark-purple text-white rounded-lg hover:bg-dark-purple-hover transition-colors"
+      class="px-4 py-2 bg-purple text-white rounded-lg hover:bg-purple-hover transition-colors"
       onclick={() => {
         editMode = false;
         selectedLogId = null;
@@ -141,7 +138,7 @@
     <div class="mt-6">
       {#if filteredLogs.length === 0}
         <div class="text-center py-12">
-          <p class="text-dark-muted">No log entries found</p>
+          <p class="text-muted">No log entries found</p>
         </div>
       {:else}
         <LogEntriesList 
@@ -157,10 +154,10 @@
   
   <!-- New/Edit Log Form Modal -->
   {#if showNewLogForm}
-    <div class="fixed inset-0 bg-dark-overlay z-50 flex items-center justify-center p-4">
-      <div class="bg-dark-surface rounded-xl shadow-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        <div class="p-6 border-b border-dark-border">
-          <h2 class="text-xl font-semibold text-white">
+    <div class="fixed inset-0 bg-bg-base bg-opacity-80 z-50 flex items-center justify-center p-4">
+      <div class="bg-surface rounded-xl shadow-dropdown max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+        <div class="p-6 border-b border-border">
+          <h2 class="text-xl font-semibold text-highlight">
             {editMode ? 'Edit' : 'New'} Log Entry
           </h2>
         </div>

@@ -1,6 +1,6 @@
 // Authentication types with role support
 import type { User } from '@supabase/supabase-js';
-import type { UserRole } from './database-updated';
+import type { UserRole } from './database';
 
 export interface AppUser extends User {
   role?: UserRole;

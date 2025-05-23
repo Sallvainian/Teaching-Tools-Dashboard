@@ -145,25 +145,25 @@
 
 <div class="space-y-4">
   {#if showBulkActions}
-    <div class="bg-dark-card border border-dark-border rounded-xl p-4 mb-4 flex justify-between items-center">
+    <div class="bg-card border border-border rounded-xl p-4 mb-4 flex justify-between items-center">
       <div class="flex items-center space-x-2">
         <input 
           type="checkbox" 
           checked={selectAll} 
           onchange={handleSelectAll}
-          class="h-4 w-4 rounded border-dark-border text-dark-purple"
+          class="h-4 w-4 rounded border-border text-purple"
         />
-        <span class="text-white">Select All</span>
+        <span class="text-highlight">Select All</span>
       </div>
       <div class="flex space-x-2">
         <button
-          class="px-3 py-1 text-gray-300 hover:text-white transition-colors"
+          class="px-3 py-1 text-text-base hover:text-highlight transition-colors"
           onclick={toggleBulkMode}
         >
           Cancel
         </button>
         <button
-          class="px-3 py-1 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          class="px-3 py-1 bg-error text-highlight rounded-lg hover:bg-error-hover transition-colors"
           onclick={handleBulkDelete}
         >
           Delete Selected
@@ -183,7 +183,7 @@
 
   {#each logs as log (log.id)}
     <div 
-      class="bg-dark-card border border-dark-border rounded-xl p-4 mb-2 relative cursor-pointer"
+      class="bg-card border border-border rounded-xl p-4 mb-2 relative cursor-pointer hover:border-purple transition-colors"
       onclick={() => handleSelectLog(log.id)}
       onkeydown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -204,7 +204,7 @@
               checked={selectedItems[log.id] || false} 
               onchange={() => toggleSelection(log.id)}
               onclick={(e) => e.stopPropagation()}
-              class="h-5 w-5 rounded border-dark-border text-dark-purple"
+              class="h-5 w-5 rounded border-border text-purple"
             />
           </div>
         {/if}
@@ -212,19 +212,19 @@
         <!-- Entry header -->
         <div class="flex justify-between items-start mb-2">
           <div>
-            <h3 class="text-lg font-semibold text-white">{log.student}</h3>
-            <p class="text-sm text-dark-muted">{formatDate(log.date)}</p>
+            <h3 class="text-lg font-semibold text-highlight">{log.student}</h3>
+            <p class="text-sm text-muted">{formatDate(log.date)}</p>
           </div>
           <div class="flex items-center gap-2">
-            {#if log.tags.length > 0}
+            {#if log.tags && log.tags.length > 0}
               <div class="flex gap-2">
-                {#each log.tags.slice(0, 3) as tag (tag)}
-                  <span class="px-2 py-1 bg-dark-accent text-xs text-gray-300 rounded-full">
+                {#each log.tags?.slice(0, 3) || [] as tag (tag)}
+                  <span class="px-2 py-1 bg-accent text-xs text-text-base rounded-full">
                     {tag}
                   </span>
                 {/each}
-                {#if log.tags.length > 3}
-                  <span class="px-2 py-1 bg-dark-accent text-xs text-gray-300 rounded-full">
+                {#if log.tags && log.tags.length > 3}
+                  <span class="px-2 py-1 bg-accent text-xs text-text-base rounded-full">
                     +{log.tags.length - 3}
                   </span>
                 {/if}
@@ -232,13 +232,13 @@
             {/if}
             {#if !showBulkActions}
               <button 
-                class="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-full" 
+                class="text-muted hover:text-error transition-colors p-1 rounded-full" 
                 onclick={(e) => handleDeleteLog(e, log.id, log)}
                 onkeydown={(e) => {}}
                 title={itemsToConfirmDelete[log.id] ? "Click to confirm deletion" : "Delete log entry"}
               >
                 {#if itemsToConfirmDelete[log.id]}
-                  <span class="text-red-500 font-medium text-sm px-2">Confirm?</span>
+                  <span class="text-error font-medium text-sm px-2">Confirm?</span>
                 {:else}
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -250,14 +250,14 @@
         </div>
         
         <!-- Log entry content -->
-        <p class="text-gray-300">
-          {truncateText(log.log_entry, 200)}
+        <p class="text-text-base">
+          {truncateText(log.observation, 200)}
         </p>
         
         <!-- Follow-up indicator -->
         {#if log.follow_up}
-          <div class="mt-2 pt-2 border-t border-dark-border">
-            <p class="text-sm text-yellow-500">Follow-up required</p>
+          <div class="mt-2 pt-2 border-t border-border">
+            <p class="text-sm text-purple-light">Follow-up required</p>
           </div>
         {/if}
       </div>
@@ -267,10 +267,10 @@
 
 <!-- Undo notification banner -->
 {#if showUndoBar}
-  <div class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-dark-surface border border-dark-border rounded-lg shadow-lg p-4 flex items-center space-x-4 z-50">
-    <span class="text-white">Entry deleted</span>
+  <div class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-surface border border-border rounded-lg shadow-dropdown p-4 flex items-center space-x-4 z-50">
+    <span class="text-highlight">Entry deleted</span>
     <button
-      class="px-3 py-1 bg-dark-purple text-white rounded-lg hover:bg-dark-purple-hover transition-colors"
+      class="px-3 py-1 bg-purple text-white rounded-lg hover:bg-purple-hover transition-colors"
       onclick={handleUndo}
     >
       Undo

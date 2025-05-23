@@ -22,10 +22,10 @@
   } = jeopardyStore;
 
   let gameId = $page.params.gameId;
-  let isLoading = true;
-  let showAnswer = false;
+  let isLoading = $state(true);
+  let showAnswer = $state(false);
   let selectedTeamId = '';
-  let wagerInputValue = '0';
+  let wagerInputValue = $state('0');
   
   onMount(async () => {
     await jeopardyStore.ensureDataLoaded();
@@ -96,6 +96,7 @@
               onclick={() => goto('/jeopardy')}
               class="text-gray-400 hover:text-gray-200 transition-colors"
               title="Back to Games"
+              aria-label="Back to Games"
             >
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>

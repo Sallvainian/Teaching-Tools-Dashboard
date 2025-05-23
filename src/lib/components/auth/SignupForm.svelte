@@ -65,7 +65,7 @@
 </script>
 
 <div class="w-full max-w-md">
-  <form on:submit|preventDefault={handleSubmit} class="bg-surface rounded-lg px-8 pt-6 pb-8 mb-4 shadow-themed-card">
+  <form onsubmit={(e) => { e.preventDefault(); handleSubmit(); }} class="bg-surface rounded-lg px-8 pt-6 pb-8 mb-4 shadow-themed-card">
     <h2 class="text-2xl font-bold mb-6 text-center">Create an Account</h2>
     
     {#if error}
@@ -76,7 +76,7 @@
           <div class="mt-3">
             <p class="text-sm mb-2">This email is already registered but hasn't been confirmed.</p>
             <button
-              on:click={resendConfirmation}
+              onclick={resendConfirmation}
               class="btn btn-sm btn-outline {loading ? 'loading' : ''}"
               disabled={loading}
             >

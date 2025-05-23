@@ -44,17 +44,17 @@
 </script>
 
 {#if log}
-  <div class="fixed inset-0 bg-dark-overlay z-50 flex items-center justify-center p-4">
-    <div class="bg-dark-surface rounded-xl shadow-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+  <div class="fixed inset-0 bg-bg-base bg-opacity-80 z-50 flex items-center justify-center p-4">
+    <div class="bg-surface rounded-xl shadow-dropdown max-w-3xl w-full max-h-[90vh] overflow-y-auto">
       <!-- Header -->
-      <div class="sticky top-0 bg-dark-surface p-6 border-b border-dark-border flex justify-between items-start">
+      <div class="sticky top-0 bg-surface p-6 border-b border-border flex justify-between items-start">
         <div>
-          <h2 class="text-2xl font-bold text-white">{log.student}</h2>
-          <p class="text-dark-muted">{formatDate(log.date)}</p>
+          <h2 class="text-2xl font-bold text-highlight">{log.student}</h2>
+          <p class="text-muted">{formatDate(log.date)}</p>
         </div>
         <button
           onclick={handleClose}
-          class="text-gray-400 hover:text-white transition-colors"
+          class="text-muted hover:text-highlight transition-colors"
           aria-label="Close"
         >
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -65,31 +65,51 @@
       
       <!-- Content -->
       <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div>
+            <h3 class="text-sm font-medium text-muted mb-1">Observer</h3>
+            <p class="text-highlight">{log.observer}</p>
+          </div>
+          {#if log.subject}
+            <div>
+              <h3 class="text-sm font-medium text-muted mb-1">Subject</h3>
+              <p class="text-highlight">{log.subject}</p>
+            </div>
+          {/if}
+        </div>
+
+        {#if log.objective}
+          <div class="mb-6">
+            <h3 class="text-sm font-medium text-muted mb-1">Objective</h3>
+            <p class="text-highlight">{log.objective}</p>
+          </div>
+        {/if}
+        
         <div class="mb-6">
-          <h3 class="text-sm font-medium text-dark-muted mb-1">Log Entry</h3>
-          <p class="text-white whitespace-pre-wrap">{log.log_entry}</p>
+          <h3 class="text-sm font-medium text-muted mb-1">Observation</h3>
+          <p class="text-highlight whitespace-pre-wrap">{log.observation}</p>
         </div>
         
         {#if log.actions}
           <div class="mb-6">
-            <h3 class="text-sm font-medium text-dark-muted mb-1">Actions Taken</h3>
-            <p class="text-white whitespace-pre-wrap">{log.actions}</p>
+            <h3 class="text-sm font-medium text-muted mb-1">Actions Taken</h3>
+            <p class="text-highlight whitespace-pre-wrap">{log.actions}</p>
           </div>
         {/if}
         
         {#if log.follow_up}
-          <div class="mb-6 p-4 bg-yellow-500 bg-opacity-10 border border-yellow-500 border-opacity-30 rounded-lg">
-            <h3 class="text-sm font-medium text-yellow-500 mb-1">Follow-up</h3>
-            <p class="text-white whitespace-pre-wrap">{log.follow_up}</p>
+          <div class="mb-6 p-4 bg-purple-bg border border-purple rounded-lg">
+            <h3 class="text-sm font-medium text-purple-light mb-1">Follow-up</h3>
+            <p class="text-highlight whitespace-pre-wrap">{log.follow_up}</p>
           </div>
         {/if}
         
-        {#if log.tags.length > 0}
+        {#if log.tags && log.tags.length > 0}
           <div class="mb-6">
-            <h3 class="text-sm font-medium text-dark-muted mb-2">Tags</h3>
+            <h3 class="text-sm font-medium text-muted mb-2">Tags</h3>
             <div class="flex flex-wrap gap-2">
               {#each log.tags as tag}
-                <span class="px-3 py-1 bg-dark-accent text-sm text-gray-300 rounded-full">
+                <span class="px-3 py-1 bg-accent text-sm text-text-base rounded-full">
                   {tag}
                 </span>
               {/each}
@@ -99,16 +119,16 @@
       </div>
       
       <!-- Actions -->
-      <div class="sticky bottom-0 bg-dark-surface p-6 border-t border-dark-border flex justify-end gap-3">
+      <div class="sticky bottom-0 bg-surface p-6 border-t border-border flex justify-end gap-3">
         <button
           onclick={handleEdit}
-          class="px-4 py-2 bg-dark-accent text-white rounded-lg hover:bg-dark-accent-hover transition-colors"
+          class="px-4 py-2 bg-accent text-highlight rounded-lg hover:bg-accent-hover transition-colors"
         >
           Edit
         </button>
         <button
           onclick={handleDelete}
-          class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          class="px-4 py-2 bg-error text-white rounded-lg hover:bg-error-hover transition-colors"
         >
           Delete
         </button>

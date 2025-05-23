@@ -263,12 +263,12 @@ function createLogEntriesStore() {
             return tag.toLowerCase().includes(query);
           }
           
-          // Check if student name, log entry, or any tag matches the query
+          // Check if student name, observation, or any tag matches the query
           const studentMatch = log.student.toLowerCase().includes(query);
-          const logEntryMatch = log.log_entry.toLowerCase().includes(query);
-          const tagMatch = log.tags.some(tagContainsQuery);
+          const observationMatch = log.observation.toLowerCase().includes(query);
+          const tagMatch = log.tags?.some(tagContainsQuery) || false;
           
-          const matchesSearch = studentMatch || logEntryMatch || tagMatch;
+          const matchesSearch = studentMatch || observationMatch || tagMatch;
           
           if (!matchesSearch) return false;
         }
@@ -296,7 +296,7 @@ function createLogEntriesStore() {
           
           // Helper function to check if any log tag matches a specific filter tag
           function hasTagMatch(filterTag: string): boolean {
-            return log.tags.some(logTag => tagMatches(logTag, filterTag));
+            return log.tags?.some(logTag => tagMatches(logTag, filterTag)) || false;
           }
           
           // Check if any filter tag matches any log tag
@@ -334,8 +334,8 @@ function createLogEntriesStore() {
     getUniqueTags: () => {
       let result: string[] = [];
       const unsubscribe = subscribe(state => {
-        const allTags = state.logs.flatMap(log => log.tags);
-        const uniqueTags = [...new Set(allTags)];
+        const allTags = state.logs.flatMap(log => log.tags || []);
+        const uniqueTags = [...new Set(allTags)].filter(tag => tag !== null) as string[];
         // Create a new array and sort it to avoid mutating the original
         result = [...uniqueTags].sort((a, b) => 
           a.localeCompare(b, undefined, { sensitivity: 'base' })

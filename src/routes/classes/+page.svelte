@@ -33,7 +33,7 @@
     initializeData();
   });
   
-  function handleClassSelect(classId) {
+  function handleClassSelect(classId: string | null) {
     selectedClassId = classId;
   }
   
@@ -108,7 +108,7 @@
           <ClassList 
             classes={$gradebookStore.categories}
             selectedClassId={selectedClassId}
-            on:selectClass={handleClassSelect}
+            onSelectClass={handleClassSelect}
           />
         {:else}
           <div class="bg-gray-800 border border-gray-700 rounded-lg p-6">
@@ -140,8 +140,8 @@
   
   {#if showImportWizard}
     <ImportWizard 
-      on:close={() => showImportWizard = false}
-      on:complete={handleImportComplete}
+      onClose={() => showImportWizard = false}
+      onComplete={handleImportComplete}
     />
   {/if}
 </div>

@@ -301,13 +301,14 @@
                   <!-- Questions sorted by point value -->
                   {#each category.questions.sort((a, b) => a.pointValue - b.pointValue) as question (question.id)}
                     <div class="relative group">
-                      <div class="w-full card-dark py-6 text-center cursor-pointer hover:border-purple transition-all duration-200"
-                           onclick={() => startEditingQuestion(category.id, question)}>
+                      <button class="w-full card-dark py-6 text-center cursor-pointer hover:border-purple transition-all duration-200"
+                           onclick={() => startEditingQuestion(category.id, question)}
+                           type="button">
                         <div class="text-xl font-bold text-purple-light">${question.pointValue}</div>
                         {#if question.isDoubleJeopardy}
                           <div class="text-xs text-purple mt-1">Daily Double</div>
                         {/if}
-                      </div>
+                      </button>
                       <button
                         onclick={() => deleteQuestion(category.id, question.id)}
                         class="absolute top-2 right-2 text-dark-error hover:text-dark-error-hover transition-colors opacity-0 group-hover:opacity-100"

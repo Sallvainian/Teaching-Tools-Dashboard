@@ -1,11 +1,14 @@
 export interface LogEntry {
   id: string;
+  observer: string;
   date: string;
   student: string;
-  log_entry: string;
+  subject: string | null;
+  objective: string | null;
+  observation: string;
   actions: string | null;
   follow_up: string | null;
-  tags: string[];
+  tags: string[] | null;
 }
 
 export interface LogEntryFilters {
