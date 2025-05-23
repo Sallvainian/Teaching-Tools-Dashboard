@@ -1,10 +1,13 @@
 // src/lib/stores/auth.ts
 import { writable, derived, get } from 'svelte/store';
 import type { AuthSession, User } from '@supabase/supabase-js';
+import { supabaseService, type Profile } from '$lib/SupabaseService';
+import type { StudentSignupData, TeacherSignupData } from '$lib/types/auth';
 
 function createAuthStore() {
   const user = writable<User | null>(null);
   const session = writable<AuthSession | null>(null);
+  const profile = writable<Profile | null>(null);
   const loading = writable(true);
   const error = writable<string | null>(null);
 
@@ -125,6 +128,36 @@ function createAuthStore() {
     }
   }
 
+  // Sign up a student
+  async function signUpStudent({ email, password, fullName }: StudentSignupData) {
+    loading.set(true);
+    error.set(null);
+
+    try {
+      const { data, error: signUpError } = await supabaseService.signUpStudent(email, password);
+      if (signUpError) throw signUpError;
+
+      if (data?.user) {
+        session.set(data.session);
+        user.set(data.user);
+        await createProfile({ id: data.user.id, full_name: fullName });
+        return true;
+      }
+
+      return false;
+    } catch (err) {
+      error.set(err instanceof Error ? err.message : 'Sign up failed');
+      return false;
+    } finally {
+      loading.set(false);
+    }
+  }
+
+  // Sign up a teacher
+  async function signUpTeacher({ email, password, fullName }: TeacherSignupData) {
+    return signUpStudent({ email, password, fullName });
+  }
+
   // Sign out
   async function signOut() {
     loading.set(true);
@@ -205,6 +238,25 @@ function createAuthStore() {
     }
   }
 
+  async function getProfile(userId: string) {
+    const { data, error: profileError } = await supabaseService.getProfile(userId);
+    if (profileError) throw profileError;
+    profile.set(data);
+    return data;
+  }
+
+  async function createProfile(profileData: Profile) {
+    const { error: createErr } = await supabaseService.createProfile(profileData);
+    if (createErr) throw createErr;
+    profile.set(profileData);
+  }
+
+  async function updateProfile(profileData: Profile) {
+    const { error: updateErr } = await supabaseService.updateProfile(profileData);
+    if (updateErr) throw updateErr;
+    profile.set(profileData);
+  }
+
   // Get current session
   async function getSession() {
     const currentUser = get(user);
@@ -217,10 +269,11 @@ function createAuthStore() {
 
   return {
     subscribe: derived(
-      [user, session, loading, error, isAuthenticated],
-      ([$user, $session, $loading, $error, $isAuthenticated]) => ({
+      [user, session, profile, loading, error, isAuthenticated],
+      ([$user, $session, $profile, $loading, $error, $isAuthenticated]) => ({
         user: $user,
         session: $session,
+        profile: $profile,
         loading: $loading,
         error: $error,
         isAuthenticated: $isAuthenticated
@@ -228,9 +281,14 @@ function createAuthStore() {
     ).subscribe,
     signIn,
     signUp,
+    signUpStudent,
+    signUpTeacher,
     signOut,
     resetPassword,
     updateUserProfile,
+    getProfile,
+    createProfile,
+    updateProfile,
     initialize,
     getSession
   };
@@ -242,6 +300,7 @@ export const authStore = createAuthStore();
 // Export individual pieces for convenience
 export const user = derived(authStore, ($store) => $store.user);
 export const session = derived(authStore, ($store) => $store.session);
+export const profileStore = derived(authStore, ($store) => $store.profile);
 export const loading = derived(authStore, ($store) => $store.loading);
 export const error = derived(authStore, ($store) => $store.error);
 export const isAuthenticated = derived(authStore, ($store) => $store.isAuthenticated);
