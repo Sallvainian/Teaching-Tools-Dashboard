@@ -106,7 +106,7 @@ jobs:
             comment += `**Helpful Commands:**\n`;
             comment += `\`\`\`bash\n`;
             comment += `# Install dependencies\n`;
-            comment += `pnpm install --frozen-lockfile\n\n`;
+            comment += `pnpm install\n\n`;
             comment += `# Run development server\n`;
             comment += `pnpm dev\n\n`;
             comment += `# Run tests\n`;
