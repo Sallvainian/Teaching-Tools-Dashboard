@@ -74,7 +74,7 @@ jobs:
                - Proper lazy loading and optimization
                
             Provide a summary with specific recommendations and any blocking issues.
-          allowed_tools: "Bash(pnpm install),Bash(pnpm lint),Bash(pnpm check),Bash(pnpm test),Bash(git diff --name-only HEAD~1),View,GlobTool,GrepTool"
+          allowed_tools: "Bash(pnpm install --frozen-lockfile),Bash(pnpm lint),Bash(pnpm check),Bash(pnpm test),Bash(git diff --name-only HEAD~1),View,GlobTool,GrepTool"
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           timeout_minutes: 20
 

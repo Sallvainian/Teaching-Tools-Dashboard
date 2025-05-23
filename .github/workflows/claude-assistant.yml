@@ -26,7 +26,7 @@ jobs:
           trigger_phrase: "@claude"
           assignee_trigger: "claude"
           timeout_minutes: 30
-          allowed_tools: "Bash(pnpm install),Bash(pnpm build),Bash(pnpm test),Bash(pnpm lint),Bash(pnpm check),Edit,Write,View,GlobTool,GrepTool"
+          allowed_tools: "Bash(pnpm install --frozen-lockfile),Bash(pnpm build),Bash(pnpm test),Bash(pnpm lint),Bash(pnpm check),Edit,Write,View,GlobTool,GrepTool"
           custom_instructions: |
             You are working on a SvelteKit 5 TypeScript application with Supabase backend.
             Always follow the project's CLAUDE.md guidelines and existing code patterns.
