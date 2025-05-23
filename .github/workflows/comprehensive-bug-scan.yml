@@ -48,11 +48,13 @@ jobs:
         id: lint
         run: |
           echo "## ESLint Results" > lint-report.md
-          pnpm lint --format json > eslint-results.json || true
           
-          # Parse results
-          ERRORS=$(cat eslint-results.json | jq '[.[] | .errorCount] | add')
-          WARNINGS=$(cat eslint-results.json | jq '[.[] | .warningCount] | add')
+          # Run ESLint and capture output
+          pnpm lint 2>&1 | tee eslint-output.txt || true
+          
+          # Count errors and warnings from output
+          ERRORS=$(grep -c "error" eslint-output.txt || echo "0")
+          WARNINGS=$(grep -c "warning" eslint-output.txt || echo "0")
           
           echo "errors=$ERRORS" >> $GITHUB_OUTPUT
           echo "warnings=$WARNINGS" >> $GITHUB_OUTPUT
@@ -62,7 +64,7 @@ jobs:
           
           # Extract top issues
           echo "### Top Issues:" >> lint-report.md
-          cat eslint-results.json | jq -r '.[] | select(.errorCount > 0) | .filePath' | head -10 >> lint-report.md
+          head -20 eslint-output.txt >> lint-report.md || echo "No issues found" >> lint-report.md
           
       - name: Run TypeScript Check
         id: typecheck
@@ -84,19 +86,26 @@ jobs:
         id: test
         run: |
           echo "## Test Results" > test-report.md
-          pnpm test --reporter=json > test-results.json || true
           
-          # Parse test results
-          if [ -f test-results.json ]; then
-            PASSED=$(cat test-results.json | jq '.numPassedTests // 0')
-            FAILED=$(cat test-results.json | jq '.numFailedTests // 0')
-            echo "failures=$FAILED" >> $GITHUB_OUTPUT
-            
-            echo "- Passed: $PASSED" >> test-report.md
-            echo "- Failed: $FAILED" >> test-report.md
-          else
-            echo "failures=unknown" >> $GITHUB_OUTPUT
-            echo "- Test results unavailable" >> test-report.md
+          # Run tests and capture output
+          pnpm test 2>&1 | tee test-output.txt || true
+          
+          # Extract test counts from output
+          PASSED=$(grep -oP '\d+(?= passed)' test-output.txt | tail -1 || echo "0")
+          FAILED=$(grep -oP '\d+(?= failed)' test-output.txt | tail -1 || echo "0")
+          
+          if [ -z "$PASSED" ]; then PASSED="0"; fi
+          if [ -z "$FAILED" ]; then FAILED="0"; fi
+          
+          echo "failures=$FAILED" >> $GITHUB_OUTPUT
+          
+          echo "- Passed: $PASSED" >> test-report.md
+          echo "- Failed: $FAILED" >> test-report.md
+          
+          # Show failed test details if any
+          if [ "$FAILED" -gt 0 ]; then
+            echo "### Failed Tests:" >> test-report.md
+            grep -A 5 "FAIL" test-output.txt | head -20 >> test-report.md || true
           fi
           
       - name: Security Scan
@@ -105,15 +114,19 @@ jobs:
           echo "## Security Scan Results" > security-report.md
           
           # NPM Audit
-          npm audit --json > npm-audit.json || true
-          VULNERABILITIES=$(cat npm-audit.json | jq '.metadata.vulnerabilities.total // 0')
+          npm audit 2>&1 | tee audit-output.txt || true
+          
+          # Count vulnerabilities from output
+          VULNERABILITIES=$(grep -oP '\d+(?= vulnerabilities)' audit-output.txt | head -1 || echo "0")
+          if [ -z "$VULNERABILITIES" ]; then VULNERABILITIES="0"; fi
+          
           echo "issues=$VULNERABILITIES" >> $GITHUB_OUTPUT
           
           echo "- NPM Vulnerabilities: $VULNERABILITIES" >> security-report.md
           
           # Extract critical/high vulnerabilities
-          echo "### Critical Issues:" >> security-report.md
-          cat npm-audit.json | jq -r '.vulnerabilities | to_entries[] | select(.value.severity == "critical" or .value.severity == "high") | .key' | head -10 >> security-report.md || true
+          echo "### Vulnerability Summary:" >> security-report.md
+          grep -E "(critical|high|moderate)" audit-output.txt | head -10 >> security-report.md || echo "No critical issues found" >> security-report.md
           
       - name: Performance Analysis
         run: |

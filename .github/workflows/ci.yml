@@ -52,8 +52,7 @@ jobs:
         with:
           name: eslint-results
           path: |
-            eslint-report.json
-            eslint-report.html
+            eslint-output.txt
           if-no-files-found: ignore
           
       - name: Run TypeScript type checking
