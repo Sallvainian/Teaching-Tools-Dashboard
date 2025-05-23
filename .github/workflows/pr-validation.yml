@@ -176,14 +176,14 @@ jobs:
       - name: Build base branch
         run: |
           cd base
-          pnpm install
+          pnpm install --no-frozen-lockfile
           pnpm build
           du -sh .svelte-kit/output/client > ../base-size.txt
           
       - name: Build PR branch
         run: |
           cd pr
-          pnpm install
+          pnpm install --no-frozen-lockfile
           pnpm build
           du -sh .svelte-kit/output/client > ../pr-size.txt
           

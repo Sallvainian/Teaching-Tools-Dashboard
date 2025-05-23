@@ -38,7 +38,7 @@ jobs:
           version: 8
           
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
         
       - name: Run ESLint auto-fix
         run: |
@@ -154,7 +154,7 @@ jobs:
           
       - name: Test after updates
         run: |
-          pnpm install
+          pnpm install --no-frozen-lockfile
           pnpm test || echo "⚠️ Tests failed after dependency updates" >> dependency-updates.md
           pnpm build || echo "⚠️ Build failed after dependency updates" >> dependency-updates.md
           
