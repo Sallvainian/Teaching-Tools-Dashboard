@@ -13,13 +13,16 @@
     "prepare": "svelte-kit sync",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "check:svelte": "svelte-check --tsconfig ./tsconfig.json",
     "test:unit": "vitest",
     "test": "pnpm run test:coverage",
     "test:coverage": "vitest run --coverage",
     "test:coverage:qodana": "pnpm run test:coverage && bash ./copy-coverage.sh",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
-    "validate": "pnpm run lint && pnpm run check"
+    "validate": "pnpm run lint && pnpm run check",
+    "format": "prettier --write \"src/**/*.{js,ts,svelte,css,html,json}\"",
+    "format:check": "prettier --check \"src/**/*.{js,ts,svelte,css,html,json}\""
   },
   "devDependencies": {
     "@eslint/compat": "^1.2.9",

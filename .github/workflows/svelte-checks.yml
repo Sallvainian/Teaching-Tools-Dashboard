@@ -1,0 +1,162 @@
+name: Svelte-Specific Checks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/*.svelte'
+      - 'svelte.config.js'
+      - 'vite.config.ts'
+  pull_request:
+    branches: [main]
+    paths:
+      - '**/*.svelte'
+      - 'svelte.config.js'
+      - 'vite.config.ts'
+  workflow_dispatch:
+
+jobs:
+  svelte-lint:
+    name: Svelte Component Analysis
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Run svelte-check with detailed output
+        run: |
+          pnpm check -- --output human-verbose > svelte-check-results.txt || true
+          echo "### Svelte Check Results" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          cat svelte-check-results.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          
+      - name: Check for Svelte 5 runes usage
+        run: |
+          echo "### Checking for Svelte 5 Runes Usage" >> $GITHUB_STEP_SUMMARY
+          echo "Components using old syntax:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          grep -r "export let" src/**/*.svelte || echo "✅ No old prop syntax found"
+          grep -r "\\$:" src/**/*.svelte || echo "✅ No old reactive statements found"
+          grep -r "on:" src/**/*.svelte || echo "✅ No old event handlers found"
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        continue-on-error: true
+        
+      - name: Analyze component complexity
+        run: |
+          echo "### Component Complexity Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "Large components (>300 lines):" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          find src -name "*.svelte" -exec wc -l {} + | sort -nr | head -20 >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        continue-on-error: true
+        
+      - name: Check for accessibility issues
+        run: |
+          pnpm add -D eslint-plugin-jsx-a11y @typescript-eslint/parser
+          echo "### Accessibility Check" >> $GITHUB_STEP_SUMMARY
+          npx eslint src/**/*.svelte --ext .svelte --no-eslintrc \
+            --parser @typescript-eslint/parser \
+            --plugin jsx-a11y \
+            --rule 'jsx-a11y/alt-text: error' \
+            --rule 'jsx-a11y/aria-props: error' \
+            --rule 'jsx-a11y/aria-role: error' \
+            --format json > a11y-results.json || true
+          echo "Check completed - results saved to a11y-results.json" >> $GITHUB_STEP_SUMMARY
+        continue-on-error: true
+
+  svelte-best-practices:
+    name: Svelte Best Practices Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Check for common anti-patterns
+        run: |
+          echo "### Svelte Anti-Pattern Detection" >> $GITHUB_STEP_SUMMARY
+          
+          echo "#### Checking for direct DOM manipulation:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          grep -rn "document\." src/**/*.svelte || echo "✅ No direct DOM manipulation found"
+          grep -rn "querySelector" src/**/*.svelte || echo "✅ No querySelector usage found"
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          
+          echo "#### Checking for missing key in each blocks:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          grep -rn "{#each" src/**/*.svelte | grep -v "(.*)" || echo "⚠️  Potential missing keys in each blocks"
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          
+          echo "#### Checking for unused CSS:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          find src -name "*.svelte" -exec grep -l "<style>" {} \; | head -10
+          echo "Note: Manual review needed for unused CSS" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        continue-on-error: true
+        
+      - name: Check component imports
+        run: |
+          echo "### Component Import Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "#### Checking for circular dependencies:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          npx madge --circular src --extensions ts,js,svelte || echo "✅ No circular dependencies found"
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        continue-on-error: true
+
+  svelte-performance:
+    name: Svelte Performance Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Build and analyze
+        run: |
+          pnpm build
+          echo "### Build Size Analysis" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          du -sh .svelte-kit/output/* | sort -hr | head -20 >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          
+      - name: Check for large bundles
+        run: |
+          echo "### Large File Detection" >> $GITHUB_STEP_SUMMARY
+          echo "Files larger than 100KB:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          find .svelte-kit/output -type f -size +100k -exec ls -lh {} \; | head -20 >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+        continue-on-error: true
