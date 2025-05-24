@@ -1,5 +1,5 @@
 // src/lib/stores/auth.ts
-import { writable, derived, get } from 'svelte/store';
+import { writable, derived } from 'svelte/store';
 import type { AuthSession, User } from '@supabase/supabase-js';
 
 function createAuthStore() {
@@ -64,23 +64,35 @@ function createAuthStore() {
       // Dynamically import supabase client to ensure it's properly initialized
       const { supabase } = await import('$lib/supabaseClient');
       
+      console.log('Attempting sign in for:', email);
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
-      if (signInError) throw signInError;
+      if (signInError) {
+        console.error('Sign in error:', signInError);
+        if (signInError.message.includes('Invalid login credentials')) {
+          error.set('Invalid email or password');
+        } else {
+          error.set(signInError.message);
+        }
+        return false;
+      }
 
       // Update stores
       if (data?.session) {
+        console.log('Sign in successful');
         session.set(data.session);
         user.set(data.session.user);
         return true;
       }
       
+      error.set('Sign in failed - no session returned');
       return false;
     } catch (err) {
       // Sign in error
+      console.error('Unexpected sign in error:', err);
       error.set(err instanceof Error ? err.message : 'Sign in failed');
       return false;
     } finally {

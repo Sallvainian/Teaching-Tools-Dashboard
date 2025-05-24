@@ -37,10 +37,10 @@
         goto('/dashboard');
       } else {
         // Error will be set via subscription
-        if (!error) error = 'Failed to sign in';
+        if (!error) error = 'Invalid email or password';
       }
     } catch (err) {
-      error = err instanceof Error ? err.message : 'Failed to sign in';
+      error = err instanceof Error ? err.message : 'Invalid email or password';
     } finally {
       loading = false;
     }
