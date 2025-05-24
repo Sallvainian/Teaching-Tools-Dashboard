@@ -13,7 +13,7 @@
     { id: '7', name: 'Parent Conference', unread: 0, lastMessage: 'You: Looking forward to meeting everyone', time: 'Last week', avatar: 'PC', isGroup: true, members: 15 }
   ]);
   
-  let activeConversation = $state(conversations[0]);
+  let activeConversation = $derived(conversations.find(c => c.id === '1') || conversations[0]);
   
   let messages = $state([
     { id: '1', sender: 'other', text: 'Good morning! I had a question about the science project.', time: '10:30 AM' },
@@ -176,6 +176,7 @@
               <button 
                 class={`w-full text-left p-4 border-b border-border/50 hover:bg-surface/50 transition-colors flex items-center gap-3 ${activeConversation.id === conversation.id ? 'bg-purple-bg' : ''}`}
                 onclick={() => selectConversation(conversation)}
+                aria-label={`Chat with ${conversation.name}`}
               >
                 <div class="relative">
                   <div class="w-10 h-10 rounded-full bg-purple-bg text-purple flex items-center justify-center font-medium">
@@ -217,7 +218,7 @@
           
           <!-- New Chat Button -->
           <div class="p-4 border-t border-border">
-            <button class="btn btn-primary w-full">
+            <button class="btn btn-primary w-full" aria-label="Start new chat">
               <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
                 <line x1="12" y1="11" x2="12" y2="17"></line>
@@ -256,18 +257,18 @@
             </div>
             
             <div class="flex gap-2">
-              <button class="p-2 text-text-base hover:text-text-hover rounded-full hover:bg-surface transition-colors" title="Call">
+              <button class="p-2 text-text-base hover:text-text-hover rounded-full hover:bg-surface transition-colors" aria-label="Start voice call">
                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
                 </svg>
               </button>
-              <button class="p-2 text-text-base hover:text-text-hover rounded-full hover:bg-surface transition-colors" title="Video">
+              <button class="p-2 text-text-base hover:text-text-hover rounded-full hover:bg-surface transition-colors" aria-label="Start video call">
                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <polygon points="23 7 16 12 23 17 23 7"></polygon>
                   <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
                 </svg>
               </button>
-              <button class="p-2 text-text-base hover:text-text-hover rounded-full hover:bg-surface transition-colors" title="Info">
+              <button class="p-2 text-text-base hover:text-text-hover rounded-full hover:bg-surface transition-colors" aria-label="View chat information">
                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="10"></circle>
                   <line x1="12" y1="16" x2="12" y2="12"></line>
@@ -305,7 +306,7 @@
                   <button 
                     class="p-2 text-text-base hover:text-text-hover rounded-full hover:bg-surface transition-colors"
                     onclick={() => showEmojiPicker = !showEmojiPicker}
-                    title="Emoji"
+                    aria-label="Open emoji picker"
                   >
                     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <circle cx="12" cy="12" r="10"></circle>
@@ -322,6 +323,7 @@
                           <button 
                             class="w-8 h-8 text-lg hover:bg-surface rounded"
                             onclick={() => addEmoji(emoji)}
+                            aria-label={`Add emoji ${emoji}`}
                           >
                             {emoji}
                           </button>
@@ -335,7 +337,7 @@
                   <button 
                     class="p-2 text-text-base hover:text-text-hover rounded-full hover:bg-surface transition-colors"
                     onclick={() => showAttachMenu = !showAttachMenu}
-                    title="Attach"
+                    aria-label="Open attachment menu"
                   >
                     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
@@ -345,7 +347,7 @@
                   {#if showAttachMenu}
                     <div class="absolute bottom-10 right-0 bg-card border border-border rounded-lg shadow-dropdown z-10">
                       <div class="py-1">
-                        <button class="flex items-center gap-2 px-4 py-2 hover:bg-surface w-full text-left">
+                        <button class="flex items-center gap-2 px-4 py-2 hover:bg-surface w-full text-left" aria-label="Attach image">
                           <svg class="w-5 h-5 text-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
                             <circle cx="8.5" cy="8.5" r="1.5"></circle>
@@ -353,14 +355,14 @@
                           </svg>
                           <span class="text-text-hover">Image</span>
                         </button>
-                        <button class="flex items-center gap-2 px-4 py-2 hover:bg-surface w-full text-left">
+                        <button class="flex items-center gap-2 px-4 py-2 hover:bg-surface w-full text-left" aria-label="Attach document">
                           <svg class="w-5 h-5 text-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                             <polyline points="14 2 14 8 20 8"></polyline>
                           </svg>
                           <span class="text-text-hover">Document</span>
                         </button>
-                        <button class="flex items-center gap-2 px-4 py-2 hover:bg-surface w-full text-left">
+                        <button class="flex items-center gap-2 px-4 py-2 hover:bg-surface w-full text-left" aria-label="Attach video">
                           <svg class="w-5 h-5 text-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polygon points="23 7 16 12 23 17 23 7"></polygon>
                             <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
@@ -376,7 +378,7 @@
                   class="p-2 text-text-base hover:text-purple rounded-full hover:bg-surface transition-colors"
                   onclick={sendMessage}
                   disabled={!newMessage.trim()}
-                  title="Send"
+                  aria-label="Send message"
                 >
                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="22" y1="2" x2="11" y2="13"></line>

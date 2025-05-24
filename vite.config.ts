@@ -14,7 +14,6 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks: {
             'svelte': ['svelte'],
-            'supabase': ['@supabase/supabase-js'],
             'ag-grid': ['@ag-grid-community/core', '@ag-grid-community/client-side-row-model'],
             'ui': ['@steeze-ui/svelte-icon', '@steeze-ui/heroicons']
           },
