@@ -12,7 +12,7 @@
   let newClassName = $state('');
   let showNewClassModal = $state(false);
   let showNewAssignmentModal = $state(false);
-  let hotInstance = $state(null);
+  let hotInstance = $state<any>(null);
   let showStudentModal = $state(false);
   
   // Reactive values using $derived
@@ -24,7 +24,6 @@
   // Create reactive data and headers for Handsontable
   let hotData = $derived(createTableData());
   let columnHeaders = $derived(createColumnHeaders());
-  let columnSettings = $derived(createColumnSettings());
   
   // Table functions
   function createTableData() {
@@ -32,9 +31,9 @@
       return [];
     }
     
-    return categoryStudents.map(student => {
-      // Start with student name
-      const row = [student.name];
+    return categoryStudents.map((student, index) => {
+      // Start with student number and name
+      const row = [index + 1, student.name];
       
       // Add grades for each assignment
       if (categoryAssignments && categoryAssignments.length > 0) {
@@ -60,8 +59,8 @@
   }
   
   function createColumnHeaders() {
-    // Start with Student column
-    const headers = ['Student'];
+    // Start with # and Student columns
+    const headers = ['#', 'Name', 'Average'];
     
     // Add assignment columns
     if (categoryAssignments && categoryAssignments.length > 0) {
@@ -70,65 +69,11 @@
       });
     }
     
-    // Add average column
-    headers.push('Average %');
-    
     return headers;
   }
   
-  function createColumnSettings() {
-    // Student column settings
-    const columns = [
-      { 
-        type: 'text',
-        readOnly: true,
-        className: 'htLeft font-medium text-white' 
-      }
-    ];
-    
-    // Assignment columns
-    if (categoryAssignments && categoryAssignments.length > 0) {
-      categoryAssignments.forEach((assignment, index) => {
-        columns.push({
-          type: 'numeric',
-          numericFormat: { pattern: '0,0.00' },
-          className: 'htCenter',
-          validator: function(value, callback) {
-            callback(value === null || value === '' || (value >= 0 && value <= assignment.maxPoints));
-          },
-          allowInvalid: false,
-          // Handle grade change
-          afterChange: (changes, source) => {
-            if (source === 'edit' && changes) {
-              const [row, col, oldValue, newValue] = changes[0];
-              const studentId = categoryStudents[row].id;
-              const assignmentId = categoryAssignments[index].id;
-              
-              gradebookStore.recordGrade(studentId, assignmentId, parseFloat(newValue) || 0);
-            }
-          }
-        });
-      });
-    }
-    
-    // Average column
-    columns.push({ 
-      type: 'numeric',
-      numericFormat: { pattern: '0,0.00' },
-      readOnly: true,
-      className: 'htCenter font-bold',
-      renderer: function(instance, td, row, col, prop, value) {
-        td.style.backgroundColor = getGradeColor(value);
-        td.innerHTML = value ? `${value.toFixed(1)}%` : '—';
-        return td;
-      }
-    });
-    
-    return columns;
-  }
-  
   function getGradeColor(value) {
-    if (!value) return 'rgba(139, 92, 246, 0.1)'; // Default purple
+    if (value === null || value === undefined) return 'rgba(139, 92, 246, 0.1)'; // Default purple
     
     if (value >= 90) return 'rgba(52, 211, 153, 0.2)'; // Green for A
     if (value >= 80) return 'rgba(96, 165, 250, 0.2)'; // Blue for B
@@ -139,9 +84,24 @@
   
   // Handle table events
   function handleAfterChange(event) {
-    // Refresh the table after changes to update averages
-    if (hotInstance) {
-      hotInstance.updateData(createTableData());
+    const { changes, source } = event.detail;
+    
+    if (source === 'edit' && changes) {
+      for (const [row, col, oldValue, newValue] of changes) {
+        // Skip the first two columns (# and Name) and the Average column
+        if (col <= 2) continue;
+        
+        // Get the corresponding student and assignment
+        const student = categoryStudents[row];
+        // Adjust column index to match assignments array (subtract 3 to account for #, Name, and Average columns)
+        const assignmentIndex = col - 3;
+        const assignment = categoryAssignments[assignmentIndex];
+        
+        if (student && assignment) {
+          // Record the grade
+          gradebookStore.recordGrade(student.id, assignment.id, parseFloat(newValue) || 0);
+        }
+      }
     }
   }
   
@@ -313,75 +273,105 @@
           </div>
           
           {#if hasData() && categoryAssignments.length > 0}
-            <!-- Gradebook Table -->
-            <div class="overflow-x-auto">
-              <table class="w-full border-collapse">
-                <thead>
-                  <tr class="bg-surface/50 text-left">
-                    <th class="p-3 border-b border-border text-text-base font-medium">#</th>
-                    <th class="p-3 border-b border-border text-text-base font-medium">Name</th>
-                    <th class="p-3 border-b border-border text-text-base font-medium text-center">Average</th>
-                    {#each categoryAssignments as assignment}
-                      <th class="p-3 border-b border-border text-text-base font-medium text-center">
-                        <div>{assignment.name}</div>
-                        <div class="text-xs opacity-70">{assignment.maxPoints}pts</div>
-                      </th>
-                    {/each}
-                  </tr>
-                </thead>
-                <tbody>
-                  {#each categoryStudents as student, index}
-                    {@const avg = gradebookStore.studentAverageInCategory(student.id, categoryId)}
-                    <tr class="hover:bg-surface/30 transition-colors">
-                      <td class="p-3 border-b border-border/50 text-text-base">{index + 1}</td>
-                      <td class="p-3 border-b border-border/50 text-highlight font-medium">{student.name}</td>
-                      <td class="p-3 border-b border-border/50 text-center">
-                        <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium
-                          ${avg >= 90 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 
-                            avg >= 80 ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' : 
-                            avg >= 70 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' : 
-                            avg >= 60 ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' : 
-                            'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'}">
-                          {avg}%
-                        </div>
-                      </td>
-                      {#each categoryAssignments as assignment}
-                        {@const grade = allGrades.find(g => g.studentId === student.id && g.assignmentId === assignment.id)}
-                        {@const percentage = grade ? (grade.points / assignment.maxPoints) * 100 : 0}
-                        <td class="p-3 border-b border-border/50 text-center relative group">
-                          <div class="flex items-center justify-center">
-                            <input 
-                              type="number" 
-                              value={grade ? grade.points : ''} 
-                              class="w-16 text-center bg-surface/50 border border-border rounded py-1 px-2 focus:ring-1 focus:ring-purple focus:border-purple"
-                              min="0"
-                              max={assignment.maxPoints}
-                              onchange={(e) => {
-                                const value = parseFloat(e.currentTarget.value);
-                                if (!isNaN(value)) {
-                                  gradebookStore.recordGrade(student.id, assignment.id, value);
-                                }
-                              }}
-                            />
-                          </div>
-                          {#if grade}
-                            <div class="absolute bottom-0 left-0 right-0 h-1 bg-surface">
-                              <div 
-                                class="${percentage >= 90 ? 'bg-green-500' : 
+            <!-- Excel-like Gradebook Table -->
+            <div class="overflow-hidden border border-border rounded-lg">
+              <Handsontable
+                data={hotData}
+                colHeaders={columnHeaders}
+                settings={{
+                  rowHeaders: true,
+                  stretchH: 'all',
+                  manualColumnResize: true,
+                  contextMenu: true,
+                  copyPaste: true,
+                  fillHandle: true,
+                  fixedColumnsStart: 2,
+                  licenseKey: 'non-commercial-and-evaluation',
+                  columns: [
+                    { // # Column
+                      type: 'numeric',
+                      readOnly: true,
+                      width: 40,
+                      className: 'htCenter text-text-base font-medium'
+                    },
+                    { // Name Column
+                      type: 'text',
+                      readOnly: true,
+                      width: 180,
+                      className: 'htLeft text-highlight font-medium'
+                    },
+                    { // Average Column
+                      type: 'numeric',
+                      readOnly: true,
+                      numericFormat: { pattern: '0.0' },
+                      width: 80,
+                      className: 'htCenter font-bold',
+                      renderer: function(instance, td, row, col, prop, value) {
+                        td.style.backgroundColor = getGradeColor(value);
+                        td.innerHTML = value ? `${value}%` : '—';
+                        
+                        // Add color classes based on grade
+                        if (value >= 90) td.className += ' text-green-400';
+                        else if (value >= 80) td.className += ' text-blue-400';
+                        else if (value >= 70) td.className += ' text-yellow-400';
+                        else if (value >= 60) td.className += ' text-orange-400';
+                        else if (value) td.className += ' text-red-400';
+                        
+                        return td;
+                      }
+                    },
+                    ...categoryAssignments.map(assignment => ({
+                      type: 'numeric',
+                      numericFormat: { pattern: '0.0' },
+                      width: 100,
+                      className: 'htCenter',
+                      validator: function(value, callback) {
+                        callback(value === null || value === '' || (value >= 0 && value <= assignment.maxPoints));
+                      },
+                      allowInvalid: false,
+                      renderer: function(instance, td, row, col, prop, value) {
+                        // Calculate percentage for background color
+                        const percentage = value !== null ? (value / assignment.maxPoints) * 100 : 0;
+                        td.style.backgroundColor = getGradeColor(percentage);
+                        
+                        // Add a subtle progress bar at the bottom of the cell
+                        if (value !== null) {
+                          td.innerHTML = `
+                            <div class="relative w-full h-full flex items-center justify-center">
+                              <span>${value}</span>
+                              <div class="absolute bottom-0 left-0 right-0 h-1 bg-surface">
+                                <div class="${percentage >= 90 ? 'bg-green-500' : 
                                   percentage >= 80 ? 'bg-blue-500' : 
                                   percentage >= 70 ? 'bg-yellow-500' : 
                                   percentage >= 60 ? 'bg-orange-500' : 
                                   'bg-red-500'}" 
-                                style="width: ${percentage}%"
-                              ></div>
+                                  style="width: ${percentage}%"></div>
+                              </div>
                             </div>
-                          {/if}
-                        </td>
-                      {/each}
-                    </tr>
-                  {/each}
-                </tbody>
-              </table>
+                          `;
+                        } else {
+                          td.innerHTML = '';
+                        }
+                        
+                        return td;
+                      }
+                    }))
+                  ]
+                }}
+                height={400}
+                on:init={handleTableInit}
+                on:afterChange={handleAfterChange}
+              />
+            </div>
+            
+            <div class="mt-4 text-sm text-text-base">
+              <p>
+                <span class="font-medium">Pro Tip:</span> This gradebook supports Excel-like features:
+                <span class="text-highlight">Select multiple cells</span> with click and drag, 
+                <span class="text-highlight">Copy/paste</span> with Ctrl+C/Ctrl+V, 
+                <span class="text-highlight">Fill values</span> by dragging cell corners, and 
+                <span class="text-highlight">Right-click</span> for more options.
+              </p>
             </div>
           {:else if hasData()}
             <div class="bg-surface/30 rounded-lg p-6 text-center">
@@ -493,7 +483,7 @@
             <h3 class="text-lg font-bold text-highlight mb-4">Students</h3>
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {#each categoryStudents as student}
+              {#each categoryStudents as student, index}
                 <div class="bg-surface/50 rounded-lg p-4 hover:bg-surface transition-colors">
                   <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-full bg-purple-bg text-purple flex items-center justify-center font-medium">
