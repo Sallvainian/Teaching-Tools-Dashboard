@@ -4,264 +4,311 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Teacher Dashboard - A comprehensive web application for educators to manage classroom activities, built with SvelteKit 5, TypeScript, and Supabase. Features include gradebook management, Jeopardy game creation, student observation logs, and more.
+**Teacher Dashboard** - A comprehensive web application for educators to manage classroom activities, students, and educational games. Built with modern web technologies focusing on type safety, performance, and user experience.
+
+### Tech Stack
+- **Frontend**: SvelteKit 5, TypeScript (strict mode), Tailwind CSS
+- **Backend**: Supabase (PostgreSQL + Auth)
+- **Data Tables**: AG-Grid Community, Handsontable
+- **Testing**: Vitest, Testing Library
+- **CI/CD**: GitHub Actions, Vercel
+
+## Code Style Guidelines
+
+### TypeScript Standards
+- **Strict Mode**: Always enabled, no implicit `any`
+- **Type Imports**: Use `type` keyword for type-only imports
+- **Null Handling**: Explicit null/undefined checks required
+- **Type Assertions**: Avoid; prefer type guards
+- **Return Types**: Explicitly type all function returns
+
+### Svelte 5 Patterns
+```typescript
+// CORRECT: Use modern Svelte 5 runes
+let count = $state(0);
+let doubled = $derived(count * 2);
+let { data, onchange } = $props<{ data: Item[], onchange?: (item: Item) => void }>();
+
+// INCORRECT: Don't use old Svelte 4 patterns
+export let data; // ❌ Use $props instead
+$: doubled = count * 2; // ❌ Use $derived instead
+```
+
+### Event Handling
+```typescript
+// CORRECT: Use callback props
+let { onclick } = $props<{ onclick?: () => void }>();
+
+// INCORRECT: Don't use createEventDispatcher
+dispatch('click'); // ❌ Use callback props
+```
+
+### Component Structure
+1. Imports (grouped by type)
+2. Type definitions
+3. Props declaration with $props()
+4. State with $state()
+5. Derived values with $derived()
+6. Effects with $effect()
+7. Functions
+8. Markup
+
+## Review Criteria for PRs
+
+### Must Pass
+1. **Type Safety**: No TypeScript errors (run `pnpm check`)
+2. **Linting**: ESLint passes (run `pnpm lint`)
+3. **Tests**: All tests pass (run `pnpm test`)
+4. **Build**: Production build succeeds (run `pnpm build`)
+
+### Code Quality Checks
+- [ ] Uses proper Svelte 5 patterns (runes, props)
+- [ ] Follows established store patterns
+- [ ] Implements proper error handling
+- [ ] Includes loading states for async operations
+- [ ] Uses correct Tailwind classes from our theme
+- [ ] Maintains consistent file organization
+
+### Database Changes
+- [ ] Updates TypeScript types if schema changes
+- [ ] Includes migration files for schema changes
+- [ ] Updates model converters if needed
+- [ ] Tests database operations
 
 ## Essential Commands
 
 ```bash
 # Development
-pnpm install        # Install dependencies
 pnpm dev            # Start dev server (http://localhost:5173)
 pnpm build          # Build for production
 pnpm preview        # Preview production build
 
+# Code Quality (MUST RUN BEFORE COMMIT)
+pnpm lint           # Run ESLint
+pnpm lint:fix       # Auto-fix linting issues
+pnpm check          # Run svelte-check for TypeScript
+pnpm validate       # Run both lint and check
+
 # Testing
 pnpm test           # Run tests with coverage
 pnpm test:unit      # Run tests in watch mode
-pnpm test:coverage  # Generate coverage report
-pnpm test:coverage:qodana  # Coverage report for Qodana
+pnpm test -- path/to/file.test.ts  # Test specific file
 
-# Code Quality
-pnpm lint           # Run ESLint
-pnpm lint:fix       # Fix linting issues
-pnpm check          # Run svelte-check
-pnpm check:watch    # Run svelte-check in watch mode
-pnpm validate       # Run both lint and check
-
-# Maintenance
-./archive-xml-reports.sh  # Archive IDE inspection XML files
-
-# Single Test File
-pnpm test -- path/to/file.test.ts
+# Database
+supabase gen types typescript --local > src/lib/types/database.ts
 ```
 
-## GitHub Actions & Claude Code
+## Architecture Patterns
 
-This repository includes Claude Code GitHub Actions for automated code reviews, PR management, and issue triage:
-
-- **Interactive Assistant**: Tag `@claude` in issues/PRs for AI assistance
-- **Automated Code Reviews**: Thorough analysis of all PRs to main branch
-- **Issue Triage**: Automatic categorization and priority assessment
-- **Documentation Sync**: Updates docs when code changes
-- **PR Validation**: Quality checks and compliance verification
-
-See `docs/CLAUDE_GITHUB_ACTIONS_SETUP.md` for complete setup instructions.
-
-## High-Level Architecture
-
-### Dual Storage System
-The app features a unique dual-storage architecture:
-
-1. **Primary**: Supabase (PostgreSQL) for authenticated users
-2. **Fallback**: localStorage for offline/development mode
-
-This is implemented through `SupabaseService` (`src/lib/services/supabaseService.ts`):
-- Automatic fallback to localStorage on Supabase errors
-- Synchronization between both storage systems
-- Type-safe database operations with full TypeScript support
-
-### State Management Pattern
-Stores follow a consistent pattern (`src/lib/stores/`):
-
+### Service Layer Pattern
 ```typescript
+// src/lib/services/supabaseService.ts
+class SupabaseService {
+  async getItems<T>(table: string): Promise<T[]> {
+    try {
+      const { data, error } = await supabase.from(table).select();
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error(`Error fetching from ${table}:`, error);
+      return this.getFromLocalStorage(table) || [];
+    }
+  }
+}
+```
+
+### Store Pattern
+```typescript
+// Consistent store pattern with TypeScript
 function createStore() {
-  // Primary state atoms
   const items = writable<Item[]>([]);
   const loading = writable(false);
+  const dataLoaded = writable(false);
   
-  // Derived computed values
-  const computed = derived([items], ([$items]) => {...});
-  
-  // Async operations with service layer
-  async function loadData() {
-    const data = await supabaseService.getItems('table');
-    items.set(data);
+  async function ensureDataLoaded() {
+    if (get(dataLoaded)) return;
+    await loadAllData();
+    dataLoaded.set(true);
   }
   
-  return { subscribe: store.subscribe, loadData };
+  return {
+    subscribe: derived([items, loading], ([$items, $loading]) => ({
+      items: $items,
+      loading: $loading
+    })).subscribe,
+    ensureDataLoaded
+  };
 }
 ```
 
-### Database Schema
-Key tables with RLS (Row Level Security):
-- `app_users` - User profiles with role (teacher/student)
-- `students` - Student records (user_id for multi-tenancy)
-- `categories` - Grade categories/classes
+### Error Handling Pattern
+```typescript
+try {
+  loading.set(true);
+  const data = await supabaseService.getItems('table');
+  items.set(data);
+} catch (error) {
+  console.error('Failed to load items:', error);
+  // User-friendly error handling
+  errorMessage.set('Failed to load data. Please try again.');
+} finally {
+  loading.set(false);
+}
+```
+
+## Database Schema
+
+### Key Tables
+- `app_users` - User profiles with roles
+- `students` - Student records (linked to user_id)
+- `categories` - Classes/grade categories
 - `assignments` - Class assignments
 - `grades` - Student grades
-- `observation_logs` - Behavior tracking
-- `games`, `game_categories`, `questions` - Jeopardy game system
+- `log_entries` - Student observation logs (NOT observation_logs)
+- `games`, `game_categories`, `questions` - Jeopardy system
 
-### Authentication Flow
-1. Supabase Auth handles login/signup/reset
-2. Auth store (`src/lib/stores/auth.ts`) manages state
-3. Root layout (`src/routes/+layout.svelte`) provides auth context
-4. Protected routes check `$isAuthenticated` derived store
+### Type Generation
+After database changes:
+```bash
+supabase gen types typescript --local > src/lib/types/database.ts
+```
 
-### Component Architecture
-- Modern Svelte 5 with runes (`$state`, `$derived`, `$effect`)
-- TypeScript for type safety (strict mode)
-- Tailwind CSS with custom dark theme
-- DaisyUI component library
-- AG-Grid for complex data tables
-- Handsontable for spreadsheet-like interfaces
+## Testing Guidelines
 
-## Critical Implementation Details
-
-### Service Layer (`src/lib/services/supabaseService.ts`)
-- Generic CRUD operations with TypeScript generics
-- Composite key support for junction tables
-- Error handling with localStorage fallback
-- Type-safe operations using generated database types
-
-### Store Initialization Pattern
-Stores use lazy loading to avoid premature Supabase calls:
+### Unit Tests
 ```typescript
-async function ensureDataLoaded() {
-  if (get(dataLoaded)) return;
-  await loadAllData();
-  dataLoaded.set(true);
-}
-```
-
-### Data Transformation
-Database models are transformed to app models:
-```typescript
-// src/lib/utils/modelConverters.ts
-export function dbStudentToAppStudent(dbStudent: Tables<'students'>): Student
-```
-
-### Route Protection
-Layout handles authentication state:
-```svelte
-{#if $isAuthenticated}
-  {@render children?.()}
-{:else}
-  <Redirect to="/auth/login" />
-{/if}
-```
-
-### Feature Modules
-The codebase is organized into distinct feature modules:
-
-1. **Authentication** - User signup, login, profile management
-   - Components: `LoginForm.svelte`, `SignupForm.svelte`, `ProfileForm.svelte`
-   - Store: `auth.ts`
-
-2. **Gradebook** - Class and assignment management
-   - Components: `ClassList.svelte`, `StudentRoster.svelte`
-   - Store: `gradebook.ts`
-
-3. **Jeopardy** - Interactive game management
-   - Routes: `/jeopardy/editor/[gameId]`, `/jeopardy/play/[gameId]`
-   - Store: `jeopardy.ts`
-   - Components: `GameSharingModal.svelte`, `JeopardyTimer.svelte`
-
-4. **Observation Logs** - Student behavior tracking
-   - Components: `LogEntriesList.svelte`, `LogEntriesForm.svelte`, `LogEntriesSearch.svelte`
-   - Store: `log-entries.ts`
-
-## Development Guidelines
-
-### Type Safety
-- No implicit `any` types
-- Define interfaces for all data structures
-- Use generated database types from Supabase
-- Handle null/undefined cases explicitly
-
-### Component Patterns
-```svelte
-<script lang="ts">
-  import { myStore } from '$lib/stores/myStore';
-  
-  let loading = $state(false);
-  let { data } = $props();
-  
-  $effect(() => {
-    // Side effects here
+// Follow this pattern for store tests
+describe('authStore', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
   });
-</script>
+  
+  it('should initialize with default state', () => {
+    const state = get(authStore);
+    expect(state.user).toBeNull();
+    expect(state.loading).toBe(true);
+  });
+});
 ```
 
-### Error Handling
-- Always catch and display user-friendly errors
-- Use loading states for async operations
-- Provide fallback UI for error states
-- Log errors to console in development
+### Component Tests
+```typescript
+// Use Testing Library with Vitest
+import { render, fireEvent } from '@testing-library/svelte';
+import Component from './Component.svelte';
 
-### Performance Considerations
-- Dynamic imports for Supabase client
-- Lazy loading of store data
-- Optimistic UI updates
-- AG-Grid virtual scrolling for large datasets
-
-## Environment Configuration
-
-Required `.env` variables:
+test('handles click events', async () => {
+  const { getByRole } = render(Component, {
+    props: { onclick: vi.fn() }
+  });
+  
+  await fireEvent.click(getByRole('button'));
+  expect(onclick).toHaveBeenCalled();
+});
 ```
+
+## Common Pitfalls to Avoid
+
+### ❌ Don't Do This
+```typescript
+// Don't use any type
+let data: any; // ❌
+
+// Don't use old Svelte patterns
+export let prop; // ❌
+dispatch('event'); // ❌
+
+// Don't ignore errors
+await supabase.from('table').select(); // ❌ Handle errors
+
+// Don't use wrong table names
+from('observation_logs') // ❌ It's 'log_entries'
+```
+
+### ✅ Do This Instead
+```typescript
+// Use proper types
+let data: StudentData; // ✅
+
+// Use Svelte 5 patterns
+let { prop } = $props(); // ✅
+let { onevent } = $props(); // ✅
+
+// Handle errors properly
+const { data, error } = await supabase.from('table').select();
+if (error) handleError(error); // ✅
+
+// Use correct table names
+from('log_entries') // ✅
+```
+
+## Git Workflow
+
+### Branch Naming
+- `feature/description` - New features
+- `fix/description` - Bug fixes
+- `docs/description` - Documentation
+- `refactor/description` - Code refactoring
+
+### Commit Messages
+Follow conventional commits:
+```
+feat: add student import functionality
+fix: correct grade calculation in gradebook
+docs: update API documentation
+style: fix log entries page styling
+refactor: simplify auth store logic
+test: add tests for grade calculations
+```
+
+## Environment Setup
+
+### Required Environment Variables
+```env
 PUBLIC_SUPABASE_URL=your_supabase_url
 PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 ```
 
-Development uses hardcoded credentials (see `src/lib/supabaseClient.ts`).
+### Local Development
+The project includes hardcoded development credentials in `src/lib/supabaseClient.ts` for local development only.
 
-## File Structure
+## Debugging Tips
 
-```
-src/
-├── lib/
-│   ├── components/     # Reusable components
-│   │   ├── auth/       # Authentication components
-│   │   └── ...         # Feature-specific components
-│   ├── services/       # Data access layer
-│   ├── stores/         # State management 
-│   ├── types/          # TypeScript types
-│   └── utils/          # Utilities
-├── routes/             # SvelteKit routes
-│   ├── auth/           # Authentication routes
-│   ├── dashboard/      # Main dashboard view
-│   ├── gradebook/      # Gradebook feature routes
-│   ├── jeopardy/       # Jeopardy game routes
-│   ├── log-entries/    # Observation log routes
-│   └── settings/       # User settings
-└── app.css            # Global styles
-```
+1. **TypeScript Errors**: Run `pnpm check` to see all TS errors
+2. **Component State**: Use Svelte DevTools browser extension
+3. **Database Issues**: Check Supabase dashboard logs
+4. **Build Errors**: Check `pnpm build` output carefully
+5. **Test Failures**: Run `pnpm test -- --reporter=verbose`
 
-## Testing Strategy
+## Performance Guidelines
 
-- Unit tests for stores and utilities
-- Component tests with Vitest
-- E2E testing planned for critical paths
-- Coverage reports for CI/CD
+1. **Lazy Loading**: Use dynamic imports for heavy components
+2. **Virtual Scrolling**: AG-Grid handles this automatically
+3. **Image Optimization**: Use appropriate formats and sizes
+4. **Bundle Size**: Monitor with `pnpm build --analyze`
+5. **State Updates**: Batch updates when possible
 
-## Deployment
+## Security Best Practices
 
-- Platform: Vercel
-- Build command: `pnpm build`
-- Environment variables set in Vercel dashboard
-- Node.js version: >=18.x
+1. **Never commit secrets** to the repository
+2. **Use environment variables** for sensitive data
+3. **Validate user input** on both client and server
+4. **Use RLS policies** in Supabase for data access
+5. **Sanitize HTML** when displaying user content
 
-## Known Issues & Workarounds
+## When Working on This Codebase
 
-1. **Supabase Connection**: Falls back to localStorage if unavailable
-2. **Auth State**: May need refresh on session timeout
-3. **Type Generation**: Run `supabase gen types` for database changes
-4. **Tailwind CSS Custom Properties**: Defined `--tw-empty` in app.css to fix inspection warnings
-5. **IDE Inspection Reports**: Use `archive-xml-reports.sh` to manage IntelliJ inspection reports
+1. **Start with**: `pnpm install && pnpm dev`
+2. **Before committing**: `pnpm validate`
+3. **Update types after DB changes**: `supabase gen types`
+4. **Check your work**: `pnpm build && pnpm preview`
+5. **Write tests**: Especially for stores and utilities
 
-## Library Dependencies
+## Need Help?
 
-- **UI Framework**: Svelte 5 with SvelteKit 2
-- **Data Grid**: AG-Grid with Svelte 5 wrappers
-- **Spreadsheet UI**: Handsontable for Excel-like interfaces
-- **Styling**: TailwindCSS with DaisyUI components
-- **Backend/Auth**: Supabase for database and authentication
-- **Icons**: Heroicons via @steeze-ui/heroicons
+- **Supabase Issues**: Check connection and RLS policies
+- **TypeScript Errors**: Ensure types are properly imported
+- **Svelte Warnings**: Usually about accessibility or unused CSS
+- **Build Failures**: Clear `.svelte-kit` and `node_modules`
 
-## Future Roadmap
-
-1. Student self-registration with join codes
-2. Role-based access control (teacher/student views)
-3. Email notifications
-4. Parent portal
-5. Real-time updates using Supabase subscriptions
+Remember: This is a production application for educators. Code quality, type safety, and user experience are paramount.
