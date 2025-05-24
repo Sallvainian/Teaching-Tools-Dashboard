@@ -90,10 +90,10 @@
       <div class="flex items-center gap-8">
         <div class="flex gap-6">
           <a href="/dashboard" class="nav-button">Dashboard</a>
+          <a href="/files" class="nav-button">Files</a>
+          <a href="/chat" class="nav-button">Chat</a>
           <a href="/gradebook" class="nav-button">Gradebook</a>
           <a href="/jeopardy" class="nav-button">Jeopardy</a>
-          <a href="/lesson-planner" class="nav-button">Planner</a>
-          <a href="/class-dojo-remake" class="nav-button">Dojo</a>
           <a href="/log-entries" class="nav-button">Log Entries</a>
         </div>
 
@@ -206,6 +206,46 @@
                 <span>Dashboard</span>
               {:else}
                 <span class="absolute left-full ml-2 px-2 py-1 bg-card border border-border rounded-lg text-sm text-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dropdown">Dashboard</span>
+              {/if}
+            </a>
+            
+            <a
+              href="/files"
+              class="menu-item relative group hover:bg-purple-bg"
+              class:px-3={!sidebarCollapsed}
+              class:px-1={sidebarCollapsed}
+              class:justify-center={sidebarCollapsed}
+              title="Files"
+            >
+              <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+              {#if !sidebarCollapsed}
+                <span>Files</span>
+              {:else}
+                <span class="absolute left-full ml-2 px-2 py-1 bg-card border border-border rounded-lg text-sm text-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dropdown">Files</span>
+              {/if}
+            </a>
+            
+            <a
+              href="/chat"
+              class="menu-item relative group hover:bg-purple-bg"
+              class:px-3={!sidebarCollapsed}
+              class:px-1={sidebarCollapsed}
+              class:justify-center={sidebarCollapsed}
+              title="Chat"
+            >
+              <svg class="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+              </svg>
+              {#if !sidebarCollapsed}
+                <span>Chat</span>
+              {:else}
+                <span class="absolute left-full ml-2 px-2 py-1 bg-card border border-border rounded-lg text-sm text-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dropdown">Chat</span>
               {/if}
             </a>
             

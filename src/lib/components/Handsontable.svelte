@@ -20,78 +20,82 @@
   let hotInstance = $state<any>(null);
   
   onMount(async () => {
-    // Dynamically import Handsontable to avoid SSR issues
-    const { default: Handsontable } = await import('handsontable');
-    
-    // Also import CSS
-    await import('handsontable/dist/handsontable.full.min.css');
-    
-    // Additional CSS for dark theme
-    const darkStyles = document.createElement('style');
-    darkStyles.textContent = `
-      .dark-theme .handsontable {
-        background-color: #1e1e1e;
-        color: #ffffff;
-      }
+    try {
+      // Dynamically import Handsontable to avoid SSR issues
+      const Handsontable = (await import('handsontable')).default;
       
-      .dark-theme .handsontable th {
-        background-color: #2d2d2d;
-        color: #e0e0e0;
-        border-color: #444444;
-      }
+      // Also import CSS
+      await import('handsontable/dist/handsontable.full.min.css');
       
-      .dark-theme .handsontable td {
-        background-color: #292929;
-        border-color: #444444;
-        color: #ffffff;
-      }
-      
-      .dark-theme .handsontable td.area-selection {
-        background-color: rgba(75, 83, 188, 0.3) !important;
-      }
-      
-      .dark-theme .handsontable .current {
-        background-color: rgba(125, 125, 225, 0.15) !important;
-      }
-      
-      .dark-theme .handsontable tbody th.ht__highlight,
-      .dark-theme .handsontable thead th.ht__highlight {
-        background-color: #444444;
-      }
-      
-      .dark-theme .handsontable td.area-selection {
-        background-color: rgba(100, 100, 225, 0.2) !important;
-      }
-    `;
-    document.head.appendChild(darkStyles);
-    
-    // Initialize Handsontable with merged settings
-    const mergedSettings = {
-      data,
-      colHeaders,
-      rowHeaders,
-      licenseKey,
-      width,
-      height,
-      afterChange: (changes: any[] | null, source: string) => {
-        if (source !== 'loadData' && changes) {
-          dispatch('afterChange', { changes, source });
+      // Additional CSS for dark theme
+      const darkStyles = document.createElement('style');
+      darkStyles.textContent = `
+        .dark-theme .handsontable {
+          background-color: #1e1e1e;
+          color: #ffffff;
         }
-      },
-      afterSelection: (row: number, column: number, row2: number, column2: number) => {
-        dispatch('afterSelection', { row, column, row2, column2 });
-      },
-      ...settings
-    };
-    
-    // Add the dark theme to the container
-    container.classList.add('dark-theme');
-    
-    // Initialize Handsontable
-    hotInstance = new Handsontable(container, mergedSettings);
-    
-    // Make the instance available to parent components
-    dispatch('init', { hotInstance });
+        
+        .dark-theme .handsontable th {
+          background-color: #2d2d2d;
+          color: #e0e0e0;
+          border-color: #444444;
+        }
+        
+        .dark-theme .handsontable td {
+          background-color: #292929;
+          border-color: #444444;
+          color: #ffffff;
+        }
+        
+        .dark-theme .handsontable td.area-selection {
+          background-color: rgba(75, 83, 188, 0.3) !important;
+        }
+        
+        .dark-theme .handsontable .current {
+          background-color: rgba(125, 125, 225, 0.15) !important;
+        }
+        
+        .dark-theme .handsontable tbody th.ht__highlight,
+        .dark-theme .handsontable thead th.ht__highlight {
+          background-color: #444444;
+        }
+        
+        .dark-theme .handsontable td.area-selection {
+          background-color: rgba(100, 100, 225, 0.2) !important;
+        }
+      `;
+      document.head.appendChild(darkStyles);
+      
+      // Initialize Handsontable with merged settings
+      const mergedSettings = {
+        data,
+        colHeaders,
+        rowHeaders,
+        licenseKey,
+        width,
+        height,
+        afterChange: (changes: any[] | null, source: string) => {
+          if (source !== 'loadData' && changes) {
+            dispatch('afterChange', { changes, source });
+          }
+        },
+        afterSelection: (row: number, column: number, row2: number, column2: number) => {
+          dispatch('afterSelection', { row, column, row2, column2 });
+        },
+        ...settings
+      };
+      
+      // Add the dark theme to the container
+      container.classList.add('dark-theme');
+      
+      // Initialize Handsontable
+      hotInstance = new Handsontable(container, mergedSettings);
+      
+      // Make the instance available to parent components
+      dispatch('init', { hotInstance });
+    } catch (error) {
+      console.error('Error initializing Handsontable:', error);
+    }
   });
   
   onDestroy(() => {
