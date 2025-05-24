@@ -130,6 +130,13 @@
       showAttachMenu = false;
     }
   }
+
+  // Handle keydown event for message input
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key === 'Enter') {
+      sendMessage();
+    }
+  }
 </script>
 
 <svelte:window on:click={handleClickOutside} />
@@ -290,7 +297,7 @@
                 bind:value={newMessage}
                 placeholder="Type a message..."
                 class="input w-full pr-24"
-                on:keydown={(e) => e.key === 'Enter' && sendMessage()}
+                onkeydown={handleKeydown}
               />
               
               <div class="absolute right-2 top-1/2 transform -translate-y-1/2 flex gap-1">
