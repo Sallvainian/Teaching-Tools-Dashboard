@@ -26,3 +26,36 @@ jobs:
       - uses: anthropics/claude-code-action@beta
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          custom_instructions: |
+            ## Security and Quality Checks
+            
+            When reviewing PRs, always perform these checks:
+            
+            ### 🔒 Security Checks
+            - Check for hardcoded secrets (api_key, apiKey, api_secret, password, token, secret)
+            - Exclude PUBLIC_ prefixed variables and test/mock files
+            - Flag any sensitive data exposure risks
+            
+            ### 📦 Bundle Size Analysis
+            - Monitor changes to bundle size
+            - Warn if size increases by more than 10%
+            - Suggest optimization strategies for large increases
+            
+            ### 🧪 Test Coverage
+            - Ensure changed src/ files have corresponding .test.ts files
+            - Remind to add tests for new functionality
+            - Check that existing tests still pass
+            
+            ### 🚨 Code Quality
+            - No console.log statements in production code
+            - No large blocks of commented code
+            - Follow TypeScript strict mode requirements
+            - Use Svelte 5 runes ($state, $derived, $effect)
+            - Check for proper error handling
+            
+            ### 📝 PR Checklist Validation
+            - Ensure PR description follows template
+            - Verify all checklist items are addressed
+            - Check for breaking changes documentation
+            
+            When asked to fix issues, prioritize security > functionality > style.
