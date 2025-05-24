@@ -29,6 +29,7 @@
   let searchQuery = $state('');
   let showEmojiPicker = $state(false);
   let showAttachMenu = $state(false);
+  let messagesContainer;
   
   // Filtered conversations
   let filteredConversations = $derived(
@@ -36,6 +37,23 @@
       ? conversations.filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
       : conversations
   );
+  
+  onMount(() => {
+    scrollToBottom();
+  });
+  
+  $effect(() => {
+    // Scroll to bottom when messages change
+    scrollToBottom();
+  });
+  
+  function scrollToBottom() {
+    if (messagesContainer) {
+      setTimeout(() => {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }, 0);
+    }
+  }
   
   function sendMessage() {
     if (!newMessage.trim()) return;
@@ -101,7 +119,20 @@
   
   // Common emojis
   const emojis = ['😊', '👍', '👏', '🎉', '👨‍🏫', '📚', '✏️', '📝', '🧪', '🔍', '⭐', '❤️'];
+  
+  // Close dropdown menus when clicking outside
+  function handleClickOutside(event) {
+    if (showEmojiPicker && !event.target.closest('.emoji-picker-container')) {
+      showEmojiPicker = false;
+    }
+    
+    if (showAttachMenu && !event.target.closest('.attach-menu-container')) {
+      showAttachMenu = false;
+    }
+  }
 </script>
+
+<svelte:window on:click={handleClickOutside} />
 
 <div class="min-h-screen">
   <div class="container mx-auto px-4 py-8">
@@ -240,7 +271,7 @@
           </div>
           
           <!-- Messages -->
-          <div class="flex-1 overflow-y-auto p-4 space-y-4">
+          <div class="flex-1 overflow-y-auto p-4 space-y-4" bind:this={messagesContainer}>
             {#each messages as message}
               <div class={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
                 <div class={`max-w-[70%] ${message.sender === 'me' ? 'bg-purple text-white' : 'bg-surface text-text-hover'} rounded-lg px-4 py-2 shadow-sm`}>
@@ -263,7 +294,7 @@
               />
               
               <div class="absolute right-2 top-1/2 transform -translate-y-1/2 flex gap-1">
-                <div class="relative">
+                <div class="relative emoji-picker-container">
                   <button 
                     class="p-2 text-text-base hover:text-text-hover rounded-full hover:bg-surface transition-colors"
                     onclick={() => showEmojiPicker = !showEmojiPicker}
@@ -278,7 +309,7 @@
                   </button>
                   
                   {#if showEmojiPicker}
-                    <div class="absolute bottom-10 right-0 bg-card border border-border rounded-lg p-2 shadow-dropdown">
+                    <div class="absolute bottom-10 right-0 bg-card border border-border rounded-lg p-2 shadow-dropdown z-10">
                       <div class="grid grid-cols-6 gap-1">
                         {#each emojis as emoji}
                           <button 
@@ -293,7 +324,7 @@
                   {/if}
                 </div>
                 
-                <div class="relative">
+                <div class="relative attach-menu-container">
                   <button 
                     class="p-2 text-text-base hover:text-text-hover rounded-full hover:bg-surface transition-colors"
                     onclick={() => showAttachMenu = !showAttachMenu}
@@ -305,7 +336,7 @@
                   </button>
                   
                   {#if showAttachMenu}
-                    <div class="absolute bottom-10 right-0 bg-card border border-border rounded-lg shadow-dropdown">
+                    <div class="absolute bottom-10 right-0 bg-card border border-border rounded-lg shadow-dropdown z-10">
                       <div class="py-1">
                         <button class="flex items-center gap-2 px-4 py-2 hover:bg-surface w-full text-left">
                           <svg class="w-5 h-5 text-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

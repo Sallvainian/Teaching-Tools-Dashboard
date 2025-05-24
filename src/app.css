@@ -139,3 +139,52 @@
   --ag-range-selection-border-color: var(--tw-text-opacity);
   --ag-range-selection-background-color: rgba(139, 92, 246, 0.1);
 }
+
+/* Button styles */
+.btn {
+  @apply px-4 py-2 rounded-lg transition-all duration-300 font-medium;
+}
+
+.btn-primary {
+  @apply bg-purple hover:bg-purple-hover text-white shadow-button;
+}
+
+.btn-secondary {
+  @apply bg-surface hover:bg-surface/80 text-text-hover shadow-button;
+}
+
+.btn-sm {
+  @apply px-3 py-1.5 text-sm;
+}
+
+.btn-lg {
+  @apply px-5 py-3 text-lg;
+}
+
+.btn-icon {
+  @apply p-2 rounded-full;
+}
+
+.btn:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(31, 41, 55, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.5);
+}
