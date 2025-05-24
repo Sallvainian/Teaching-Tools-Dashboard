@@ -73,12 +73,14 @@
   });
 </script>
 
-<div class="min-h-screen bg-gradient-dark text-text-base flex flex-col transition-colors">
-  <nav class="bg-surface border-b border-border backdrop-blur-sm relative z-50">
+<div class="min-h-screen bg-bg-base text-text-base flex flex-col transition-colors">
+  <nav class="bg-surface/80 backdrop-blur-md border-b border-border/50 relative z-50">
     <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
       <div class="flex items-center gap-3">
-        <div class="h-8 w-8 bg-gradient-card border border-border rounded-md flex items-center justify-center shadow-themed-card">
-          <span class="text-purple font-bold text-lg">T</span>
+        <div class="h-8 w-8 bg-gradient-to-br from-purple to-purple-light rounded-md flex items-center justify-center shadow-glow">
+          <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+          </svg>
         </div>
         <h1 class="text-xl font-bold tracking-wide text-highlight">
           Teacher <span class="text-purple">Dashboard</span>
@@ -114,7 +116,7 @@
               </button>
               
               {#if userMenuOpen}
-                <div class="absolute right-0 mt-2 w-48 bg-gradient-card border border-border rounded-lg shadow-dropdown z-[100]">
+                <div class="absolute right-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-dropdown z-[100]">
                   <div class="py-1">
                     <a href="/settings/profile" class="menu-item text-sm" onclick={() => userMenuOpen = false}>
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -146,7 +148,7 @@
                 </div>
               {/if}
             {:else}
-              <a href="/auth/login" class="text-gray-300 hover:text-dark-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-dark-accent">
+              <a href="/auth/login" class="text-gray-300 hover:text-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-purple-bg">
                 Sign in
               </a>
             {/if}
@@ -158,7 +160,7 @@
 
   <div class="flex flex-grow relative">
     <!-- Left sidebar - hidden on smaller screens -->
-    <aside class="hidden md:block bg-surface border-r border-border transition-[width] duration-150 relative"
+    <aside class="hidden md:block bg-surface/80 backdrop-blur-md border-r border-border/50 transition-[width] duration-150 relative"
            class:collapsed={sidebarCollapsed}
            style="width: {sidebarCollapsed ? '3.5rem' : '14rem'}">
       <!-- Toggle button -->
@@ -203,7 +205,7 @@
               {#if !sidebarCollapsed}
                 <span>Dashboard</span>
               {:else}
-                <span class="absolute left-full ml-2 px-2 py-1 bg-gradient-card border border-dark-border rounded-lg text-sm text-dark-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dark-dropdown">Dashboard</span>
+                <span class="absolute left-full ml-2 px-2 py-1 bg-card border border-border rounded-lg text-sm text-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dropdown">Dashboard</span>
               {/if}
             </a>
             
@@ -221,7 +223,7 @@
               {#if !sidebarCollapsed}
                 <span>Classes</span>
               {:else}
-                <span class="absolute left-full ml-2 px-2 py-1 bg-gradient-card border border-dark-border rounded-lg text-sm text-dark-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dark-dropdown">Classes</span>
+                <span class="absolute left-full ml-2 px-2 py-1 bg-card border border-border rounded-lg text-sm text-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dropdown">Classes</span>
               {/if}
             </a>
             
@@ -239,7 +241,7 @@
               {#if !sidebarCollapsed}
                 <span>Gradebook</span>
               {:else}
-                <span class="absolute left-full ml-2 px-2 py-1 bg-gradient-card border border-dark-border rounded-lg text-sm text-dark-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dark-dropdown">Gradebook</span>
+                <span class="absolute left-full ml-2 px-2 py-1 bg-card border border-border rounded-lg text-sm text-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dropdown">Gradebook</span>
               {/if}
             </a>
             
@@ -257,7 +259,7 @@
               {#if !sidebarCollapsed}
                 <span>Jeopardy</span>
               {:else}
-                <span class="absolute left-full ml-2 px-2 py-1 bg-gradient-card border border-dark-border rounded-lg text-sm text-dark-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dark-dropdown">Jeopardy</span>
+                <span class="absolute left-full ml-2 px-2 py-1 bg-card border border-border rounded-lg text-sm text-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dropdown">Jeopardy</span>
               {/if}
             </a>
             
@@ -275,7 +277,7 @@
               {#if !sidebarCollapsed}
                 <span>Log Entries</span>
               {:else}
-                <span class="absolute left-full ml-2 px-2 py-1 bg-gradient-card border border-dark-border rounded-lg text-sm text-dark-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dark-dropdown">Log Entries</span>
+                <span class="absolute left-full ml-2 px-2 py-1 bg-card border border-border rounded-lg text-sm text-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dropdown">Log Entries</span>
               {/if}
             </a>
             
@@ -293,7 +295,7 @@
               {#if !sidebarCollapsed}
                 <span>Class Dojo</span>
               {:else}
-                <span class="absolute left-full ml-2 px-2 py-1 bg-gradient-card border border-dark-border rounded-lg text-sm text-dark-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dark-dropdown">Class Dojo</span>
+                <span class="absolute left-full ml-2 px-2 py-1 bg-card border border-border rounded-lg text-sm text-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dropdown">Class Dojo</span>
               {/if}
             </a>
             
@@ -311,7 +313,7 @@
               {#if !sidebarCollapsed}
                 <span>Lesson Planner</span>
               {:else}
-                <span class="absolute left-full ml-2 px-2 py-1 bg-gradient-card border border-dark-border rounded-lg text-sm text-dark-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dark-dropdown">Lesson Planner</span>
+                <span class="absolute left-full ml-2 px-2 py-1 bg-card border border-border rounded-lg text-sm text-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dropdown">Lesson Planner</span>
               {/if}
             </a>
           </div>
@@ -336,7 +338,7 @@
                     >
                   {:else}
                     <span class="text-xs">{category.name.slice(0, 2).toUpperCase()}</span>
-                    <span class="absolute left-full ml-2 px-2 py-1 bg-gradient-card border border-border rounded-lg text-sm text-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dropdown">
+                    <span class="absolute left-full ml-2 px-2 py-1 bg-card border border-border rounded-lg text-sm text-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dropdown">
                       {category.name} ({category.studentIds.length} students)
                     </span>
                   {/if}
@@ -375,7 +377,7 @@
     <!-- Main content area -->
     <main class="flex-grow p-6 overflow-y-auto relative z-0">
       {#if $navigating}
-        <div class="absolute inset-0 bg-dark-bg/80 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="absolute inset-0 bg-bg-base/80 backdrop-blur-sm flex items-center justify-center z-50">
           <LoadingBounce />
         </div>
       {/if}
@@ -384,7 +386,7 @@
   </div>
 
   <footer
-    class="bg-gradient-card text-center text-muted text-xs py-4 border-t border-border px-6"
+    class="bg-card/80 backdrop-blur-sm text-center text-muted text-xs py-4 border-t border-border/50 px-6"
   >
     Teacher Dashboard • {new Date().getFullYear()}
   </footer>
