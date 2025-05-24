@@ -312,28 +312,97 @@
             </div>
           </div>
           
-          {#if hasData()}
-            <div class="bg-surface/30 rounded-lg p-1 overflow-hidden">
-              <div class="text-xs text-text-base mb-2 px-2">
-                Click cells to edit grades • Double-click to edit • Tab to navigate • Enter to save
-              </div>
-              <Handsontable
-                data={hotData}
-                colHeaders={columnHeaders}
-                settings={{
-                  columns: columnSettings,
-                  rowHeaderWidth: 40,
-                  rowHeaders: true,
-                  stretchH: 'all',
-                  manualColumnResize: true,
-                  contextMenu: true,
-                  fixedColumnsStart: 1,
-                  licenseKey: 'non-commercial-and-evaluation'
-                }}
-                height={400}
-                on:init={handleTableInit}
-                on:afterChange={handleAfterChange}
-              />
+          {#if hasData() && categoryAssignments.length > 0}
+            <!-- Gradebook Table -->
+            <div class="overflow-x-auto">
+              <table class="w-full border-collapse">
+                <thead>
+                  <tr class="bg-surface/50 text-left">
+                    <th class="p-3 border-b border-border text-text-base font-medium">#</th>
+                    <th class="p-3 border-b border-border text-text-base font-medium">Name</th>
+                    <th class="p-3 border-b border-border text-text-base font-medium text-center">Average</th>
+                    {#each categoryAssignments as assignment}
+                      <th class="p-3 border-b border-border text-text-base font-medium text-center">
+                        <div>{assignment.name}</div>
+                        <div class="text-xs opacity-70">{assignment.maxPoints}pts</div>
+                      </th>
+                    {/each}
+                  </tr>
+                </thead>
+                <tbody>
+                  {#each categoryStudents as student, index}
+                    {@const avg = gradebookStore.studentAverageInCategory(student.id, categoryId)}
+                    <tr class="hover:bg-surface/30 transition-colors">
+                      <td class="p-3 border-b border-border/50 text-text-base">{index + 1}</td>
+                      <td class="p-3 border-b border-border/50 text-highlight font-medium">{student.name}</td>
+                      <td class="p-3 border-b border-border/50 text-center">
+                        <div class="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium
+                          ${avg >= 90 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 
+                            avg >= 80 ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400' : 
+                            avg >= 70 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' : 
+                            avg >= 60 ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400' : 
+                            'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'}">
+                          {avg}%
+                        </div>
+                      </td>
+                      {#each categoryAssignments as assignment}
+                        {@const grade = allGrades.find(g => g.studentId === student.id && g.assignmentId === assignment.id)}
+                        {@const percentage = grade ? (grade.points / assignment.maxPoints) * 100 : 0}
+                        <td class="p-3 border-b border-border/50 text-center relative group">
+                          <div class="flex items-center justify-center">
+                            <input 
+                              type="number" 
+                              value={grade ? grade.points : ''} 
+                              class="w-16 text-center bg-surface/50 border border-border rounded py-1 px-2 focus:ring-1 focus:ring-purple focus:border-purple"
+                              min="0"
+                              max={assignment.maxPoints}
+                              onchange={(e) => {
+                                const value = parseFloat(e.currentTarget.value);
+                                if (!isNaN(value)) {
+                                  gradebookStore.recordGrade(student.id, assignment.id, value);
+                                }
+                              }}
+                            />
+                          </div>
+                          {#if grade}
+                            <div class="absolute bottom-0 left-0 right-0 h-1 bg-surface">
+                              <div 
+                                class="${percentage >= 90 ? 'bg-green-500' : 
+                                  percentage >= 80 ? 'bg-blue-500' : 
+                                  percentage >= 70 ? 'bg-yellow-500' : 
+                                  percentage >= 60 ? 'bg-orange-500' : 
+                                  'bg-red-500'}" 
+                                style="width: ${percentage}%"
+                              ></div>
+                            </div>
+                          {/if}
+                        </td>
+                      {/each}
+                    </tr>
+                  {/each}
+                </tbody>
+              </table>
+            </div>
+          {:else if hasData()}
+            <div class="bg-surface/30 rounded-lg p-6 text-center">
+              <svg class="w-16 h-16 mx-auto text-muted mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              <h3 class="text-xl font-bold text-highlight mb-2">No Assignments Yet</h3>
+              <p class="text-text-base mb-6">
+                You have students in this class, but no assignments have been created.
+              </p>
+              <button 
+                class="btn btn-primary"
+                onclick={() => showNewAssignmentModal = true}
+              >
+                <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                Create First Assignment
+              </button>
             </div>
           {:else}
             <div class="flex flex-col items-center justify-center py-16 bg-surface/30 rounded-lg">
@@ -360,7 +429,7 @@
         
         {#if categoryAssignments.length > 0}
           <div class="card-dark mb-6">
-            <h3 class="text-lg font-bold text-highlight mb-4">Assignments</h3>
+            <h3 class="text-lg font-bold text-highlight mb-4">Assignment Summary</h3>
             
             <div class="overflow-x-auto">
               <table class="w-full">
