@@ -9,7 +9,12 @@ export default defineConfig(({ mode }) => {
     plugins: [sveltekit()],
     
     build: {
-      sourcemap: true // Explicitly enable source maps
+      sourcemap: true, // Explicitly enable source maps
+      rollupOptions: {
+        output: {
+          sourcemapExcludeSources: false // Include source content in source maps
+        }
+      }
     },
     
     css: {
