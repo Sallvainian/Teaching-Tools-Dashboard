@@ -5,138 +5,102 @@
 
 @layer base {
   body {
-    @apply bg-white dark:bg-bg-base text-gray-900 dark:text-text-base;
+    @apply bg-gradient-to-b from-bg-base to-bg-gradient text-text-base min-h-screen;
+    background-attachment: fixed;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply dark:text-highlight;
+    @apply text-highlight;
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-blue-600 hover:bg-blue-700 dark:bg-purple dark:hover:bg-purple-hover text-white px-4 py-2 rounded-lg transition-colors;
+    @apply bg-purple hover:bg-purple-hover text-white px-4 py-2 rounded-lg transition-all duration-300 shadow-button;
   }
 
   .btn-secondary {
-    @apply bg-gray-200 hover:bg-gray-300 dark:bg-surface dark:hover:bg-muted text-gray-800 dark:text-text-hover px-4 py-2 rounded-lg transition-colors;
+    @apply bg-surface hover:bg-accent text-text-hover px-4 py-2 rounded-lg transition-all duration-300 shadow-button;
   }
 
   .card {
-    @apply bg-white dark:bg-card rounded-xl shadow-card dark:shadow-themed-card p-6;
+    @apply bg-card rounded-xl shadow-card p-6 border border-border backdrop-blur-sm;
+  }
+
+  .card-dark {
+    @apply bg-card/80 backdrop-blur-sm border border-border/50 rounded-xl p-6 shadow-themed-card;
   }
 
   .input {
-    @apply bg-white dark:bg-surface border border-gray-300 dark:border-border rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 dark:focus:ring-purple focus:border-transparent outline-none transition;
+    @apply bg-surface border border-border rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple focus:border-transparent outline-none transition text-text-hover placeholder-muted;
   }
 
   /* Navigation */
   .nav-link {
-    @apply px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-accent text-gray-700 dark:text-text-base hover:text-gray-900 dark:hover:text-text-hover transition-colors;
+    @apply px-3 py-2 rounded-lg hover:bg-surface text-text-base hover:text-text-hover transition-colors;
   }
 
   .nav-link.active {
-    @apply bg-blue-50 dark:bg-purple-bg text-blue-700 dark:text-purple font-medium;
+    @apply bg-purple-bg text-purple font-medium;
   }
 
   /* Form elements */
   .label {
-    @apply block text-sm font-medium text-gray-700 dark:text-text-base mb-1;
+    @apply block text-sm font-medium text-text-base mb-1;
   }
 
   .select {
-    @apply bg-white dark:bg-surface border border-gray-300 dark:border-border rounded-lg px-4 py-2 pr-8 appearance-none;
+    @apply bg-surface border border-border rounded-lg px-4 py-2 pr-8 appearance-none text-text-hover;
   }
 
   /* Tables */
   .table-container {
-    @apply overflow-x-auto rounded-lg border border-gray-200 dark:border-border;
+    @apply overflow-x-auto rounded-lg border border-border;
   }
 
   .table {
-    @apply min-w-full divide-y divide-gray-200 dark:divide-separator;
+    @apply min-w-full divide-y divide-separator;
   }
 
   .table-header {
-    @apply bg-gray-50 dark:bg-surface;
+    @apply bg-surface;
   }
 
   .table-header-cell {
-    @apply px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-text-base uppercase tracking-wider;
+    @apply px-6 py-3 text-left text-xs font-medium text-text-base uppercase tracking-wider;
   }
 
   .table-body {
-    @apply bg-white dark:bg-card divide-y divide-gray-200 dark:divide-separator;
+    @apply bg-card divide-y divide-separator;
   }
 
   .table-row {
-    @apply hover:bg-gray-50 dark:hover:bg-surface transition-colors;
+    @apply hover:bg-surface transition-colors;
   }
 
   .table-cell {
-    @apply px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-text-base;
+    @apply px-6 py-4 whitespace-nowrap text-sm text-text-base;
   }
 }
-/* Fix for Tailwind CSS custom properties */
-:root {
-  --tw-empty: ;
-}
 
-/* Your custom styles and AG Grid overrides come after */
-
-/* Gradient backgrounds */
+/* Custom gradients */
 .bg-gradient-dark {
-  background: linear-gradient(139deg, var(--bg-base, rgb(36, 40, 50)) 0%, var(--bg-base, rgb(36, 40, 50)) 40%, var(--bg-gradient, rgb(37, 28, 40)) 100%);
+  background: radial-gradient(circle at top left, var(--bg-base) 0%, var(--bg-gradient) 100%);
 }
 
 .bg-gradient-card {
-  background: linear-gradient(135deg, var(--card, rgb(36, 40, 50)) 0%, var(--card, rgb(36, 40, 50)) 40%, var(--bg-gradient, rgb(37, 28, 40)) 100%);
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.8) 0%, rgba(13, 17, 32, 0.8) 100%);
+  backdrop-filter: blur(10px);
 }
 
-/* Enhanced purple hover effect for navigation */
+/* Enhanced purple hover effect */
 .nav-button {
-  @apply text-gray-300 hover:text-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-purple-bg hover:shadow-md;
+  @apply text-text-base hover:text-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-purple-bg hover:shadow-glow;
 }
 
-.nav-button:hover {
-  background-color: rgba(142, 87, 209, 0.15);
-  box-shadow: 0 0 8px rgba(142, 87, 209, 0.3);
-  transform: translateY(-1px);
-}
-
-/* Custom form styles */
-.input {
-  @apply px-3 py-2 rounded-md focus:outline-none focus:ring-2;
-}
-
-/* Custom button styles */
-.btn-primary-custom {
-  @apply bg-purple text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-purple-hover;
-}
-
-.btn-secondary-custom {
-  @apply bg-purple-bg text-purple px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-purple-hover hover:text-white;
-}
-
-.btn-danger {
-  @apply bg-error text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-error-hover;
-}
-
-/* Card styles */
-.card-dark {
-  @apply bg-gradient-card rounded-lg p-4 border border-border shadow-card transition-all duration-300;
-}
-
-/* Enhanced dashboard cards */
-.card-dark:hover {
-  border-color: rgba(142, 87, 209, 0.6);
-  box-shadow: 0 0 12px rgba(142, 87, 209, 0.4);
-  transform: translateY(-2px);
-}
-
-/* Menu item styles (inspired by dropdown) */
+/* Menu item styles */
 .menu-item {
-  @apply flex items-center gap-3 px-3 py-2 rounded-md text-gray-300 transition-all duration-200 cursor-pointer hover:bg-purple-bg hover:text-highlight active:scale-[0.99] active:translate-y-[0px];
+  @apply flex items-center gap-3 px-3 py-2 rounded-md text-text-base transition-all duration-200 cursor-pointer hover:bg-purple-bg hover:text-highlight active:scale-[0.99];
 }
 
 .menu-item.danger {
@@ -144,7 +108,7 @@
 }
 
 .menu-item.special {
-  @apply text-purple hover:bg-purple-hover;
+  @apply text-purple hover:bg-purple-hover hover:text-white;
 }
 
 /* Separator */
@@ -152,74 +116,26 @@
   @apply border-t border-separator;
 }
 
-/* AG Grid styling with CSS variables */
+/* AG Grid styling */
 .ag-theme-material {
-  /* Dark palette - matching new theme */
-  --ag-background-color: rgb(36, 40, 50);
-  --ag-header-background-color: rgb(24, 26, 32);
-  --ag-odd-row-background-color: rgba(37, 28, 40, 0.2);
-  --ag-row-hover-color: rgba(83, 83, 255, 0.1);
-  --ag-selected-row-background-color: rgba(83, 83, 255, 0.2);
-
-  /* Borders */
-  --ag-border-color: #42434a;
-  --ag-row-border-color: #42434a;
-  --ag-cell-horizontal-border: #42434a;
-  --ag-borders: solid 1px;
-  --ag-borders-critical: solid 1px;
-  --ag-borders-secondary: solid 1px;
-  --ag-borders-row: solid 1px;
-
-  /* Text colors */
-  --ag-foreground-color: #7e8590;
-  --ag-header-foreground-color: #ffffff;
-  --ag-secondary-foreground-color: #7e8590;
-  --ag-disabled-foreground-color: rgba(126, 133, 144, 0.5);
-
-  /* Input fields */
-  --ag-input-border-color: #42434a;
-  --ag-input-focus-border-color: #5353ff;
-  --ag-input-bg-color: rgb(36, 40, 50);
-  --ag-input-text-color: #ffffff;
-
-  /* Range selection */
-  --ag-range-selection-border-color: #bd89ff;
-  --ag-range-selection-background-color: rgba(189, 137, 255, 0.1);
-
-  /* Cell and grid dimensions */
-  --ag-cell-horizontal-padding: 12px;
-  --ag-row-height: 40px;
-  --ag-header-height: 40px;
-  --ag-header-column-separator-display: block;
-  --ag-header-column-separator-width: 1px;
-  --ag-header-column-separator-color: #42434a;
-
-  /* Font settings */
+  --ag-background-color: var(--bg-base);
+  --ag-header-background-color: var(--surface);
+  --ag-odd-row-background-color: rgba(31, 41, 55, 0.4);
+  --ag-row-hover-color: rgba(139, 92, 246, 0.1);
+  --ag-selected-row-background-color: rgba(139, 92, 246, 0.2);
   --ag-font-family: 'Inter', sans-serif;
   --ag-font-size: 14px;
-
-  /* Miscellaneous */
-  --ag-active-color: #5353ff;
-  --ag-alpine-active-color: #5353ff;
-  --ag-selected-tab-color: #bd89ff;
-  --ag-cell-editor-bg-color: rgb(36, 40, 50);
-  --ag-popup-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
-}
-
-/* Force dark mode specific styling */
-.ag-theme-material[data-ag-theme-mode='dark'] {
-  background-color: rgb(36, 40, 50);
-  color: #7e8590;
-}
-
-/* Add styles for specific cell classes */
-.ag-theme-material .editable-cell {
-  background-color: rgba(83, 83, 255, 0.05);
-}
-/* Ensure proper sizing of the grid */
-.ag-theme-material.ag-root-wrapper {
-  border: 1px solid #42434a;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  --ag-border-color: var(--border);
+  --ag-row-border-color: var(--border);
+  --ag-cell-horizontal-border: var(--border);
+  --ag-header-foreground-color: var(--highlight);
+  --ag-foreground-color: var(--text-base);
+  --ag-secondary-foreground-color: var(--text-base);
+  --ag-disabled-foreground-color: var(--muted);
+  --ag-input-border-color: var(--border);
+  --ag-input-focus-border-color: var(--purple);
+  --ag-input-bg-color: var(--surface);
+  --ag-input-text-color: var(--highlight);
+  --ag-range-selection-border-color: var(--purple);
+  --ag-range-selection-background-color: rgba(139, 92, 246, 0.1);
 }

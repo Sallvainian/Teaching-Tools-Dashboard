@@ -12,32 +12,35 @@ const config: Config = {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       colors: {
-        // Enhanced dark theme with more sophisticated colors
-        'bg-base': '#171923', // Darker, richer background
-        'bg-gradient': '#1A1B26', // Subtle gradient end
-        'card': '#1E2028', // Slightly lighter card background
-        'surface': '#12141C', // Darker surface for contrast
+        'bg-base': '#0B0F19', // Darker background
+        'bg-gradient': '#0D1120', // Gradient end
+        'card': '#111827', // Card background
+        'surface': '#1F2937', // Surface elements
         'accent': 'rgba(99, 102, 241, 0.1)', // Indigo accent
         'accent-hover': '#6366F1', // Indigo hover
-        'purple': '#8B5CF6', // Vibrant purple
-        'purple-light': '#A78BFA', // Light purple accent
-        'purple-bg': 'rgba(139, 92, 246, 0.08)', // Subtle purple background
-        'purple-hover': '#7C3AED', // Deeper purple hover
-        'error': '#EF4444', // Brighter error red
-        'error-hover': '#DC2626', // Darker error hover
-        'text-base': '#A0AEC0', // Softer default text
-        'text-hover': '#F7FAFC', // Brighter hover text
-        'highlight': '#F9FAFB', // Crisp white highlights
-        'muted': '#4A5568', // Muted text
-        'border': '#2D3748', // Subtle borders
-        'separator': '#2D3748', // Matching separator
+        'purple': '#8B5CF6', // Primary purple
+        'purple-light': '#A78BFA', // Light purple
+        'purple-bg': 'rgba(139, 92, 246, 0.08)', // Purple background
+        'purple-hover': '#7C3AED', // Purple hover
+        'error': '#EF4444', // Error red
+        'error-hover': '#DC2626', // Error hover
+        'text-base': '#9CA3AF', // Base text
+        'text-hover': '#F9FAFB', // Text hover
+        'highlight': '#F9FAFB', // Highlights
+        'muted': '#4B5563', // Muted text
+        'border': '#1F2937', // Borders
+        'separator': '#374151', // Separators
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(50% 50% at 50% 50%, var(--tw-gradient-stops))',
+        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
       },
       boxShadow: {
-        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1)',
-        'themed-card': '0 8px 16px rgba(0, 0, 0, 0.3), 0 4px 6px rgba(0, 0, 0, 0.2)',
-        'dropdown': '0 10px 20px rgba(0, 0, 0, 0.4), 0 6px 8px rgba(0, 0, 0, 0.3)',
+        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2)',
+        'themed-card': '0 8px 16px rgba(0, 0, 0, 0.4), 0 4px 6px rgba(0, 0, 0, 0.3)',
+        'dropdown': '0 10px 20px rgba(0, 0, 0, 0.5), 0 6px 8px rgba(0, 0, 0, 0.4)',
         'glow': '0 0 20px rgba(139, 92, 246, 0.15)',
-        'button': '0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
+        'button': '0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
       },
       animation: {
         'gradient': 'gradient 8s ease infinite',
