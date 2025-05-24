@@ -1,23 +1,14 @@
 <script lang="ts">
   import { authStore, error as authError } from '$lib/stores/auth';
   import { goto } from '$app/navigation';
-  import { onMount, onDestroy } from 'svelte';
   
   let email = $state('');
   let password = $state('');
   let loading = $state(false);
   let error = $state('');
-  let unsubscribe;
   
-  onMount(() => {
-    // Set up subscription to auth errors
-    unsubscribe = authError.subscribe(err => {
-      if (err) error = err;
-    });
-  });
-  
-  onDestroy(() => {
-    if (unsubscribe) unsubscribe();
+  $effect(() => {
+    if ($authError) error = $authError;
   });
   
   async function handleSubmit(e: SubmitEvent) {
@@ -32,13 +23,8 @@
     
     try {
       const success = await authStore.signIn(email, password);
-      if (success) {
-        // Simple redirect to dashboard for now
-        goto('/dashboard');
-      } else {
-        // Error will be set via subscription
-        if (!error) error = 'Invalid email or password';
-      }
+      if (success) goto('/dashboard');
+      else if (!error) error = 'Invalid email or password';
     } catch (err) {
       error = err instanceof Error ? err.message : 'Invalid email or password';
     } finally {

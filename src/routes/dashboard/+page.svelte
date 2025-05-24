@@ -3,14 +3,11 @@
   import { jeopardyStore } from '$lib/stores/jeopardy';
   import { logEntriesStore } from '$lib/stores/log-entries';
   
-  // Store references
-  const { games } = jeopardyStore;
-  
   // Get some stats using Svelte 5 runes with null checks
-  const logEntryCount = $derived($logEntriesStore.logs?.length ?? 0);
-  const gameCount = $derived($games?.length ?? 0);
-  const studentCount = $derived($gradebookStore.students?.length ?? 0);
-  const categoryCount = $derived($gradebookStore.categories?.length ?? 0);
+  const logEntryCount = $derived(($logEntriesStore?.logs || []).length);
+  const gameCount = $derived(($jeopardyStore?.games || []).length);
+  const studentCount = $derived(($gradebookStore?.students || []).length);
+  const categoryCount = $derived(($gradebookStore?.categories || []).length);
 </script>
 
 <div class="container mx-auto px-4 py-8">
@@ -158,9 +155,9 @@
     <!-- Recent Log Entries -->
     <div class="card-dark">
       <h2 class="text-xl font-bold text-highlight mb-4">Recent Log Entries</h2>
-      {#if $logEntriesStore.logs?.length > 0}
+      {#if ($logEntriesStore?.logs || []).length > 0}
         <div class="space-y-3">
-          {#each ($logEntriesStore.logs ?? []).slice(0, 3) as log}
+          {#each ($logEntriesStore?.logs || []).slice(0, 3) as log}
             <div class="p-3 bg-surface rounded-lg hover:bg-accent transition-colors">
               <div class="flex justify-between items-start mb-1">
                 <span class="font-medium text-gray-200">{log.student}</span>
@@ -178,9 +175,9 @@
     <!-- Recent Games -->
     <div class="card-dark">
       <h2 class="text-xl font-bold text-highlight mb-4">Recent Games</h2>
-      {#if $games?.length > 0}
+      {#if ($jeopardyStore?.games || []).length > 0}
         <div class="space-y-3">
-          {#each ($games ?? []).slice(0, 3) as game}
+          {#each ($jeopardyStore?.games || []).slice(0, 3) as game}
             <div class="p-3 bg-surface rounded-lg hover:bg-accent transition-colors">
               <div class="flex justify-between items-start mb-1">
                 <span class="font-medium text-gray-200">{game.name}</span>

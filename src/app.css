@@ -85,7 +85,7 @@
 
 /* Custom gradients */
 .bg-gradient-dark {
-  background: radial-gradient(circle at top left, var(--bg-base) 0%, var(--bg-gradient) 100%);
+  background: radial-gradient(circle at top left, var(--tw-gradient-from) 0%, var(--tw-gradient-to) 100%);
 }
 
 .bg-gradient-card {
@@ -118,24 +118,24 @@
 
 /* AG Grid styling */
 .ag-theme-material {
-  --ag-background-color: var(--bg-base);
-  --ag-header-background-color: var(--surface);
+  --ag-background-color: var(--tw-gradient-from);
+  --ag-header-background-color: var(--tw-gradient-from);
   --ag-odd-row-background-color: rgba(31, 41, 55, 0.4);
   --ag-row-hover-color: rgba(139, 92, 246, 0.1);
   --ag-selected-row-background-color: rgba(139, 92, 246, 0.2);
   --ag-font-family: 'Inter', sans-serif;
   --ag-font-size: 14px;
-  --ag-border-color: var(--border);
-  --ag-row-border-color: var(--border);
-  --ag-cell-horizontal-border: var(--border);
-  --ag-header-foreground-color: var(--highlight);
-  --ag-foreground-color: var(--text-base);
-  --ag-secondary-foreground-color: var(--text-base);
-  --ag-disabled-foreground-color: var(--muted);
-  --ag-input-border-color: var(--border);
-  --ag-input-focus-border-color: var(--purple);
-  --ag-input-bg-color: var(--surface);
-  --ag-input-text-color: var(--highlight);
-  --ag-range-selection-border-color: var(--purple);
+  --ag-border-color: var(--tw-border-opacity);
+  --ag-row-border-color: var(--tw-border-opacity);
+  --ag-cell-horizontal-border: var(--tw-border-opacity);
+  --ag-header-foreground-color: var(--tw-text-opacity);
+  --ag-foreground-color: var(--tw-text-opacity);
+  --ag-secondary-foreground-color: var(--tw-text-opacity);
+  --ag-disabled-foreground-color: var(--tw-text-opacity);
+  --ag-input-border-color: var(--tw-border-opacity);
+  --ag-input-focus-border-color: var(--tw-text-opacity);
+  --ag-input-bg-color: var(--tw-bg-opacity);
+  --ag-input-text-color: var(--tw-text-opacity);
+  --ag-range-selection-border-color: var(--tw-text-opacity);
   --ag-range-selection-background-color: rgba(139, 92, 246, 0.1);
 }

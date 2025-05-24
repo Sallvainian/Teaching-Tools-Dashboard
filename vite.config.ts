@@ -9,17 +9,22 @@ export default defineConfig(({ mode }) => {
     plugins: [sveltekit()],
     
     build: {
-      sourcemap: true, // Explicitly enable source maps
+      sourcemap: true,
       rollupOptions: {
         output: {
-          sourcemapExcludeSources: false // Include source content in source maps
+          manualChunks: {
+            'svelte': ['svelte'],
+            'supabase': ['@supabase/supabase-js'],
+            'ag-grid': ['@ag-grid-community/core', '@ag-grid-community/client-side-row-model'],
+            'ui': ['@steeze-ui/svelte-icon', '@steeze-ui/heroicons']
+          },
+          sourcemapExcludeSources: false
         }
       }
     },
     
     css: {
-      // Let Vite auto-discover the PostCSS config
-      devSourcemap: true // Enable source maps for CSS in development
+      devSourcemap: true
     },
     
     optimizeDeps: {
@@ -27,7 +32,6 @@ export default defineConfig(({ mode }) => {
     },
     
     define: {
-      // Make specific environment variables available to client code
       'import.meta.env.PUBLIC_SUPABASE_URL': JSON.stringify(env.PUBLIC_SUPABASE_URL || ''),
       'import.meta.env.PUBLIC_SUPABASE_ANON_KEY': JSON.stringify(env.PUBLIC_SUPABASE_ANON_KEY || ''),
     }

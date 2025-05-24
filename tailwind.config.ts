@@ -12,24 +12,24 @@ const config: Config = {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
       colors: {
-        'bg-base': '#0B0F19', // Darker background
-        'bg-gradient': '#0D1120', // Gradient end
-        'card': '#111827', // Card background
-        'surface': '#1F2937', // Surface elements
-        'accent': 'rgba(99, 102, 241, 0.1)', // Indigo accent
-        'accent-hover': '#6366F1', // Indigo hover
-        'purple': '#8B5CF6', // Primary purple
-        'purple-light': '#A78BFA', // Light purple
-        'purple-bg': 'rgba(139, 92, 246, 0.08)', // Purple background
-        'purple-hover': '#7C3AED', // Purple hover
-        'error': '#EF4444', // Error red
-        'error-hover': '#DC2626', // Error hover
-        'text-base': '#9CA3AF', // Base text
-        'text-hover': '#F9FAFB', // Text hover
-        'highlight': '#F9FAFB', // Highlights
-        'muted': '#4B5563', // Muted text
-        'border': '#1F2937', // Borders
-        'separator': '#374151', // Separators
+        'bg-base': '#0B0F19',
+        'bg-gradient': '#0D1120',
+        'card': '#111827',
+        'surface': '#1F2937',
+        'accent': 'rgba(99, 102, 241, 0.1)',
+        'accent-hover': '#6366F1',
+        'purple': '#8B5CF6',
+        'purple-light': '#A78BFA',
+        'purple-bg': 'rgba(139, 92, 246, 0.08)',
+        'purple-hover': '#7C3AED',
+        'error': '#EF4444',
+        'error-hover': '#DC2626',
+        'text-base': '#9CA3AF',
+        'text-hover': '#F9FAFB',
+        'highlight': '#F9FAFB',
+        'muted': '#4B5563',
+        'border': '#1F2937',
+        'separator': '#374151',
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(50% 50% at 50% 50%, var(--tw-gradient-stops))',
