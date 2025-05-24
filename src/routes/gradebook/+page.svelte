@@ -11,7 +11,9 @@
   let newStudentName = $state('');
   let newClassName = $state('');
   let showNewClassModal = $state(false);
+  let showNewAssignmentModal = $state(false);
   let hotInstance = $state(null);
+  let showStudentModal = $state(false);
   
   // Reactive values using $derived
   let selectedCategory = $derived($gradebookStore.getSelectedCategory);
@@ -126,7 +128,7 @@
   }
   
   function getGradeColor(value) {
-    if (!value) return 'rgba(139, 92, 246, 0.2)'; // Default purple
+    if (!value) return 'rgba(139, 92, 246, 0.1)'; // Default purple
     
     if (value >= 90) return 'rgba(52, 211, 153, 0.2)'; // Green for A
     if (value >= 80) return 'rgba(96, 165, 250, 0.2)'; // Blue for B
@@ -150,14 +152,13 @@
   onMount(async () => {
     // Ensure data is loaded when gradebook is accessed
     await gradebookStore.ensureDataLoaded();
-    console.log('Gradebook data loaded');
   });
 
   // Handle initial category selection with $effect
   $effect(() => {
     if ($gradebookStore.categories?.length > 0 && !categoryId) {
-      console.log('Setting initial category reactively');
       gradebookStore.selectCategory($gradebookStore.categories[0].id);
+      categoryId = $gradebookStore.categories[0].id;
     }
   });
 
@@ -166,6 +167,7 @@
       gradebookStore.addAssignmentToCategory(assignmentName.trim(), maxPoints || 0, categoryId);
       assignmentName = '';
       maxPoints = 100;
+      showNewAssignmentModal = false;
     }
   }
 
@@ -175,6 +177,7 @@
       if (studentId) {
         gradebookStore.assignStudentToCategory(studentId, categoryId);
         newStudentName = '';
+        showStudentModal = false;
       }
     }
   }
@@ -183,6 +186,7 @@
     if (newClassName.trim()) {
       gradebookStore.addCategory(newClassName.trim());
       newClassName = '';
+      showNewClassModal = false;
     }
   }
 
@@ -200,228 +204,393 @@
   }
 </script>
 
-{#if $gradebookStore.isLoading}
-  <div class="flex items-center justify-center min-h-[500px]">
-    <LoadingBounce />
-  </div>
-{:else}
-  <!-- Class selection dropdown -->
-  <div class="mb-4">
-    <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden shadow-dark-card p-4">
-      <label for="class-selector" class="block text-dark-muted text-sm mb-1">Select Class</label>
-      <div class="flex gap-2">
-        <select 
-          id="class-selector" 
-          class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-2 text-sm focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"
-          bind:value={categoryId}
-        >
-          <option value="" disabled>Select a class</option>
-          {#each $gradebookStore.categories as category}
-            <option value={category.id}>{category.name}</option>
-          {/each}
-        </select>
-        <button
-          onclick={toggleNewClassModal}
-          class="bg-dark-purple hover:bg-dark-accent text-white px-4 rounded-lg text-sm transition whitespace-nowrap"
-        >
-          New Class
-        </button>
+<div class="min-h-screen">
+  <div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="mb-8">
+      <div class="flex items-center gap-3">
+        <div class="text-purple">
+          <svg class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-3xl font-bold text-highlight">Gradebook</h1>
+          <p class="text-text-base">Manage student grades and assignments</p>
+        </div>
       </div>
     </div>
-  </div>
 
-  {#if selectedCategory}
-    <div class="bg-dark-card border border-dark-border rounded-xl overflow-hidden shadow-dark-card mb-4">
-      <div class="p-4 border-b border-dark-border bg-dark-surface">
-        <h3 class="font-medium text-white">{selectedCategory.name} - Grades</h3>
-        <p class="text-dark-muted text-xs mt-1">
-          Excel-like features: Click and drag to select cells, double-click to edit, Ctrl+C to copy,
-          and Ctrl+V to paste. Use arrow keys to navigate between cells.
-        </p>
+    {#if $gradebookStore.isLoading}
+      <div class="flex items-center justify-center min-h-[500px]">
+        <LoadingBounce />
       </div>
-      
-      <div class="p-4">
-        {#if hasData()}
-          <Handsontable
-            data={hotData}
-            colHeaders={columnHeaders}
-            settings={{
-              columns: columnSettings,
-              rowHeaderWidth: 40,
-              rowHeaders: true,
-              stretchH: 'all',
-              manualColumnResize: true,
-              contextMenu: true,
-              fixedColumnsStart: 1,
-              licenseKey: 'non-commercial-and-evaluation'
-            }}
-            height={400}
-            on:init={handleTableInit}
-            on:afterChange={handleAfterChange}
-          />
-        {:else}
-          <div class="flex items-center justify-center h-64 bg-dark-card">
-            <div class="text-center p-6">
-              <svg
-                class="w-12 h-12 mx-auto mb-4 text-dark-muted"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+    {:else}
+      <!-- Action Bar -->
+      <div class="flex flex-wrap gap-4 mb-6">
+        <div class="flex-1">
+          <div class="card-dark p-4">
+            <label for="class-selector" class="block text-sm font-medium text-text-base mb-2">Select Class</label>
+            <div class="flex gap-2">
+              <select 
+                id="class-selector" 
+                class="select w-full"
+                bind:value={categoryId}
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                ></path>
-              </svg>
-              <h3 class="mb-2 text-lg font-medium text-white">No Data Available</h3>
-              <p class="text-dark-muted">Add students and assignments using the forms below.</p>
+                <option value="" disabled>Select a class</option>
+                {#each $gradebookStore.categories as category}
+                  <option value={category.id}>{category.name}</option>
+                {/each}
+              </select>
+              <button
+                onclick={toggleNewClassModal}
+                class="btn btn-primary"
+                aria-label="Create new class"
+              >
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 5v14M5 12h14"></path>
+                </svg>
+              </button>
             </div>
+          </div>
+        </div>
+        
+        {#if selectedCategory}
+          <div class="flex gap-2">
+            <button 
+              class="btn btn-primary"
+              onclick={() => showNewAssignmentModal = true}
+            >
+              <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              New Assignment
+            </button>
+            
+            <button 
+              class="btn btn-secondary"
+              onclick={() => showStudentModal = true}
+            >
+              <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              Add Student
+            </button>
           </div>
         {/if}
       </div>
-    </div>
-  {/if}
-  
-  {#if !selectedCategory}
-    <div class="bg-dark-card border border-dark-border p-8 rounded-xl text-center">
-      <svg
-        class="w-16 h-16 mx-auto text-dark-muted mb-4"
-        xmlns="http://www.w3.org/2000/svg"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-        />
-      </svg>
-      <h3 class="text-lg font-medium text-white mb-2">No Class Selected</h3>
-      <p class="text-dark-muted">Please select a class from the dropdown above or create a new one to view grades.</p>
-    </div>
-  {/if}
-{/if}
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-  <!-- Add assignment form -->
-  {#if selectedCategory}
-    <div class="bg-dark-card border border-dark-border rounded-xl p-4">
-      <h3 class="font-medium text-white mb-3">Add Assignment</h3>
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label for="assignmentName" class="block text-dark-muted text-sm mb-1">Name</label>
-          <input
-            id="assignmentName"
-            type="text"
-            bind:value={assignmentName}
-            class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-2 text-sm focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"
-            placeholder="e.g. Midterm Exam"
-          />
+      {#if selectedCategory}
+        <div class="card-dark mb-6">
+          <div class="flex justify-between items-center mb-6">
+            <div>
+              <h2 class="text-xl font-bold text-highlight">{selectedCategory.name}</h2>
+              <p class="text-text-base text-sm mt-1">
+                {categoryStudents.length} student{categoryStudents.length !== 1 ? 's' : ''} • 
+                {categoryAssignments.length} assignment{categoryAssignments.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+            
+            <div class="flex gap-2">
+              <button class="btn btn-sm btn-secondary">
+                <svg class="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Export
+              </button>
+              <button class="btn btn-sm btn-secondary">
+                <svg class="w-4 h-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 3v12M5 8l7-5 7 5"></path>
+                  <path d="M5 21h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v11a2 2 0 002 2z"></path>
+                </svg>
+                Import
+              </button>
+            </div>
+          </div>
+          
+          {#if hasData()}
+            <div class="bg-surface/30 rounded-lg p-1 overflow-hidden">
+              <div class="text-xs text-text-base mb-2 px-2">
+                Click cells to edit grades • Double-click to edit • Tab to navigate • Enter to save
+              </div>
+              <Handsontable
+                data={hotData}
+                colHeaders={columnHeaders}
+                settings={{
+                  columns: columnSettings,
+                  rowHeaderWidth: 40,
+                  rowHeaders: true,
+                  stretchH: 'all',
+                  manualColumnResize: true,
+                  contextMenu: true,
+                  fixedColumnsStart: 1,
+                  licenseKey: 'non-commercial-and-evaluation'
+                }}
+                height={400}
+                on:init={handleTableInit}
+                on:afterChange={handleAfterChange}
+              />
+            </div>
+          {:else}
+            <div class="flex flex-col items-center justify-center py-16 bg-surface/30 rounded-lg">
+              <svg class="w-16 h-16 text-muted mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+              </svg>
+              <h3 class="text-xl font-bold text-highlight mb-2">No Students Yet</h3>
+              <p class="text-text-base text-center max-w-md mb-6">
+                Add students to this class to start tracking grades. You can add students individually or import a list.
+              </p>
+              <button 
+                class="btn btn-primary"
+                onclick={() => showStudentModal = true}
+              >
+                <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                Add First Student
+              </button>
+            </div>
+          {/if}
         </div>
-        <div>
-          <label for="maxPoints" class="block text-dark-muted text-sm mb-1">Max Points</label>
-          <input
-            id="maxPoints"
-            type="number"
-            bind:value={maxPoints}
-            min="1"
-            class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-2 text-sm focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"
-          />
-        </div>
-        <div class="col-span-2">
+        
+        {#if categoryAssignments.length > 0}
+          <div class="card-dark mb-6">
+            <h3 class="text-lg font-bold text-highlight mb-4">Assignments</h3>
+            
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead class="text-left border-b border-border">
+                  <tr>
+                    <th class="pb-3 text-text-base font-medium">Name</th>
+                    <th class="pb-3 text-text-base font-medium">Max Points</th>
+                    <th class="pb-3 text-text-base font-medium">Average</th>
+                    <th class="pb-3 text-text-base font-medium text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {#each categoryAssignments as assignment}
+                    <tr class="border-b border-border/50 hover:bg-surface/50 transition-colors">
+                      <td class="py-3 text-highlight">{assignment.name}</td>
+                      <td class="py-3 text-text-base">{assignment.maxPoints}</td>
+                      <td class="py-3">
+                        {#if categoryStudents.length > 0}
+                          {@const grades = allGrades.filter(g => g.assignmentId === assignment.id)}
+                          {@const total = grades.reduce((sum, g) => sum + g.points, 0)}
+                          {@const avg = grades.length > 0 ? (total / grades.length / assignment.maxPoints * 100).toFixed(1) : '—'}
+                          <div class="flex items-center gap-2">
+                            <div class="w-24 h-2 bg-surface rounded-full overflow-hidden">
+                              <div 
+                                class="h-full bg-purple" 
+                                style={`width: ${avg === '—' ? '0' : avg}%`}
+                              ></div>
+                            </div>
+                            <span class="text-text-base">{avg}%</span>
+                          </div>
+                        {:else}
+                          <span class="text-text-base">—</span>
+                        {/if}
+                      </td>
+                      <td class="py-3 text-right">
+                        <div class="flex justify-end gap-2">
+                          <button class="p-1 text-text-base hover:text-purple transition-colors" aria-label="Edit assignment">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
+                              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                          </button>
+                          <button class="p-1 text-text-base hover:text-error transition-colors" aria-label="Delete assignment">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <polyline points="3 6 5 6 21 6"></polyline>
+                              <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  {/each}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        {/if}
+        
+        {#if categoryStudents.length > 0}
+          <div class="card-dark">
+            <h3 class="text-lg font-bold text-highlight mb-4">Students</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {#each categoryStudents as student}
+                <div class="bg-surface/50 rounded-lg p-4 hover:bg-surface transition-colors">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-purple-bg text-purple flex items-center justify-center font-medium">
+                      {student.name.charAt(0)}
+                    </div>
+                    <div>
+                      <div class="font-medium text-highlight">{student.name}</div>
+                      {#if categoryAssignments.length > 0}
+                        {@const avg = gradebookStore.studentAverageInCategory(student.id, categoryId)}
+                        <div class="text-sm">
+                          <span class={`${avg >= 90 ? 'text-green-400' : avg >= 80 ? 'text-blue-400' : avg >= 70 ? 'text-yellow-400' : avg >= 60 ? 'text-orange-400' : 'text-red-400'}`}>
+                            {avg}%
+                          </span>
+                          <span class="text-text-base ml-1">average</span>
+                        </div>
+                      {/if}
+                    </div>
+                  </div>
+                </div>
+              {/each}
+            </div>
+          </div>
+        {/if}
+      {:else}
+        <div class="card-dark p-8 text-center">
+          <svg class="w-16 h-16 mx-auto text-muted mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"></path>
+          </svg>
+          <h3 class="text-xl font-bold text-highlight mb-2">No Class Selected</h3>
+          <p class="text-text-base mb-6">Please select a class from the dropdown above or create a new one to view grades.</p>
           <button
-            onclick={handleAddAssignment}
-            class="w-full bg-dark-purple hover:bg-dark-accent text-white p-2 rounded-lg text-sm transition"
+            onclick={toggleNewClassModal}
+            class="btn btn-primary"
           >
-            Add Assignment
+            <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14M5 12h14"></path>
+            </svg>
+            Create New Class
           </button>
         </div>
-      </div>
-    </div>
-
-    <!-- Add student form -->
-    <div class="bg-dark-card border border-dark-border rounded-xl p-4">
-      <h3 class="font-medium text-white mb-3">Add Student to {selectedCategory.name}</h3>
-      <div class="grid grid-cols-4 gap-4">
-        <div class="col-span-3">
-          <label for="studentName" class="block text-dark-muted text-sm mb-1">Student Name</label>
-          <input
-            id="studentName"
-            type="text"
-            bind:value={newStudentName}
-            class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-2 text-sm focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"
-            placeholder="e.g. John Smith"
-          />
-        </div>
-        <div class="flex items-end">
-          <button
-            onclick={handleAddStudent}
-            class="w-full bg-dark-purple hover:bg-dark-accent text-white p-2 rounded-lg text-sm transition"
-          >
-            Add
-          </button>
-        </div>
-      </div>
-    </div>
-  {/if}
+      {/if}
+    {/if}
+  </div>
 </div>
 
 <!-- New Class Modal -->
 {#if showNewClassModal}
-  <div class="fixed inset-0 z-50 overflow-y-auto">
-    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-      <div class="fixed inset-0 transition-opacity" aria-hidden="true">
-        <div class="absolute inset-0 bg-black opacity-50"></div>
+  <div class="fixed inset-0 bg-bg-base/80 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-card border border-border rounded-lg p-6 w-full max-w-md">
+      <h3 class="text-xl font-bold text-highlight mb-4">Create New Class</h3>
+      
+      <div class="mb-6">
+        <label for="new-class-name" class="block text-sm font-medium text-text-base mb-2">Class Name</label>
+        <input
+          type="text"
+          id="new-class-name"
+          bind:value={newClassName}
+          placeholder="Class name (e.g. Math 101)"
+          class="input w-full"
+        />
+        <p class="text-xs text-text-base mt-1">You'll be able to add students and assignments after creating the class.</p>
       </div>
       
-      <div class="inline-block align-bottom bg-dark-card rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-        <div class="bg-dark-card px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-          <div class="sm:flex sm:items-start">
-            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-dark-surface sm:mx-0 sm:h-10 sm:w-10">
-              <svg class="h-6 w-6 text-dark-purple" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-            </div>
-            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-              <h3 class="text-lg leading-6 font-medium text-white">Create New Class</h3>
-              <div class="mt-2">
-                <p class="text-sm text-dark-muted">Enter a name for your new class. You'll be able to add students and assignments after creating it.</p>
-                <div class="mt-4">
-                  <input
-                    type="text"
-                    id="new-class-name"
-                    bind:value={newClassName}
-                    placeholder="Class name (e.g. Math 101)"
-                    class="w-full bg-dark-surface text-white border border-dark-border rounded-lg p-2 text-sm focus:ring-2 focus:ring-dark-purple focus:border-dark-purple"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="bg-dark-surface px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-          <button
-            type="button"
-            onclick={() => {
-              handleAddClass();
-              toggleNewClassModal();
-            }}
-            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-dark-purple text-base font-medium text-white hover:bg-dark-accent focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dark-purple sm:ml-3 sm:w-auto sm:text-sm"
-          >
-            Create Class
-          </button>
-          <button
-            type="button"
-            onclick={toggleNewClassModal}
-            class="mt-3 w-full inline-flex justify-center rounded-md border border-dark-border shadow-sm px-4 py-2 bg-dark-surface text-base font-medium text-white hover:bg-dark-accent/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-dark-purple sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-          >
-            Cancel
-          </button>
-        </div>
+      <div class="flex gap-3">
+        <button
+          type="button"
+          onclick={toggleNewClassModal}
+          class="btn btn-secondary flex-1"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onclick={handleAddClass}
+          class="btn btn-primary flex-1"
+          disabled={!newClassName.trim()}
+        >
+          Create Class
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- New Assignment Modal -->
+{#if showNewAssignmentModal}
+  <div class="fixed inset-0 bg-bg-base/80 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-card border border-border rounded-lg p-6 w-full max-w-md">
+      <h3 class="text-xl font-bold text-highlight mb-4">Add New Assignment</h3>
+      
+      <div class="mb-4">
+        <label for="assignment-name" class="block text-sm font-medium text-text-base mb-2">Assignment Name</label>
+        <input
+          type="text"
+          id="assignment-name"
+          bind:value={assignmentName}
+          placeholder="e.g. Midterm Exam"
+          class="input w-full"
+        />
+      </div>
+      
+      <div class="mb-6">
+        <label for="max-points" class="block text-sm font-medium text-text-base mb-2">Maximum Points</label>
+        <input
+          type="number"
+          id="max-points"
+          bind:value={maxPoints}
+          min="1"
+          class="input w-full"
+        />
+      </div>
+      
+      <div class="flex gap-3">
+        <button
+          type="button"
+          onclick={() => showNewAssignmentModal = false}
+          class="btn btn-secondary flex-1"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onclick={handleAddAssignment}
+          class="btn btn-primary flex-1"
+          disabled={!assignmentName.trim() || maxPoints <= 0}
+        >
+          Add Assignment
+        </button>
+      </div>
+    </div>
+  </div>
+{/if}
+
+<!-- Add Student Modal -->
+{#if showStudentModal}
+  <div class="fixed inset-0 bg-bg-base/80 backdrop-blur-sm flex items-center justify-center z-50">
+    <div class="bg-card border border-border rounded-lg p-6 w-full max-w-md">
+      <h3 class="text-xl font-bold text-highlight mb-4">Add Student to {selectedCategory?.name}</h3>
+      
+      <div class="mb-6">
+        <label for="student-name" class="block text-sm font-medium text-text-base mb-2">Student Name</label>
+        <input
+          type="text"
+          id="student-name"
+          bind:value={newStudentName}
+          placeholder="e.g. John Smith"
+          class="input w-full"
+        />
+      </div>
+      
+      <div class="flex gap-3">
+        <button
+          type="button"
+          onclick={() => showStudentModal = false}
+          class="btn btn-secondary flex-1"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onclick={handleAddStudent}
+          class="btn btn-primary flex-1"
+          disabled={!newStudentName.trim()}
+        >
+          Add Student
+        </button>
       </div>
     </div>
   </div>
