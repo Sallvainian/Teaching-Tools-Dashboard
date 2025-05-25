@@ -4,9 +4,6 @@
   import '@fontsource/inter/400.css';
   import '@fontsource/inter/500.css';
   import '@fontsource/inter/600.css';
-  import '$lib/ag-grid-modules';
-  import '@ag-grid-community/styles/ag-grid.css';
-  import '@ag-grid-community/styles/ag-theme-material.css';
   import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 
   import { goto } from '$app/navigation';
