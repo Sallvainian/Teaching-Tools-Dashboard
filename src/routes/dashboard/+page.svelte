@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { authStore } from '$lib/stores/auth';
+  import { filesActions, fileStats } from '$lib/stores/files';
   
 
   // Current date
@@ -13,10 +14,12 @@
   });
   
   // Dashboard stats
-  $: totalStudents = 25;
-  $: totalClasses = 4;
-  $: totalLessons = 32;
-  $: totalFiles = 128;
+  let totalStudents = $state(25);
+  let totalClasses = $state(4);
+  let totalLessons = $state(32);
+  
+  // File stats from store
+  let fileStatsData = $derived($fileStats);
   
   let recentUploads = $state([
     { name: 'Lesson Plan - Week 12.pdf', size: '1.2 MB', date: '2 hours ago' },
@@ -40,7 +43,10 @@
   // Chart data
   let chartLoaded = $state(false);
   
-  onMount(() => {
+  onMount(async () => {
+    // Load file data
+    await filesActions.ensureDataLoaded();
+    
     // Simulate chart loading
     setTimeout(() => {
       chartLoaded = true;
@@ -128,7 +134,7 @@
           <span class="text-text-base">Files</span>
         </div>
         
-        <div class="text-3xl font-bold text-highlight">{totalFiles}</div>
+        <div class="text-3xl font-bold text-highlight">{fileStatsData?.totalFiles ?? 0}</div>
       </div>
     </div>
     
