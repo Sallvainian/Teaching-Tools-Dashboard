@@ -78,8 +78,7 @@
     "cookie": "^1.0.2",
     "handsontable": "^15.3.0",
     "lucide-svelte": "^0.511.0",
-    "pnpm": "^10.11.0",
     "uuid": "^9.0.1"
   },
-  "packageManager": "pnpm@10.11.0"
+  "packageManager": "npm@10.2.4"
 }
