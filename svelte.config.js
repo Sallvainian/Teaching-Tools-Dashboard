@@ -4,9 +4,6 @@ import vercel from '@sveltejs/adapter-vercel';
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	preprocess: vitePreprocess(),
-	compilerOptions: {
-		runes: true
-	},
 	kit: {
 		adapter: vercel({
 			runtime: 'nodejs20.x',
