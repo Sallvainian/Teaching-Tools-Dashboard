@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "pnpm run build",
-  "devCommand": "pnpm run dev",
-  "installCommand": "pnpm install --no-frozen-lockfile",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
   "framework": "sveltekit",
   "regions": ["iad1"],
   "headers": [

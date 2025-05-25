@@ -1,4 +1,4 @@
-import { sequence } from "@sveltejs/kit/hooks";
+import { sequence, type Handle } from "@sveltejs/kit/hooks";
 import { handleErrorWithSentry, sentryHandle } from "@sentry/sveltekit";
 import * as Sentry from '@sentry/sveltekit';
 import { nodeProfilingIntegration } from "@sentry/profiling-node";
@@ -25,11 +25,11 @@ Sentry.init({
 });
 
 // Custom handler to add Document-Policy header for JS profiling
-async function documentPolicyHandler({ event, resolve }) {
+const documentPolicyHandler: Handle = async ({ event, resolve }) => {
   const response = await resolve(event);
   response.headers.set('Document-Policy', 'js-profiling');
   return response;
-}
+};
 
 // If you have custom handlers, make sure to place them after `sentryHandle()` in the `sequence` function.
 export const handle = sequence(sentryHandle(), documentPolicyHandler);
