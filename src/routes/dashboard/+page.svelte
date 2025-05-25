@@ -13,10 +13,10 @@
   });
   
   // Dashboard stats
-  let totalStudents = $state(25);
-  let totalClasses = $state(4);
-  let totalLessons = $state(32);
-  let totalFiles = $state(128);
+  $: totalStudents = 25;
+  $: totalClasses = 4;
+  $: totalLessons = 32;
+  $: totalFiles = 128;
   
   let recentUploads = $state([
     { name: 'Lesson Plan - Week 12.pdf', size: '1.2 MB', date: '2 hours ago' },
