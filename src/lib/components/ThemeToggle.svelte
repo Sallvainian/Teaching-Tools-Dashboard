@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Icon } from '@steeze-ui/svelte-icon';
-  import { Sun, Moon } from '@steeze-ui/heroicons';
+  import { Sun, Moon } from 'lucide-svelte';
 
   let isDarkMode = $state(false);
   let isClient = $state(false);
@@ -58,8 +57,8 @@
   aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
 >
   {#if isDarkMode}
-    <Icon src={Sun} class="w-5 h-5" />
+    <Sun class="w-5 h-5" />
   {:else}
-    <Icon src={Moon} class="w-5 h-5" />
+    <Moon class="w-5 h-5" />
   {/if}
-</button>
+</button>

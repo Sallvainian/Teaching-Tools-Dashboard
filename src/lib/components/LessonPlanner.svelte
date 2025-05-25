@@ -1,7 +1,6 @@
 <script lang="ts">
   import { v4 as uuidv4 } from 'uuid';
-  import { Icon } from '@steeze-ui/svelte-icon';
-  import { PlusCircle, Trash } from '@steeze-ui/heroicons';
+  import { PlusCircle, Trash2 as Trash } from 'lucide-svelte';
 
   type LessonSection = {
     id: string;
@@ -72,7 +71,7 @@
               class="p-2 text-error hover:text-error-hover transition-colors rounded-full hover:bg-gray-200 dark:hover:bg-accent"
               aria-label="Remove section"
             >
-              <Icon src={Trash} class="w-5 h-5" />
+              <Trash class="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -91,7 +90,7 @@
       onclick={addSection}
       class="btn-primary flex items-center"
     >
-      <Icon src={PlusCircle} class="w-5 h-5 mr-2" />
+      <PlusCircle class="w-5 h-5 mr-2" />
       Add Section
     </button>
     
@@ -99,4 +98,4 @@
       Total Duration: <span class="text-purple font-bold">{getTotalDuration()} minutes</span>
     </div>
   </div>
-</div>
+</div>
