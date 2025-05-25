@@ -16,6 +16,11 @@
   // Use regular imports - we'll fix the store files after
   import { authStore, isAuthenticated } from '$lib/stores/auth';
   import { gradebookStore } from '$lib/stores/gradebook';
+  
+  // Vercel Speed Insights
+  import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
+  
+  injectSpeedInsights();
 
   // Get children prop for Svelte 5
   let { children } = $props();
@@ -130,6 +135,12 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                       </svg>
                       <span>Settings</span>
+                    </a>
+                    <a href="/test-sentry" class="menu-item text-sm" onclick={() => userMenuOpen = false}>
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                      <span>Test Sentry</span>
                     </a>
                     <div class="separator mx-2 my-1"></div>
                     <button

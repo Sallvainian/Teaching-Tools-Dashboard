@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { authStore } from '$lib/stores/auth';
   
+
   // Current date
   const today = new Date();
   const formattedDate = today.toLocaleDateString('en-US', {

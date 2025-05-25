@@ -7,7 +7,7 @@
     "node": ">=18.x"
   },
   "scripts": {
-    "dev": "vite dev",
+    "dev": "npx vite dev",
     "build": "vite build",
     "preview": "vite preview",
     "prepare": "svelte-kit sync",
@@ -22,13 +22,15 @@
     "lint:fix": "eslint --fix .",
     "validate": "pnpm run lint && pnpm run check",
     "format": "prettier --write \"src/**/*.{js,ts,svelte,css,html,json}\"",
-    "format:check": "prettier --check \"src/**/*.{js,ts,svelte,css,html,json}\""
+    "format:check": "prettier --check \"src/**/*.{js,ts,svelte,css,html,json}\"",
+    "build:release": "node scripts/create-release.js",
+    "release": "pnpm run validate && pnpm run build:release"
   },
   "devDependencies": {
     "@eslint/compat": "^1.2.9",
-    "@eslint/js": "^9.26.0", 
+    "@eslint/js": "^9.26.0",
     "@sveltejs/adapter-auto": "^6.0.1",
-    "@sveltejs/kit": "^2.21.0",
+    "@sveltejs/kit": "^2.21.1",
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/typography": "^0.5.16",
@@ -63,13 +65,19 @@
     "@ag-grid-community/core": "^32.3.5",
     "@ag-grid-community/styles": "^32.3.5",
     "@fontsource/inter": "^5.2.5",
+    "@sentry/browser": "^9.22.0",
+    "@sentry/profiling-node": "^9.22.0",
+    "@sentry/sveltekit": "^9.22.0",
     "@steeze-ui/heroicons": "^2.4.2",
     "@steeze-ui/svelte-icon": "^1.6.2",
     "@supabase/supabase-js": "^2.49.4",
     "@sveltejs/adapter-vercel": "^5.7.2",
+    "@vercel/speed-insights": "^1.2.0",
     "ag-grid-svelte5": "^1.0.3",
     "ag-grid-svelte5-extended": "^0.0.13",
-    "handsontable": "^13.1.0",
+    "cookie": "^1.0.2",
+    "handsontable": "^15.3.0",
+    "pnpm": "^10.11.0",
     "uuid": "^9.0.1"
   },
   "packageManager": "pnpm@10.11.0"
