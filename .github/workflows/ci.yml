@@ -21,29 +21,19 @@ jobs:
         with:
           node-version: '20'
           
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
-          
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-          
-      - name: Setup pnpm cache
+      - name: Cache dependencies
         uses: actions/cache@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+            ${{ runner.os }}-node-
             
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: npm ci
         
       - name: Run ESLint
-        run: pnpm lint
+        run: npm run lint
         continue-on-error: true
         
       - name: Upload ESLint results
@@ -56,10 +46,10 @@ jobs:
           if-no-files-found: ignore
           
       - name: Run TypeScript type checking
-        run: pnpm check
+        run: npm run check
         
       - name: Run Svelte Check
-        run: pnpm check:svelte || true
+        run: npm run check:svelte || true
         
       - name: Generate TypeScript coverage report
         run: |
@@ -79,29 +69,19 @@ jobs:
         with:
           node-version: '20'
           
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
-          
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-          
-      - name: Setup pnpm cache
+      - name: Cache dependencies
         uses: actions/cache@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+            ${{ runner.os }}-node-
             
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: npm ci
         
       - name: Run unit tests with coverage
-        run: pnpm test:coverage
+        run: npm run test:coverage
         
       - name: Copy coverage for Qodana
         run: |
@@ -166,29 +146,19 @@ jobs:
         with:
           node-version: '20'
           
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
-          
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-          
-      - name: Setup pnpm cache
+      - name: Cache dependencies
         uses: actions/cache@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+            ${{ runner.os }}-node-
             
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: npm ci
         
       - name: Build project
-        run: pnpm build
+        run: npm run build
         
       - name: Check build output
         run: |
@@ -220,18 +190,21 @@ jobs:
         with:
           node-version: '20'
           
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
+      - name: Cache dependencies
+        uses: actions/cache@v4
         with:
-          version: 8
-          
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+            
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: npm ci
         
       - name: Analyze bundle
         run: |
-          pnpm add -D vite-bundle-visualizer
-          pnpm build -- --mode analyze || true
+          npm add -D vite-bundle-visualizer
+          npm run build -- --mode analyze || true
         continue-on-error: true
         
       - name: Upload bundle analysis
