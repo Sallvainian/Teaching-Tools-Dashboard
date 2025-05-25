@@ -46,14 +46,13 @@ The content is organized as follows:
 .github/pull_request_template.md
 .github/workflows/ci.yml
 .github/workflows/claude.yml
-.github/workflows/qodana.yml
 .github/workflows/README.md
+.github/workflows/sentry-release.yml
 .gitignore
 .lighthouserc.json
 .npmrc
 .prettierignore
 .prettierrc
-.qodana/coverage.json
 ~/.config/goose/config.toml
 ~/.config/goose/goose.yaml
 ~/start-goose.sh
@@ -63,20 +62,20 @@ docs/ARCHITECTURE.md
 docs/CLAUDE_GITHUB_ACTIONS_SETUP.md
 docs/QUICK_REFERENCE.md
 docs/README.md
+docs/SENTRY_SETUP.md
 docs/SUPABASE_INTEGRATION.md
 docs/TAILWIND_CSS_QUICK_REFERENCE.md
 eslint.config.ts
 package.json
 pnpm-workspace.yaml
-postcss.config.js
 postcss.config.ts
-qodana.yaml
-qodana.yml
 README.md
+scripts/create-release.js
 src/app.css
 src/app.d.ts
 src/app.html
-src/lib/ag-grid-modules.ts
+src/hooks.client.ts
+src/hooks.server.ts
 src/lib/components/auth/LoginForm.svelte
 src/lib/components/auth/LoginForm.test.ts
 src/lib/components/auth/ProfileForm.svelte
@@ -84,6 +83,8 @@ src/lib/components/auth/ResetPasswordForm.svelte
 src/lib/components/auth/RoleSignupForm.svelte
 src/lib/components/auth/SignupForm.svelte
 src/lib/components/ClassList.svelte
+src/lib/components/DeploymentInfo.svelte
+src/lib/components/FilePreviewModal.svelte
 src/lib/components/FlipCard.svelte
 src/lib/components/GameSharingModal.svelte
 src/lib/components/Handsontable.svelte
@@ -95,14 +96,17 @@ src/lib/components/LogEntriesDetails.svelte
 src/lib/components/LogEntriesForm.svelte
 src/lib/components/LogEntriesList.svelte
 src/lib/components/LogEntriesSearch.svelte
+src/lib/components/PDFViewer.svelte
 src/lib/components/StudentRoster.svelte
 src/lib/components/StudentRoster.test.ts
 src/lib/components/ThemeToggle.svelte
 src/lib/index.ts
+src/lib/services/fileService.ts
 src/lib/services/supabaseService.test.ts
 src/lib/services/supabaseService.ts
 src/lib/stores/auth.test.ts
 src/lib/stores/auth.ts
+src/lib/stores/files.ts
 src/lib/stores/gradebook.test.ts
 src/lib/stores/gradebook.ts
 src/lib/stores/jeopardy.test.ts
@@ -112,13 +116,15 @@ src/lib/stores/scattergories.ts
 src/lib/supabaseClient.ts
 src/lib/types/auth.ts
 src/lib/types/database.ts
+src/lib/types/files.ts
 src/lib/types/gradebook.ts
 src/lib/types/jeopardy.ts
 src/lib/types/log-entries.ts
 src/lib/utils/authGuard.ts
+src/lib/utils/dragAndDrop.ts
 src/lib/utils/modelConverters.test.ts
 src/lib/utils/modelConverters.ts
-src/makeSvelteCellRenderer.svelte.ts
+src/lib/utils/performance.ts
 src/routes/+layout.svelte
 src/routes/+layout.ts
 src/routes/+page.svelte
@@ -146,6 +152,7 @@ src/routes/settings/+page.svelte
 src/routes/settings/profile/+page.svelte
 src/routes/student/dashboard/+page.svelte
 src/routes/student/games/+page.svelte
+src/routes/test-sentry/+page.svelte
 start-goose.sh
 supabase/migrations/001_add_user_roles.sql
 supabase/migrations/002_update_student_tables.sql
@@ -474,29 +481,19 @@ jobs:
         with:
           node-version: '20'
           
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
-          
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-          
-      - name: Setup pnpm cache
+      - name: Cache dependencies
         uses: actions/cache@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+            ${{ runner.os }}-node-
             
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: npm ci
         
       - name: Run ESLint
-        run: pnpm lint
+        run: npm run lint
         continue-on-error: true
         
       - name: Upload ESLint results
@@ -509,10 +506,10 @@ jobs:
           if-no-files-found: ignore
           
       - name: Run TypeScript type checking
-        run: pnpm check
+        run: npm run check
         
       - name: Run Svelte Check
-        run: pnpm check:svelte || true
+        run: npm run check:svelte || true
         
       - name: Generate TypeScript coverage report
         run: |
@@ -532,29 +529,19 @@ jobs:
         with:
           node-version: '20'
           
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
-          
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-          
-      - name: Setup pnpm cache
+      - name: Cache dependencies
         uses: actions/cache@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+            ${{ runner.os }}-node-
             
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: npm ci
         
       - name: Run unit tests with coverage
-        run: pnpm test:coverage
+        run: npm run test:coverage
         
       - name: Copy coverage for Qodana
         run: |
@@ -619,29 +606,19 @@ jobs:
         with:
           node-version: '20'
           
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
-          
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-          
-      - name: Setup pnpm cache
+      - name: Cache dependencies
         uses: actions/cache@v4
         with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+            ${{ runner.os }}-node-
             
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: npm ci
         
       - name: Build project
-        run: pnpm build
+        run: npm run build
         
       - name: Check build output
         run: |
@@ -673,18 +650,21 @@ jobs:
         with:
           node-version: '20'
           
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
+      - name: Cache dependencies
+        uses: actions/cache@v4
         with:
-          version: 8
-          
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+            
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: npm ci
         
       - name: Analyze bundle
         run: |
-          pnpm add -D vite-bundle-visualizer
-          pnpm build -- --mode analyze || true
+          npm add -D vite-bundle-visualizer
+          npm run build -- --mode analyze || true
         continue-on-error: true
         
       - name: Upload bundle analysis
@@ -760,120 +740,6 @@ jobs:
             - Check for breaking changes documentation
             
             When asked to fix issues, prioritize security > functionality > style.
-</file>
-
-<file path=".github/workflows/qodana.yml">
-name: Qodana with Code Coverage
-
-on:
-  workflow_dispatch:
-  pull_request:
-  push:
-    branches:
-      - main
-      - testing
-      - 'releases/*'
-
-jobs:
-  qodana:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      checks: write
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-          
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
-
-      - name: Run tests with coverage
-        run: pnpm test:coverage
-        continue-on-error: true
-
-      - name: Prepare coverage data for Qodana
-        run: |
-          mkdir -p .qodana/code-coverage
-          if [ -f "coverage/lcov.info" ]; then
-            cp coverage/lcov.info .qodana/code-coverage/
-            echo "Coverage data copied to .qodana/code-coverage/"
-          else
-            echo "No coverage data found. Creating empty file."
-            touch .qodana/code-coverage/lcov.info
-          fi
-          
-          # Copy additional coverage formats
-          if [ -f "coverage/coverage-final.json" ]; then
-            cp coverage/coverage-final.json .qodana/code-coverage/
-          fi
-          
-          if [ -f "coverage/coverage-summary.json" ]; then
-            cp coverage/coverage-summary.json .qodana/code-coverage/
-          fi
-          
-          # Copy our coverage config
-          if [ -f ".qodana/coverage.json" ]; then
-            cp .qodana/coverage.json .qodana/code-coverage/
-          fi
-
-      - name: Qodana Scan
-        uses: JetBrains/qodana-action@v2024.2
-        continue-on-error: true
-        env:
-          # Use the existing GitHub Secret with the correct name
-          QODANA_TOKEN: ${{ secrets.QODANA_TOKEN_724674951 }}
-        with:
-          args: |
-            --source-directory,.
-            --linter,jetbrains/qodana-js:latest
-            --coverage-dir,.qodana/code-coverage
-          pr-mode: true
-          use-annotations: true
-          
-      - name: Upload Qodana Report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: qodana-report
-          path: ${{ runner.temp }}/qodana/results
-          retention-days: 30
-          
-      - name: Upload Test Coverage Report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-coverage
-          path: |
-            coverage/
-            .qodana/code-coverage/
-          retention-days: 30
 </file>
 
 <file path=".github/workflows/README.md">
@@ -1059,6 +925,70 @@ When adding new workflows:
 - [Security Hardening](https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions)
 </file>
 
+<file path=".github/workflows/sentry-release.yml">
+name: Create Sentry Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  SENTRY_ORG: frank-cottone
+  SENTRY_PROJECT: teacher-dashboard
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build project
+        env:
+          SENTRY_RELEASE: ${{ github.sha }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: pnpm build
+
+      - name: Create Sentry release
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ env.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ env.SENTRY_PROJECT }}
+        with:
+          environment: production
+          version: ${{ github.sha }}
+          sourcemaps: './build'
+</file>
+
 <file path=".gitignore">
 node_modules
 
@@ -1090,6 +1020,9 @@ vite.config.ts.timestamp-*
 
 # Claude settings
 **/.claude/settings.local.json
+
+# Sentry Config File
+.env.sentry-build-plugin
 </file>
 
 <file path=".lighthouserc.json">
@@ -1137,6 +1070,11 @@ shamefully-hoist=true
 strict-peer-dependencies=false
 @jsr:registry=https://npm.jsr.io
 @sitnik:registry=https://npm.jsr.io
+
+# Fix Windows/WSL permission issues
+cache-dir=~/.pnpm
+prefer-symlinks=false
+unsafe-perm=true
 </file>
 
 <file path=".prettierignore">
@@ -1164,43 +1102,6 @@ bun.lockb
       }
     }
   ]
-}
-</file>
-
-<file path=".qodana/coverage.json">
-{
-  "version": "1.0",
-  "coverage": {
-    "enabled": true,
-    "thresholds": {
-      "total": 70,
-      "newCode": 80
-    },
-    "reportPaths": [
-      "coverage/lcov.info",
-      "coverage/coverage-final.json"
-    ],
-    "excludePaths": [
-      "**/*.test.ts",
-      "**/*.test.js",
-      "**/*.spec.ts",
-      "**/*.spec.js",
-      "**/test/**",
-      "**/tests/**",
-      "**/__tests__/**",
-      "**/node_modules/**",
-      "**/.svelte-kit/**",
-      "**/build/**",
-      "**/dist/**",
-      "**/*.config.ts",
-      "**/*.config.js",
-      "**/vitest.config.ts",
-      "**/vite.config.ts",
-      "**/postcss.config.ts",
-      "**/tailwind.config.ts"
-    ],
-    "includeOnlyProjectFiles": true
-  }
 }
 </file>
 
@@ -2671,6 +2572,143 @@ src/lib/components/
 For detailed information on any topic, please refer to the specific documentation files linked above.
 </file>
 
+<file path="docs/SENTRY_SETUP.md">
+# Sentry Setup Guide
+
+## Overview
+
+This project is configured with Sentry for error tracking and release management.
+
+## Features
+
+- ✅ Client-side error tracking
+- ✅ Server-side error tracking
+- ✅ **Performance monitoring** with automatic instrumentation
+- ✅ **Custom transaction tracking** for API calls and database operations
+- ✅ **Web Vitals monitoring** (LCP, FID, CLS, INP)
+- ✅ **User interaction tracking** (clicks, navigation)
+- ✅ **Long task detection** (>50ms)
+- ✅ Source map uploads
+- ✅ Release tracking
+- ✅ Environment-specific configuration
+- ✅ Session replay (10% sample rate)
+- ✅ **Profiling** for function-level performance data
+
+## Configuration
+
+### Environment Variables
+
+Add these to your `.env` file:
+
+```bash
+# Required for source map uploads
+SENTRY_AUTH_TOKEN=your_sentry_auth_token
+
+# Optional - will be auto-detected from deployment environment
+SENTRY_RELEASE=your-release-name
+```
+
+### GitHub Secrets
+
+For the GitHub Actions workflow to work, add these secrets to your repository:
+
+1. Go to Settings → Secrets and variables → Actions
+2. Add `SENTRY_AUTH_TOKEN` with your Sentry auth token
+
+To get a Sentry auth token:
+1. Go to https://sentry.io/settings/account/api/auth-tokens/
+2. Create a new token with these scopes:
+   - `project:releases`
+   - `org:read`
+   - `project:write`
+
+## Usage
+
+### Local Development
+
+Errors are automatically captured in development mode with full stack traces.
+
+### Creating a Release
+
+1. **Manual Release**:
+   ```bash
+   pnpm run release
+   ```
+   This will validate, build, and create a Sentry release with source maps.
+
+2. **Automatic Release** (via GitHub Actions):
+   - Push to main branch
+   - GitHub Action will automatically create a release
+
+3. **Vercel Deployment**:
+   - Releases are automatically created using the Git commit SHA
+
+### Testing Sentry
+
+Visit `/test-sentry` to trigger test errors and verify your setup.
+
+### Performance Monitoring
+
+The setup includes:
+- **Automatic instrumentation** for page loads, route changes, and API calls
+- **Custom tracking utilities** in `src/lib/utils/performance.ts`
+- **Database operation tracking** with timing and metadata
+- **User interaction breadcrumbs** for debugging
+- **Web Vitals** monitoring for Core Web Vitals
+
+### Using Custom Performance Tracking
+
+```typescript
+import { trackAsyncOperation, trackDatabaseOperation, trackUserInteraction } from '$lib/utils/performance';
+
+// Track API calls
+await trackAsyncOperation('api-call', async () => {
+  return await fetch('/api/data');
+}, { 'api.endpoint': '/api/data' });
+
+// Track database operations
+await trackDatabaseOperation('users', 'select', async () => {
+  return await supabase.from('users').select('*');
+});
+
+// Track user interactions
+trackUserInteraction('click', 'submit-button');
+```
+
+## Release Naming
+
+Releases are named using this pattern:
+- Production: `teacher-dashboard@{git-commit-sha}`
+- Local builds: `teacher-dashboard@{version}-{short-sha}`
+- Development: `development`
+
+## Viewing Releases
+
+View your releases at:
+https://sentry.io/organizations/frank-cottone/releases/
+
+## Troubleshooting
+
+### Source Maps Not Working
+
+1. Ensure `SENTRY_AUTH_TOKEN` is set correctly
+2. Check that the release name matches between build and runtime
+3. Verify source maps are being uploaded (check build logs)
+
+### Errors Not Appearing
+
+1. Check your DSN is correct in hooks files
+2. Verify Sentry initialization in both client and server hooks
+3. Check browser console for any Sentry errors
+4. Try clearing browser cache
+
+### Release Not Created
+
+1. Ensure you have the correct org and project names in `vite.config.ts`
+2. Verify your auth token has the correct permissions
+3. Check build logs for any upload errors
+</file>
+
 <file path="docs/SUPABASE_INTEGRATION.md">
 # Supabase Integration Documentation
 
@@ -3709,7 +3747,7 @@ export default ts.config(
     "node": ">=18.x"
   },
   "scripts": {
-    "dev": "vite dev",
+    "dev": "npx vite dev",
     "build": "vite build",
     "preview": "vite preview",
     "prepare": "svelte-kit sync",
@@ -3717,26 +3755,26 @@ export default ts.config(
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "check:svelte": "svelte-check --tsconfig ./tsconfig.json",
     "test:unit": "vitest",
-    "test": "pnpm run test:coverage",
+    "test": "npm run test:coverage",
     "test:coverage": "vitest run --coverage",
-    "test:coverage:qodana": "pnpm run test:coverage && bash ./copy-coverage.sh",
     "lint": "eslint .",
     "lint:fix": "eslint --fix .",
-    "validate": "pnpm run lint && pnpm run check",
+    "validate": "npm run lint && npm run check",
     "format": "prettier --write \"src/**/*.{js,ts,svelte,css,html,json}\"",
     "format:check": "prettier --check \"src/**/*.{js,ts,svelte,css,html,json}\""
   },
   "devDependencies": {
     "@eslint/compat": "^1.2.9",
-    "@eslint/js": "^9.26.0", 
+    "@eslint/js": "^9.26.0",
     "@sveltejs/adapter-auto": "^6.0.1",
-    "@sveltejs/kit": "^2.21.0",
+    "@sveltejs/kit": "^2.21.1",
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/typography": "^0.5.16",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/svelte": "^5.2.7",
     "@types/node": "^22.15.18",
+    "@types/uuid": "^10.0.0",
     "@vitest/coverage-v8": "^3.1.3",
     "autoprefixer": "^10.4.21",
     "daisyui": "^4.12.24",
@@ -3761,20 +3799,20 @@ export default ts.config(
     "vitest": "^3.1.3"
   },
   "dependencies": {
-    "@ag-grid-community/client-side-row-model": "^32.3.5",
-    "@ag-grid-community/core": "^32.3.5",
-    "@ag-grid-community/styles": "^32.3.5",
     "@fontsource/inter": "^5.2.5",
-    "@steeze-ui/heroicons": "^2.4.2",
-    "@steeze-ui/svelte-icon": "^1.6.2",
+    "@sentry/browser": "^9.22.0",
+    "@sentry/profiling-node": "^9.22.0",
+    "@sentry/sveltekit": "^9.22.0",
     "@supabase/supabase-js": "^2.49.4",
     "@sveltejs/adapter-vercel": "^5.7.2",
-    "ag-grid-svelte5": "^1.0.3",
-    "ag-grid-svelte5-extended": "^0.0.13",
-    "handsontable": "^13.1.0",
+    "@vercel/analytics": "^1.5.0",
+    "@vercel/speed-insights": "^1.2.0",
+    "cookie": "^1.0.2",
+    "handsontable": "^15.3.0",
+    "lucide-svelte": "^0.511.0",
     "uuid": "^9.0.1"
   },
-  "packageManager": "pnpm@10.11.0"
+  "packageManager": "npm@10.2.4"
 }
 </file>
 
@@ -3783,15 +3821,6 @@ onlyBuiltDependencies:
   - core-js
   - esbuild
   - supabase
-</file>
-
-<file path="postcss.config.js">
-export default {
-  plugins: {
-    tailwindcss: {},
-    autoprefixer: {},
-  },
-};
 </file>
 
 <file path="postcss.config.ts">
@@ -3804,45 +3833,6 @@ export default {
     autoprefixer: {},
   },
 };
-</file>
-
-<file path="qodana.yaml">
-version: "1.0"
-linter: jetbrains/qodana-js:2025.1
-failThreshold: 0
-include:
-  - name: Qodana.JavaScript
-exclude:
-  - name: All
-    paths:
-      - node_modules
-      - .svelte-kit
-      - build
-      - dist
-      - coverage
-      - .git
-      - .github
-      - public
-      - static
-      - .idea
-      - .vscode
-      - "**/*.min.js"
-      - "**/*.min.css"
-      - "**/vendor/**"
-      - "**/test-results/**"
-</file>
-
-<file path="qodana.yml">
-version: "1.0"
-linter: jetbrains/qodana-js:latest
-exclude:
-  - name: All
-    paths:
-      - node_modules
-      - .svelte-kit
-      - coverage
-      - build
-      - dist
 </file>
 
 <file path="README.md">
@@ -3995,6 +3985,37 @@ All stores follow a pattern of:
 ## 📄 License
 
 [Add your license information here]
+</file>
+
+<file path="scripts/create-release.js">
+#!/usr/bin/env node
+import { execSync } from 'child_process';
+import { readFileSync } from 'fs';
+
+// Read package.json to get version
+const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'));
+const version = packageJson.version;
+
+// Get git commit hash
+const gitHash = execSync('git rev-parse --short HEAD').toString().trim();
+
+// Create release name
+const releaseName = `${packageJson.name}@${version}-${gitHash}`;
+
+console.log(`Creating Sentry release: ${releaseName}`);
+
+// Set environment variable for the build
+process.env.SENTRY_RELEASE = releaseName;
+
+// Run the build
+console.log('Building project...');
+execSync('pnpm build', { 
+  stdio: 'inherit',
+  env: { ...process.env, SENTRY_RELEASE: releaseName }
+});
+
+console.log(`✅ Release ${releaseName} created successfully!`);
+console.log(`View releases at: https://sentry.io/organizations/frank-cottone/releases/`);
 </file>
 
 <file path="src/app.css">
@@ -4213,23 +4234,11 @@ export {};
 </file>
 
 <file path="src/app.html">
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <title>Teacher Dashboard</title>
-    <link rel="icon" href="%sveltekit.assets%/favicon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    %sveltekit.head%
-  </head>
-  <body data-sveltekit-preload-data="hover">
-    <div>%sveltekit.body%</div>
-  </body>
-</html>
 <!DOCTYPE html>
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
+		<title>Teacher Dashboard</title>
 		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		%sveltekit.head%
@@ -4253,21 +4262,81 @@ export {};
 </html>
 </file>
 
-<file path="src/lib/ag-grid-modules.ts">
-// src/lib/ag-grid-modules.ts
-/**
- * This file registers AG Grid modules globally so they're available to all grid instances.
- * Import this file in your root layout component to ensure modules are registered
- * before any grids are rendered.
- */
-import { ModuleRegistry } from '@ag-grid-community/core';
-import { ClientSideRowModelModule } from '@ag-grid-community/client-side-row-model';
+<file path="src/hooks.client.ts">
+import { handleErrorWithSentry, replayIntegration } from "@sentry/sveltekit";
+import * as Sentry from '@sentry/sveltekit';
 
-// Export the module for direct import if needed
-export const clientSideRowModelModule = ClientSideRowModelModule;
+Sentry.init({
+  dsn: 'https://2644904ccddbf49afacdccf14cae13d2@o4509381050957824.ingest.us.sentry.io/4509381155553280',
+  
+  environment: import.meta.env.MODE, // 'development' or 'production'
+  release: import.meta.env.SENTRY_RELEASE || 'development',
+  
+  integrations: [
+    // browserTracingIntegration is automatically added by SvelteKit
+    Sentry.browserProfilingIntegration(),
+    replayIntegration(),
+  ],
+  
+  // Tracing
+  tracesSampleRate: 1.0, //  Capture 100% of the transactions
+  // Set 'tracePropagationTargets' to control for which URLs distributed tracing should be enabled
+  tracePropagationTargets: ["localhost", /^https:\/\/yourserver\.io\/api/],
+  // Set profilesSampleRate to 1.0 to profile every transaction.
+  // Since profilesSampleRate is relative to tracesSampleRate,
+  // the final profiling rate can be computed as tracesSampleRate * profilesSampleRate
+  // For example, a tracesSampleRate of 0.5 and profilesSampleRate of 0.5 would
+  // results in 25% of transactions being profiled (0.5*0.5=0.25)
+  profilesSampleRate: 1.0,
 
-// Register modules globally
-ModuleRegistry.registerModules([ClientSideRowModelModule]);
+  // Session Replay
+  replaysSessionSampleRate: 0.1,
+  replaysOnErrorSampleRate: 1.0,
+});
+
+// If you have a custom error handler, pass it to `handleErrorWithSentry`
+export const handleError = handleErrorWithSentry();
+</file>
+
+<file path="src/hooks.server.ts">
+import { sequence, type Handle } from "@sveltejs/kit/hooks";
+import { handleErrorWithSentry, sentryHandle } from "@sentry/sveltekit";
+import * as Sentry from '@sentry/sveltekit';
+import { nodeProfilingIntegration } from "@sentry/profiling-node";
+
+Sentry.init({
+  dsn: 'https://2644904ccddbf49afacdccf14cae13d2@o4509381050957824.ingest.us.sentry.io/4509381155553280',
+  
+  environment: process.env.NODE_ENV || 'development',
+  release: process.env.SENTRY_RELEASE || 'development',
+  
+  integrations: [
+    nodeProfilingIntegration(),
+  ],
+  
+  // Tracing must be enabled for profiling to work
+  tracesSampleRate: 1.0, //  Capture 100% of the transactions
+  // Set sampling rate for profiling - this is evaluated only once per SDK.init call
+  profileSessionSampleRate: 1.0,
+  // Trace lifecycle automatically enables profiling during active traces
+  profileLifecycle: 'trace',
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: import.meta.env.DEV,
+});
+
+// Custom handler to add Document-Policy header for JS profiling
+const documentPolicyHandler: Handle = async ({ event, resolve }) => {
+  const response = await resolve(event);
+  response.headers.set('Document-Policy', 'js-profiling');
+  return response;
+};
+
+// If you have custom handlers, make sure to place them after `sentryHandle()` in the `sequence` function.
+export const handle = sequence(sentryHandle(), documentPolicyHandler);
+
+// If you have a custom error handler, pass it to `handleErrorWithSentry`
+export const handleError = handleErrorWithSentry();
 </file>
 
 <file path="src/lib/components/auth/LoginForm.svelte">
@@ -5186,6 +5255,318 @@ describe('LoginForm', () => {
     {/if}
   </div>
 </div>
+</file>
+
+<file path="src/lib/components/DeploymentInfo.svelte">
+<script lang="ts">
+	import { dev } from '$app/environment';
+	
+	const release = import.meta.env.SENTRY_RELEASE || 'development';
+	const environment = import.meta.env.MODE;
+	const buildTime = import.meta.env.BUILD_TIME || new Date().toISOString();
+</script>
+
+{#if dev}
+	<div class="fixed bottom-4 right-4 bg-gray-800 text-white text-xs p-2 rounded shadow-lg opacity-75 hover:opacity-100 transition-opacity">
+		<div>Environment: {environment}</div>
+		<div>Release: {release}</div>
+		<div>Built: {new Date(buildTime).toLocaleString()}</div>
+	</div>
+{/if}
+</file>
+
+<file path="src/lib/components/FilePreviewModal.svelte">
+<script lang="ts">
+  import type { FileMetadata } from '$lib/types/files';
+  import { getFileType } from '$lib/types/files';
+  import { fileService } from '$lib/services/fileService';
+  import PDFViewer from './PDFViewer.svelte';
+  
+  let { 
+    isOpen = $bindable(false), 
+    file = $bindable<FileMetadata | null>(null),
+    onDelete = $bindable<((file: FileMetadata) => void) | undefined>(undefined)
+  } = $props<{
+    isOpen: boolean;
+    file: FileMetadata | null;
+    onDelete?: (file: FileMetadata) => void;
+  }>();
+  
+  let imageUrl = $state<string | null>(null);
+  let pdfUrl = $state<string | null>(null);
+  let isLoading = $state(false);
+  let error = $state<string | null>(null);
+  
+  // Watch for file changes
+  $effect(() => {
+    if (file && isOpen) {
+      loadFilePreview();
+    } else {
+      cleanup();
+    }
+  });
+  
+  async function loadFilePreview() {
+    if (!file) return;
+    
+    const fileType = getFileType(file.name).toLowerCase();
+    
+    // Handle images
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileType)) {
+      isLoading = true;
+      error = null;
+      
+      try {
+        const url = await fileService.getFileUrl(file.storage_path);
+        if (url) {
+          imageUrl = url;
+        } else {
+          error = 'Failed to load image';
+        }
+      } catch (err) {
+        console.error('Error loading image:', err);
+        error = 'Failed to load image';
+      } finally {
+        isLoading = false;
+      }
+    }
+    
+    // Handle PDFs
+    if (fileType === 'pdf') {
+      isLoading = true;
+      error = null;
+      
+      try {
+        const url = await fileService.getFileUrl(file.storage_path);
+        if (url) {
+          pdfUrl = url;
+        } else {
+          error = 'Failed to load PDF';
+        }
+      } catch (err) {
+        console.error('Error loading PDF:', err);
+        error = 'Failed to load PDF';
+      } finally {
+        isLoading = false;
+      }
+    }
+  }
+  
+  function cleanup() {
+    if (imageUrl) {
+      URL.revokeObjectURL(imageUrl);
+      imageUrl = null;
+    }
+    pdfUrl = null;
+    error = null;
+    isLoading = false;
+  }
+  
+  function closeModal() {
+    isOpen = false;
+    file = null;
+  }
+  
+  function openInNewTab() {
+    if (!file) return;
+    
+    // For non-image files, open in new tab for browser native viewing
+    fileService.getFileUrl(file.storage_path).then(url => {
+      if (url) {
+        window.open(url, '_blank');
+      }
+    });
+  }
+  
+  function getPreviewContent() {
+    if (!file) return null;
+    
+    const fileType = getFileType(file.name).toLowerCase();
+    
+    // Image preview
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileType)) {
+      return 'image';
+    }
+    
+    // PDF preview (for future PDF.js integration)
+    if (fileType === 'pdf') {
+      return 'pdf';
+    }
+    
+    // Text files
+    if (['txt', 'csv', 'json', 'md'].includes(fileType)) {
+      return 'text';
+    }
+    
+    // Office documents
+    if (['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(fileType)) {
+      return 'office';
+    }
+    
+    return 'unsupported';
+  }
+  
+  function handleKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape') {
+      closeModal();
+    }
+  }
+  
+  async function handleDelete() {
+    if (!file) return;
+    
+    if (confirm(`Are you sure you want to delete "${file.name}"?`)) {
+      if (onDelete) {
+        onDelete(file);
+      }
+      closeModal();
+    }
+  }
+</script>
+
+<svelte:window onkeydown={handleKeydown} />
+
+{#if isOpen && file}
+  <div class="fixed inset-0 bg-bg-base/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-card border border-border rounded-lg max-w-4xl max-h-[90vh] w-full flex flex-col">
+      <!-- Header -->
+      <div class="flex items-center justify-between p-4 border-b border-border">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-purple-bg flex items-center justify-center text-purple">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-highlight">{file.name}</h3>
+            <p class="text-sm text-text-base">{getFileType(file.name).toUpperCase()} • {Math.round(file.size / 1024)}KB</p>
+          </div>
+        </div>
+        
+        <div class="flex items-center gap-2">
+          <button 
+            class="btn btn-secondary"
+            onclick={openInNewTab}
+            title="Open in new tab"
+          >
+            <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <line x1="10" y1="14" x2="21" y2="3"></line>
+            </svg>
+            Open
+          </button>
+          {#if onDelete}
+            <button 
+              class="btn btn-error"
+              onclick={handleDelete}
+              title="Delete file"
+            >
+              <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              Delete
+            </button>
+          {/if}
+          <button 
+            class="p-2 text-text-base hover:text-text-hover rounded-lg hover:bg-surface transition-colors"
+            onclick={closeModal}
+            title="Close"
+          >
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Content -->
+      <div class="flex-1 overflow-auto">
+        {#if getPreviewContent() === 'image'}
+          {#if isLoading}
+            <div class="flex items-center justify-center h-64">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple"></div>
+            </div>
+          {:else if error}
+            <div class="flex flex-col items-center justify-center h-64 text-center">
+              <svg class="w-16 h-16 text-muted mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              </svg>
+              <p class="text-text-base">{error}</p>
+              <button class="btn btn-secondary mt-4" onclick={openInNewTab}>
+                Try opening in new tab
+              </button>
+            </div>
+          {:else if imageUrl}
+            <div class="p-4">
+              <img 
+                src={imageUrl} 
+                alt={file.name}
+                class="max-w-full max-h-[60vh] mx-auto rounded-lg shadow-lg"
+                style="object-fit: contain;"
+              />
+            </div>
+          {/if}
+        {:else if getPreviewContent() === 'pdf'}
+          {#if isLoading}
+            <div class="flex items-center justify-center h-64">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple mb-4"></div>
+              <p class="text-text-base">Loading PDF...</p>
+            </div>
+          {:else if error}
+            <div class="flex flex-col items-center justify-center h-64 text-center">
+              <svg class="w-16 h-16 text-error mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              </svg>
+              <p class="text-error font-medium mb-2">Failed to load PDF</p>
+              <p class="text-text-base mb-4">{error}</p>
+              <button class="btn btn-secondary" onclick={openInNewTab}>
+                Try opening in new tab
+              </button>
+            </div>
+          {:else if pdfUrl}
+            <div class="h-[70vh]">
+              <PDFViewer pdfUrl={pdfUrl} height="100%" />
+            </div>
+          {/if}
+        {:else}
+          <!-- Other file types -->
+          <div class="flex flex-col items-center justify-center h-64 text-center p-8">
+            <svg class="w-16 h-16 text-muted mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            <h4 class="text-lg font-medium text-highlight mb-2">File Preview</h4>
+            <p class="text-text-base mb-4">
+              {#if getPreviewContent() === 'office'}
+                This office document can be opened in a new tab for viewing.
+              {:else if getPreviewContent() === 'text'}
+                This text file can be opened in a new tab for viewing.
+              {:else}
+                This file type doesn't support inline preview. You can download or open it in a new tab.
+              {/if}
+            </p>
+            <button class="btn btn-primary" onclick={openInNewTab}>
+              <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+              Open File
+            </button>
+          </div>
+        {/if}
+      </div>
+    </div>
+  </div>
+{/if}
 </file>
 
 <file path="src/lib/components/FlipCard.svelte">
@@ -6438,8 +6819,7 @@ describe('LoginForm', () => {
 <file path="src/lib/components/LessonPlanner.svelte">
 <script lang="ts">
   import { v4 as uuidv4 } from 'uuid';
-  import { Icon } from '@steeze-ui/svelte-icon';
-  import { PlusCircle, Trash } from '@steeze-ui/heroicons';
+  import { PlusCircle, Trash2 as Trash } from 'lucide-svelte';
 
   type LessonSection = {
     id: string;
@@ -6510,7 +6890,7 @@ describe('LoginForm', () => {
               class="p-2 text-error hover:text-error-hover transition-colors rounded-full hover:bg-gray-200 dark:hover:bg-accent"
               aria-label="Remove section"
             >
-              <Icon src={TrashBin} class="w-5 h-5" />
+              <Trash class="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -6529,7 +6909,7 @@ describe('LoginForm', () => {
       onclick={addSection}
       class="btn-primary flex items-center"
     >
-      <Icon src={PlusCircle} class="w-5 h-5 mr-2" />
+      <PlusCircle class="w-5 h-5 mr-2" />
       Add Section
     </button>
     
@@ -7405,6 +7785,252 @@ describe('LoginForm', () => {
 </div>
 </file>
 
+<file path="src/lib/components/PDFViewer.svelte">
+<script lang="ts">
+  import { onMount } from 'svelte';
+  
+  let { 
+    pdfUrl = '',
+    height = '600px' 
+  } = $props<{
+    pdfUrl: string;
+    height?: string;
+  }>();
+  
+  let pdfContainer: HTMLDivElement;
+  let isLoading = $state(true);
+  let error = $state<string | null>(null);
+  let currentPage = $state(1);
+  let totalPages = $state(0);
+  let scale = $state(1.2);
+  
+  // PDF.js variables
+  let pdfjsLib: any = null;
+  let pdfDoc: any = null;
+  
+  onMount(async () => {
+    try {
+      // Load PDF.js from CDN
+      await loadPDFJS();
+      if (pdfUrl) {
+        await loadPDF();
+      }
+    } catch (err) {
+      console.error('Error initializing PDF viewer:', err);
+      error = 'Failed to load PDF viewer';
+      isLoading = false;
+    }
+  });
+  
+  async function loadPDFJS() {
+    return new Promise((resolve, reject) => {
+      if (typeof window !== 'undefined' && (window as any).pdfjsLib) {
+        pdfjsLib = (window as any).pdfjsLib;
+        resolve(pdfjsLib);
+        return;
+      }
+      
+      // Load PDF.js from CDN
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      script.onload = () => {
+        pdfjsLib = (window as any).pdfjsLib;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        resolve(pdfjsLib);
+      };
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+  }
+  
+  async function loadPDF() {
+    if (!pdfjsLib || !pdfUrl) return;
+    
+    try {
+      isLoading = true;
+      error = null;
+      
+      const loadingTask = pdfjsLib.getDocument(pdfUrl);
+      pdfDoc = await loadingTask.promise;
+      totalPages = pdfDoc.numPages;
+      
+      await renderPage(1);
+      isLoading = false;
+    } catch (err) {
+      console.error('Error loading PDF:', err);
+      error = 'Failed to load PDF document';
+      isLoading = false;
+    }
+  }
+  
+  async function renderPage(pageNum: number) {
+    if (!pdfDoc || !pdfContainer) return;
+    
+    try {
+      // Clear previous content
+      pdfContainer.innerHTML = '';
+      
+      const page = await pdfDoc.getPage(pageNum);
+      const viewport = page.getViewport({ scale });
+      
+      // Create canvas
+      const canvas = document.createElement('canvas');
+      const context = canvas.getContext('2d');
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+      canvas.style.maxWidth = '100%';
+      canvas.style.height = 'auto';
+      
+      pdfContainer.appendChild(canvas);
+      
+      // Render page
+      const renderContext = {
+        canvasContext: context,
+        viewport: viewport
+      };
+      
+      await page.render(renderContext).promise;
+      currentPage = pageNum;
+    } catch (err) {
+      console.error('Error rendering page:', err);
+      error = 'Failed to render PDF page';
+    }
+  }
+  
+  async function nextPage() {
+    if (currentPage < totalPages) {
+      await renderPage(currentPage + 1);
+    }
+  }
+  
+  async function prevPage() {
+    if (currentPage > 1) {
+      await renderPage(currentPage - 1);
+    }
+  }
+  
+  async function zoomIn() {
+    scale = Math.min(scale + 0.2, 3.0);
+    await renderPage(currentPage);
+  }
+  
+  async function zoomOut() {
+    scale = Math.max(scale - 0.2, 0.5);
+    await renderPage(currentPage);
+  }
+  
+  // Watch for URL changes
+  $effect(() => {
+    if (pdfjsLib && pdfUrl) {
+      loadPDF();
+    }
+  });
+</script>
+
+<div class="pdf-viewer bg-surface rounded-lg" style="height: {height}">
+  {#if isLoading}
+    <div class="flex items-center justify-center h-full">
+      <div class="text-center">
+        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple mx-auto mb-4"></div>
+        <p class="text-text-base">Loading PDF...</p>
+      </div>
+    </div>
+  {:else if error}
+    <div class="flex items-center justify-center h-full">
+      <div class="text-center">
+        <svg class="w-16 h-16 text-error mx-auto mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+        <p class="text-error font-medium mb-2">PDF Loading Error</p>
+        <p class="text-text-base text-sm">{error}</p>
+      </div>
+    </div>
+  {:else}
+    <!-- PDF Controls -->
+    <div class="flex items-center justify-between p-3 border-b border-border bg-card">
+      <div class="flex items-center gap-2">
+        <button 
+          class="btn-icon" 
+          onclick={prevPage} 
+          disabled={currentPage <= 1}
+          title="Previous page"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
+        
+        <span class="text-sm text-text-base">
+          Page {currentPage} of {totalPages}
+        </span>
+        
+        <button 
+          class="btn-icon" 
+          onclick={nextPage} 
+          disabled={currentPage >= totalPages}
+          title="Next page"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </button>
+      </div>
+      
+      <div class="flex items-center gap-2">
+        <button 
+          class="btn-icon" 
+          onclick={zoomOut}
+          title="Zoom out"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="8" y1="11" x2="14" y2="11"></line>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </button>
+        
+        <span class="text-sm text-text-base">
+          {Math.round(scale * 100)}%
+        </span>
+        
+        <button 
+          class="btn-icon" 
+          onclick={zoomIn}
+          title="Zoom in"
+        >
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="8" y1="11" x2="14" y2="11"></line>
+            <line x1="11" y1="8" x2="11" y2="14"></line>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+    
+    <!-- PDF Content -->
+    <div class="flex-1 overflow-auto p-4 bg-gray-100 dark:bg-gray-800">
+      <div class="flex justify-center">
+        <div bind:this={pdfContainer} class="pdf-canvas-container shadow-lg bg-white"></div>
+      </div>
+    </div>
+  {/if}
+</div>
+
+<style>
+  .btn-icon {
+    @apply p-2 text-text-base hover:text-text-hover rounded-lg hover:bg-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  .pdf-canvas-container {
+    min-height: 200px;
+    border-radius: 4px;
+  }
+</style>
+</file>
+
 <file path="src/lib/components/StudentRoster.svelte">
 <script lang="ts">
   import type { Student } from '$lib/types/gradebook';
@@ -7809,8 +8435,7 @@ describe('StudentRoster', () => {
 <file path="src/lib/components/ThemeToggle.svelte">
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { Icon } from '@steeze-ui/svelte-icon';
-  import { Sun, Moon } from '@steeze-ui/heroicons';
+  import { Sun, Moon } from 'lucide-svelte';
 
   let isDarkMode = $state(false);
   let isClient = $state(false);
@@ -7867,21 +8492,500 @@ describe('StudentRoster', () => {
   aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
 >
   {#if isDarkMode}
-    <Icon src={Sun} class="w-5 h-5" />
+    <Sun class="w-5 h-5" />
   {:else}
-    <Icon src={Moon} class="w-5 h-5" />
+    <Moon class="w-5 h-5" />
   {/if}
 </button>
 </file>
 
 <file path="src/lib/index.ts">
 // place files you want to import through the `$lib` alias in this folder.
+</file>
 
-// AG Grid components
-// We now import AgGrid directly from ag-grid-svelte5-extended
-// The local Grid.svelte component has been replaced with the imported version
-import { AgGrid } from 'ag-grid-svelte5-extended';
-export { AgGrid as Grid };
+<file path="src/lib/services/fileService.ts">
+import { supabase } from '$lib/supabaseClient';
+import type { 
+  FileFolder, 
+  FileMetadata, 
+  FileShare, 
+  FileFolderWithChildren, 
+  FileMetadataWithFolder,
+  UserFileStats,
+  FileUploadProgress 
+} from '$lib/types/files';
+import { validateFile, getFileType } from '$lib/types/files';
+
+export class FileService {
+  private static readonly STORAGE_BUCKET = 'teacher-files';
+
+  // =================== FOLDER OPERATIONS ===================
+
+  /**
+   * Get all folders for the current user
+   */
+  async getFolders(): Promise<FileFolder[]> {
+    try {
+      const { data, error } = await supabase
+        .from('file_folders')
+        .select('*')
+        .order('name');
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching folders:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get folder tree structure with nested children
+   */
+  async getFolderTree(): Promise<FileFolderWithChildren[]> {
+    try {
+      const folders = await this.getFolders();
+      return this.buildFolderTree(folders);
+    } catch (error) {
+      console.error('Error building folder tree:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Create a new folder
+   */
+  async createFolder(name: string, parentId?: string): Promise<FileFolder | null> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('file_folders')
+        .insert({
+          user_id: user.id,
+          name: name.trim(),
+          parent_id: parentId || null
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error creating folder:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Delete a folder and all its contents
+   */
+  async deleteFolder(folderId: string): Promise<boolean> {
+    try {
+      // First, delete all files in the folder
+      const files = await this.getFiles(folderId);
+      for (const file of files) {
+        await this.deleteFile(file.id);
+      }
+
+      // Then delete the folder
+      const { error } = await supabase
+        .from('file_folders')
+        .delete()
+        .eq('id', folderId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error deleting folder:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Rename a folder
+   */
+  async renameFolder(folderId: string, newName: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('file_folders')
+        .update({ name: newName.trim() })
+        .eq('id', folderId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error renaming folder:', error);
+      return false;
+    }
+  }
+
+  // =================== FILE OPERATIONS ===================
+
+  /**
+   * Get all files for the current user, optionally filtered by folder
+   */
+  async getFiles(folderId?: string): Promise<FileMetadataWithFolder[]> {
+    try {
+      let query = supabase
+        .from('file_metadata')
+        .select(`
+          *,
+          folder:file_folders(*)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (folderId) {
+        query = query.eq('folder_id', folderId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return data || [];
+    } catch (error) {
+      console.error('Error fetching files:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Upload a file to Supabase Storage
+   */
+  async uploadFile(
+    file: File, 
+    folderId?: string,
+    onProgress?: (progress: number) => void
+  ): Promise<FileMetadata | null> {
+    try {
+      // Validate file
+      const validation = validateFile(file);
+      if (!validation.valid) {
+        throw new Error(validation.error);
+      }
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Generate unique file path
+      const fileType = getFileType(file.name);
+      const timestamp = Date.now();
+      const fileName = `${timestamp}_${file.name}`;
+      const storagePath = folderId 
+        ? `${user.id}/${folderId}/${fileName}`
+        : `${user.id}/${fileName}`;
+
+      // Upload to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from(FileService.STORAGE_BUCKET)
+        .upload(storagePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+      if (onProgress) onProgress(50); // Upload complete, now saving metadata
+
+      // Save file metadata to database
+      const { data: metadataData, error: metadataError } = await supabase
+        .from('file_metadata')
+        .insert({
+          user_id: user.id,
+          folder_id: folderId || null,
+          storage_path: uploadData.path,
+          name: file.name,
+          size: file.size,
+          type: fileType,
+          mime_type: file.type || null
+        })
+        .select()
+        .single();
+
+      if (metadataError) {
+        // If metadata save fails, cleanup the uploaded file
+        await supabase.storage
+          .from(FileService.STORAGE_BUCKET)
+          .remove([uploadData.path]);
+        throw metadataError;
+      }
+
+      if (onProgress) onProgress(100);
+      return metadataData;
+
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Download a file from Supabase Storage
+   */
+  async downloadFile(fileId: string): Promise<string | null> {
+    try {
+      // Get file metadata
+      const { data: fileData, error: fileError } = await supabase
+        .from('file_metadata')
+        .select('storage_path, name')
+        .eq('id', fileId)
+        .single();
+
+      if (fileError) throw fileError;
+
+      // Get signed URL for download
+      const { data, error } = await supabase.storage
+        .from(FileService.STORAGE_BUCKET)
+        .createSignedUrl(fileData.storage_path, 3600); // 1 hour expiry
+
+      if (error) throw error;
+      return data.signedUrl;
+
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Delete a file
+   */
+  async deleteFile(fileId: string): Promise<boolean> {
+    try {
+      // Get file metadata first
+      const { data: fileData, error: fileError } = await supabase
+        .from('file_metadata')
+        .select('storage_path')
+        .eq('id', fileId)
+        .single();
+
+      if (fileError) throw fileError;
+
+      // Delete from storage
+      const { error: storageError } = await supabase.storage
+        .from(FileService.STORAGE_BUCKET)
+        .remove([fileData.storage_path]);
+
+      if (storageError) {
+        console.warn('Error deleting from storage:', storageError);
+        // Continue with metadata deletion even if storage deletion fails
+      }
+
+      // Delete metadata
+      const { error: metadataError } = await supabase
+        .from('file_metadata')
+        .delete()
+        .eq('id', fileId);
+
+      if (metadataError) throw metadataError;
+      return true;
+
+    } catch (error) {
+      console.error('Error deleting file:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Rename a file
+   */
+  async renameFile(fileId: string, newName: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('file_metadata')
+        .update({ name: newName.trim() })
+        .eq('id', fileId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error renaming file:', error);
+      return false;
+    }
+  }
+
+  // =================== FILE SHARING ===================
+
+  /**
+   * Share a file with another user
+   */
+  async shareFile(
+    fileId: string, 
+    shareWithEmail: string, 
+    permission: 'view' | 'edit' | 'delete' = 'view',
+    expiresAt?: Date
+  ): Promise<FileShare | null> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Find the user to share with
+      const { data: shareWithUser, error: userError } = await supabase
+        .from('app_users')
+        .select('user_id')
+        .eq('email', shareWithEmail)
+        .single();
+
+      if (userError || !shareWithUser) {
+        throw new Error('User not found');
+      }
+
+      const { data, error } = await supabase
+        .from('file_shares')
+        .insert({
+          file_id: fileId,
+          shared_with: shareWithUser.user_id,
+          shared_by: user.id,
+          permission,
+          expires_at: expiresAt?.toISOString() || null
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error sharing file:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Get files shared with the current user
+   */
+  async getSharedFiles(): Promise<FileMetadataWithFolder[]> {
+    try {
+      const { data, error } = await supabase
+        .from('file_shares')
+        .select(`
+          *,
+          file:file_metadata(
+            *,
+            folder:file_folders(*)
+          )
+        `)
+        .eq('shared_with', (await supabase.auth.getUser()).data.user?.id)
+        .is('expires_at', null)
+        .or('expires_at.gt.' + new Date().toISOString());
+
+      if (error) throw error;
+      return data?.map(share => share.file).filter(Boolean) || [];
+    } catch (error) {
+      console.error('Error fetching shared files:', error);
+      return [];
+    }
+  }
+
+  // =================== STATISTICS ===================
+
+  /**
+   * Get file statistics for the current user
+   */
+  async getUserStats(): Promise<UserFileStats | null> {
+    try {
+      const { data, error } = await supabase
+        .from('user_file_stats')
+        .select('*')
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+      return null;
+    }
+  }
+
+  // =================== HELPER METHODS ===================
+
+  /**
+   * Build a nested folder tree structure
+   */
+  private buildFolderTree(folders: FileFolder[]): FileFolderWithChildren[] {
+    const folderMap = new Map<string, FileFolderWithChildren>();
+    const rootFolders: FileFolderWithChildren[] = [];
+
+    // Create folder map
+    folders.forEach(folder => {
+      folderMap.set(folder.id, { ...folder, children: [] });
+    });
+
+    // Build tree structure
+    folders.forEach(folder => {
+      const folderWithChildren = folderMap.get(folder.id)!;
+      
+      if (folder.parent_id) {
+        const parent = folderMap.get(folder.parent_id);
+        if (parent) {
+          parent.children!.push(folderWithChildren);
+        }
+      } else {
+        rootFolders.push(folderWithChildren);
+      }
+    });
+
+    return rootFolders;
+  }
+
+  /**
+   * Create default folders for a new user
+   */
+  async createDefaultFolders(): Promise<void> {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      // Call the database function
+      const { error } = await supabase.rpc('create_default_folders', {
+        user_id: user.id
+      });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error creating default folders:', error);
+    }
+  }
+
+  /**
+   * Get a public URL for viewing a file
+   */
+  async getFileUrl(storagePath: string): Promise<string | null> {
+    try {
+      const { data } = await supabase.storage
+        .from('teacher-files')
+        .createSignedUrl(storagePath, 3600); // 1 hour expiry
+
+      return data?.signedUrl || null;
+    } catch (error) {
+      console.error('Error getting file URL:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Move a file to a different folder
+   */
+  async moveFile(fileId: string, newFolderId: string | null): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('file_metadata')
+        .update({ 
+          folder_id: newFolderId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', fileId);
+
+      if (error) throw error;
+      return true;
+    } catch (error) {
+      console.error('Error moving file:', error);
+      return false;
+    }
+  }
+}
+
+// Export singleton instance
+export const fileService = new FileService();
 </file>
 
 <file path="src/lib/services/supabaseService.test.ts">
@@ -9043,6 +10147,385 @@ export const session = derived(authStore, ($store) => $store.session);
 export const loading = derived(authStore, ($store) => $store.loading);
 export const error = derived(authStore, ($store) => $store.error);
 export const isAuthenticated = derived(authStore, ($store) => $store.isAuthenticated);
+</file>
+
+<file path="src/lib/stores/files.ts">
+import { writable, derived, get } from 'svelte/store';
+import type { 
+  FileFolder, 
+  FileMetadata, 
+  FileFolderWithChildren, 
+  FileMetadataWithFolder,
+  UserFileStats,
+  FileUploadProgress 
+} from '$lib/types/files';
+import { fileService } from '$lib/services/fileService';
+
+// Store state interface
+interface FileStoreState {
+  folders: FileFolder[];
+  files: FileMetadataWithFolder[];
+  currentFolderId: string | null;
+  uploadProgress: FileUploadProgress[];
+  userStats: UserFileStats | null;
+  isLoading: boolean;
+  error: string | null;
+  dataLoaded: boolean;
+}
+
+// Initial state
+const initialState: FileStoreState = {
+  folders: [],
+  files: [],
+  currentFolderId: null,
+  uploadProgress: [],
+  userStats: null,
+  isLoading: false,
+  error: null,
+  dataLoaded: false
+};
+
+// Create the main store
+const fileStore = writable<FileStoreState>(initialState);
+
+// Helper function to update store
+function updateStore(updater: (state: FileStoreState) => FileStoreState) {
+  fileStore.update(updater);
+}
+
+// Helper function to set loading state
+function setLoading(loading: boolean) {
+  updateStore(state => ({ ...state, isLoading: loading }));
+}
+
+// Helper function to set error
+function setError(error: string | null) {
+  updateStore(state => ({ ...state, error }));
+}
+
+// Derived stores for computed values
+export const folders = derived(fileStore, $store => $store.folders);
+export const files = derived(fileStore, $store => $store.files);
+export const currentFolderId = derived(fileStore, $store => $store.currentFolderId);
+export const uploadProgress = derived(fileStore, $store => $store.uploadProgress);
+export const userStats = derived(fileStore, $store => $store.userStats);
+export const isLoading = derived(fileStore, $store => $store.isLoading);
+export const error = derived(fileStore, $store => $store.error);
+
+// Derived store for folder tree
+export const folderTree = derived(fileStore, $store => {
+  return buildFolderTree($store.folders);
+});
+
+// Derived store for current folder files
+export const currentFolderFiles = derived(
+  [fileStore], 
+  ([$store]) => {
+    if ($store.currentFolderId === null) {
+      // Root level files (no folder)
+      return $store.files.filter(file => !file.folder_id);
+    } else {
+      return $store.files.filter(file => file.folder_id === $store.currentFolderId);
+    }
+  }
+);
+
+// Derived store for file statistics
+export const fileStats = derived(fileStore, $store => {
+  const totalFiles = $store.files.length;
+  const totalSize = $store.files.reduce((sum, file) => sum + file.size, 0);
+  const folderCount = $store.folders.length;
+  
+  return {
+    totalFiles,
+    totalSize,
+    folderCount,
+    formattedSize: formatFileSize(totalSize)
+  };
+});
+
+// Helper function to build folder tree
+function buildFolderTree(folders: FileFolder[]): FileFolderWithChildren[] {
+  const folderMap = new Map<string, FileFolderWithChildren>();
+  const rootFolders: FileFolderWithChildren[] = [];
+
+  // Create folder map
+  folders.forEach(folder => {
+    folderMap.set(folder.id, { ...folder, children: [] });
+  });
+
+  // Build tree structure
+  folders.forEach(folder => {
+    const folderWithChildren = folderMap.get(folder.id)!;
+    
+    if (folder.parent_id) {
+      const parent = folderMap.get(folder.parent_id);
+      if (parent) {
+        parent.children!.push(folderWithChildren);
+      }
+    } else {
+      rootFolders.push(folderWithChildren);
+    }
+  });
+
+  return rootFolders;
+}
+
+// Helper function to format file size
+function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
+  
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// =================== ACTIONS ===================
+
+export const filesActions = {
+  // Ensure data is loaded
+  async ensureDataLoaded() {
+    const state = get(fileStore);
+    if (state.dataLoaded) return;
+    await this.loadAllData();
+  },
+
+  // Load all files and folders
+  async loadAllData() {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const [folders, files, stats] = await Promise.all([
+        fileService.getFolders(),
+        fileService.getFiles(),
+        fileService.getUserStats()
+      ]);
+
+      updateStore(state => ({
+        ...state,
+        folders,
+        files,
+        userStats: stats,
+        dataLoaded: true
+      }));
+
+    } catch (err) {
+      console.error('Error loading file data:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load files');
+    } finally {
+      setLoading(false);
+    }
+  },
+
+  // Set current folder
+  setCurrentFolder(folderId: string | null) {
+    updateStore(state => ({ ...state, currentFolderId: folderId }));
+  },
+
+  // Create folder
+  async createFolder(name: string, parentId?: string) {
+    try {
+      setError(null);
+      const newFolder = await fileService.createFolder(name, parentId);
+      
+      if (newFolder) {
+        updateStore(state => ({
+          ...state,
+          folders: [...state.folders, newFolder]
+        }));
+        return newFolder;
+      }
+      throw new Error('Failed to create folder');
+    } catch (err) {
+      console.error('Error creating folder:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create folder');
+      return null;
+    }
+  },
+
+  // Delete folder
+  async deleteFolder(folderId: string) {
+    try {
+      setError(null);
+      const success = await fileService.deleteFolder(folderId);
+      
+      if (success) {
+        updateStore(state => ({
+          ...state,
+          folders: state.folders.filter(f => f.id !== folderId),
+          files: state.files.filter(f => f.folder_id !== folderId)
+        }));
+        return true;
+      }
+      throw new Error('Failed to delete folder');
+    } catch (err) {
+      console.error('Error deleting folder:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete folder');
+      return false;
+    }
+  },
+
+  // Upload file
+  async uploadFile(file: File, folderId?: string) {
+    try {
+      setError(null);
+      
+      // Add to upload progress
+      const progressItem: FileUploadProgress = {
+        file,
+        progress: 0,
+        status: 'uploading'
+      };
+
+      updateStore(state => ({
+        ...state,
+        uploadProgress: [...state.uploadProgress, progressItem]
+      }));
+
+      // Upload file with progress tracking
+      const uploadedFile = await fileService.uploadFile(
+        file, 
+        folderId,
+        (progress) => {
+          updateStore(state => ({
+            ...state,
+            uploadProgress: state.uploadProgress.map(item => 
+              item.file === file ? { ...item, progress } : item
+            )
+          }));
+        }
+      );
+
+      if (uploadedFile) {
+        // Add to files list
+        updateStore(state => ({
+          ...state,
+          files: [uploadedFile, ...state.files],
+          uploadProgress: state.uploadProgress.map(item => 
+            item.file === file 
+              ? { ...item, progress: 100, status: 'success' } 
+              : item
+          )
+        }));
+
+        // Remove from progress after 2 seconds
+        setTimeout(() => {
+          updateStore(state => ({
+            ...state,
+            uploadProgress: state.uploadProgress.filter(item => item.file !== file)
+          }));
+        }, 2000);
+
+        return uploadedFile;
+      }
+      throw new Error('Failed to upload file');
+
+    } catch (err) {
+      console.error('Error uploading file:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to upload file';
+      setError(errorMessage);
+
+      // Update progress with error
+      updateStore(state => ({
+        ...state,
+        uploadProgress: state.uploadProgress.map(item => 
+          item.file === file 
+            ? { ...item, status: 'error', error: errorMessage } 
+            : item
+        )
+      }));
+
+      return null;
+    }
+  },
+
+  // Delete file
+  async deleteFile(fileId: string) {
+    try {
+      setError(null);
+      const success = await fileService.deleteFile(fileId);
+      
+      if (success) {
+        updateStore(state => ({
+          ...state,
+          files: state.files.filter(f => f.id !== fileId)
+        }));
+        return true;
+      }
+      throw new Error('Failed to delete file');
+    } catch (err) {
+      console.error('Error deleting file:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete file');
+      return false;
+    }
+  },
+
+  // Move file to different folder
+  async moveFile(fileId: string, newFolderId: string | null) {
+    try {
+      setError(null);
+      const success = await fileService.moveFile(fileId, newFolderId);
+      
+      if (success) {
+        updateStore(state => ({
+          ...state,
+          files: state.files.map(f => 
+            f.id === fileId 
+              ? { ...f, folder_id: newFolderId }
+              : f
+          )
+        }));
+        return true;
+      }
+      throw new Error('Failed to move file');
+    } catch (err) {
+      console.error('Error moving file:', err);
+      setError(err instanceof Error ? err.message : 'Failed to move file');
+      return false;
+    }
+  },
+
+  // Download file
+  async downloadFile(fileId: string, fileName: string) {
+    try {
+      setError(null);
+      const downloadUrl = await fileService.downloadFile(fileId);
+      
+      if (downloadUrl) {
+        // Create download link
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        return true;
+      }
+      throw new Error('Failed to get download URL');
+    } catch (err) {
+      console.error('Error downloading file:', err);
+      setError(err instanceof Error ? err.message : 'Failed to download file');
+      return false;
+    }
+  },
+
+  // Clear error
+  clearError() {
+    setError(null);
+  },
+
+  // Refresh data
+  async refresh() {
+    updateStore(state => ({ ...state, dataLoaded: false }));
+    await this.loadAllData();
+  }
+};
+
+// Export the main store
+export { fileStore };
 </file>
 
 <file path="src/lib/stores/gradebook.test.ts">
@@ -12220,6 +13703,204 @@ export type Updates<T extends keyof Database['public']['Tables']> = Database['pu
 export type UserRole = Database['public']['Enums']['user_role']
 </file>
 
+<file path="src/lib/types/files.ts">
+// File Storage System Types
+
+export interface FileFolder {
+  id: string;
+  user_id: string;
+  name: string;
+  parent_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FileMetadata {
+  id: string;
+  user_id: string;
+  folder_id: string | null;
+  storage_path: string;
+  name: string;
+  size: number; // Size in bytes
+  type: string; // File extension (pdf, docx, etc.)
+  mime_type: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface FileShare {
+  id: string;
+  file_id: string;
+  shared_with: string;
+  shared_by: string;
+  permission: 'view' | 'edit' | 'delete';
+  created_at: string;
+  expires_at: string | null;
+}
+
+// Extended types with relations
+export interface FileFolderWithChildren extends FileFolder {
+  children?: FileFolderWithChildren[];
+  files?: FileMetadata[];
+}
+
+export interface FileMetadataWithFolder extends FileMetadata {
+  folder?: FileFolder | null;
+}
+
+export interface FileShareWithDetails extends FileShare {
+  file?: FileMetadata;
+  shared_with_user?: {
+    id: string;
+    email: string;
+    full_name?: string;
+  };
+  shared_by_user?: {
+    id: string;
+    email: string;
+    full_name?: string;
+  };
+}
+
+// File upload progress tracking
+export interface FileUploadProgress {
+  file: File;
+  progress: number; // 0-100
+  status: 'pending' | 'uploading' | 'success' | 'error';
+  error?: string;
+}
+
+// File stats for dashboard
+export interface UserFileStats {
+  user_id: string;
+  total_files: number;
+  total_folders: number;
+  total_size_bytes: number;
+  total_size_mb: number;
+}
+
+// Helper type for file icons
+export const FILE_TYPE_ICONS: Record<string, string> = {
+  // Documents
+  pdf: '📄',
+  doc: '📝',
+  docx: '📝',
+  txt: '📃',
+  rtf: '📝',
+  
+  // Spreadsheets
+  xls: '📊',
+  xlsx: '📊',
+  csv: '📊',
+  
+  // Presentations
+  ppt: '📊',
+  pptx: '📊',
+  
+  // Images
+  jpg: '🖼️',
+  jpeg: '🖼️',
+  png: '🖼️',
+  gif: '🖼️',
+  svg: '🖼️',
+  
+  // Videos
+  mp4: '🎥',
+  avi: '🎥',
+  mov: '🎥',
+  wmv: '🎥',
+  
+  // Audio
+  mp3: '🎵',
+  wav: '🎵',
+  m4a: '🎵',
+  
+  // Archives
+  zip: '📦',
+  rar: '📦',
+  '7z': '📦',
+  tar: '📦',
+  
+  // Code
+  js: '💻',
+  ts: '💻',
+  html: '🌐',
+  css: '🎨',
+  json: '📋',
+  
+  // Default
+  default: '📎'
+};
+
+// Helper function to get file icon
+export function getFileIcon(fileType: string): string {
+  return FILE_TYPE_ICONS[fileType.toLowerCase()] || FILE_TYPE_ICONS.default;
+}
+
+// Helper function to format file size
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0) return '0 Bytes';
+  
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Helper function to get file type from name
+export function getFileType(fileName: string): string {
+  const parts = fileName.split('.');
+  return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : 'unknown';
+}
+
+// Storage limits (can be adjusted based on your needs)
+export const STORAGE_LIMITS = {
+  MAX_FILE_SIZE: 50 * 1024 * 1024, // 50MB per file
+  MAX_TOTAL_STORAGE: 1024 * 1024 * 1024, // 1GB total per user
+  ALLOWED_FILE_TYPES: [
+    // Documents
+    'pdf', 'doc', 'docx', 'txt', 'rtf', 'odt',
+    // Spreadsheets
+    'xls', 'xlsx', 'csv', 'ods',
+    // Presentations
+    'ppt', 'pptx', 'odp',
+    // Images
+    'jpg', 'jpeg', 'png', 'gif', 'svg', 'webp',
+    // Videos
+    'mp4', 'avi', 'mov', 'wmv', 'webm',
+    // Audio
+    'mp3', 'wav', 'm4a', 'ogg',
+    // Archives
+    'zip', 'rar', '7z', 'tar', 'gz',
+    // Other
+    'json', 'xml'
+  ]
+};
+
+// Validate file before upload
+export function validateFile(file: File): { valid: boolean; error?: string } {
+  // Check file size
+  if (file.size > STORAGE_LIMITS.MAX_FILE_SIZE) {
+    return {
+      valid: false,
+      error: `File size exceeds limit of ${formatFileSize(STORAGE_LIMITS.MAX_FILE_SIZE)}`
+    };
+  }
+  
+  // Check file type
+  const fileType = getFileType(file.name);
+  if (!STORAGE_LIMITS.ALLOWED_FILE_TYPES.includes(fileType)) {
+    return {
+      valid: false,
+      error: `File type '${fileType}' is not allowed`
+    };
+  }
+  
+  return { valid: true };
+}
+</file>
+
 <file path="src/lib/types/gradebook.ts">
 export interface Student {
   id: string;
@@ -12352,6 +14033,118 @@ export async function authGuard({ url }: LoadEvent) {
   // User is authenticated, continue
   return {
     user: data.session.user
+  };
+}
+</file>
+
+<file path="src/lib/utils/dragAndDrop.ts">
+import type { FileMetadata } from '$lib/types/files';
+
+export interface DragData {
+  type: 'file';
+  file: FileMetadata;
+}
+
+export interface DropTarget {
+  type: 'folder';
+  folderId: string | null;
+  folderName: string;
+}
+
+// Drag and drop state management
+export function createDragHandlers() {
+  let draggedItem: DragData | null = null;
+  let isDragging = false;
+
+  function startDrag(file: FileMetadata) {
+    draggedItem = { type: 'file', file };
+    isDragging = true;
+  }
+
+  function endDrag() {
+    draggedItem = null;
+    isDragging = false;
+  }
+
+  function getDraggedItem() {
+    return draggedItem;
+  }
+
+  function getIsDragging() {
+    return isDragging;
+  }
+
+  return {
+    startDrag,
+    endDrag,
+    getDraggedItem,
+    getIsDragging
+  };
+}
+
+// HTML5 Drag and Drop handlers
+export function createDragEventHandlers(
+  file: FileMetadata,
+  onDragStart: (file: FileMetadata) => void,
+  onDragEnd: () => void
+) {
+  return {
+    draggable: true,
+    ondragstart: (e: DragEvent) => {
+      if (e.dataTransfer) {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('application/json', JSON.stringify({
+          type: 'file',
+          file
+        }));
+      }
+      onDragStart(file);
+    },
+    ondragend: () => {
+      onDragEnd();
+    }
+  };
+}
+
+export function createDropEventHandlers(
+  target: DropTarget,
+  onDrop: (dragData: DragData, target: DropTarget) => void,
+  onDragOver?: (isOver: boolean) => void
+) {
+  return {
+    ondragover: (e: DragEvent) => {
+      e.preventDefault();
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = 'move';
+      }
+      onDragOver?.(true);
+    },
+    ondragenter: (e: DragEvent) => {
+      e.preventDefault();
+      onDragOver?.(true);
+    },
+    ondragleave: (e: DragEvent) => {
+      e.preventDefault();
+      // Only trigger leave if we're actually leaving the element
+      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+        onDragOver?.(false);
+      }
+    },
+    ondrop: (e: DragEvent) => {
+      e.preventDefault();
+      onDragOver?.(false);
+      
+      if (e.dataTransfer) {
+        try {
+          const dragData = JSON.parse(e.dataTransfer.getData('application/json')) as DragData;
+          if (dragData.type === 'file') {
+            onDrop(dragData, target);
+          }
+        } catch (error) {
+          console.error('Error parsing drag data:', error);
+        }
+      }
+    }
   };
 }
 </file>
@@ -13071,61 +14864,96 @@ export function appLogToDbLog(log: Partial<LogEntry>): Partial<DBObservationLog>
 }
 </file>
 
-<file path="src/makeSvelteCellRenderer.svelte.ts">
-import type { ICellRenderer, ICellRendererParams } from '@ag-grid-community/core';
-import { mount, unmount, type Component } from 'svelte';
+<file path="src/lib/utils/performance.ts">
+import * as Sentry from '@sentry/sveltekit';
 
-export default function makeSvelteCellRenderer(
-  RenderingComponent: Component<ICellRendererParams>,
-  containerDivClass?: string
-) {
-  //
-  return class SvelteCellRenderer implements ICellRenderer {
-    element: HTMLElement | undefined = undefined;
-    component: Record<string, unknown> | undefined = undefined;
-    props: ICellRendererParams | undefined = $state(undefined);
+/**
+ * Custom performance utilities for manual instrumentation
+ */
 
-    init(params: ICellRendererParams) {
-      this.element = document.createElement('div');
-
-      if (containerDivClass) {
-        this.element.classList.add(containerDivClass);
-      }
-
-      this.props = params;
-
-      this.component = mount(RenderingComponent, {
-        target: this.element,
-        props: this.props,
-      });
-    }
-
-    getGui() {
-      return this.element;
-    }
-
-    destroy() {
-      if (this.component !== undefined) {
-        unmount(this.component);
-        this.element?.remove();
-        this.component = undefined;
-      }
-    }
-
-    refresh(params: ICellRendererParams): boolean {
-      if (this.props === undefined) {
-        return false;
-      }
-
+/**
+ * Track async operations like API calls
+ */
+export async function trackAsyncOperation<T>(
+  name: string,
+  operation: () => Promise<T>,
+  tags?: Record<string, string>
+): Promise<T> {
+  return Sentry.startSpan(
+    {
+      name,
+      op: 'function',
+      tags,
+    },
+    async () => {
       try {
-        Object.assign(this.props, params);
-        return true;
+        const result = await operation();
+        Sentry.setTag('operation.success', 'true');
+        return result;
       } catch (error) {
-        console.error(error);
-        return false;
+        Sentry.setTag('operation.success', 'false');
+        Sentry.captureException(error);
+        throw error;
       }
     }
-  };
+  );
+}
+
+/**
+ * Track component rendering performance
+ */
+export function trackComponentRender(componentName: string) {
+  return Sentry.startSpan({
+    name: `${componentName} render`,
+    op: 'ui.svelte.render',
+  });
+}
+
+/**
+ * Track user interactions
+ */
+export function trackUserInteraction(action: string, target?: string) {
+  Sentry.addBreadcrumb({
+    message: `User ${action}`,
+    category: 'user',
+    data: {
+      target,
+      timestamp: Date.now(),
+    },
+    level: 'info',
+  });
+}
+
+/**
+ * Track database operations
+ */
+export async function trackDatabaseOperation<T>(
+  table: string,
+  operation: string,
+  dbOperation: () => Promise<T>
+): Promise<T> {
+  return trackAsyncOperation(
+    `db.${operation}`,
+    dbOperation,
+    {
+      'db.table': table,
+      'db.operation': operation,
+    }
+  );
+}
+
+/**
+ * Track route changes manually (in addition to automatic tracking)
+ */
+export function trackRouteChange(from: string, to: string) {
+  Sentry.startSpan({
+    name: `Route change: ${from} → ${to}`,
+    op: 'navigation',
+    tags: {
+      'route.from': from,
+      'route.to': to,
+    },
+  });
 }
 </file>
 
@@ -13136,9 +14964,6 @@ export default function makeSvelteCellRenderer(
   import '@fontsource/inter/400.css';
   import '@fontsource/inter/500.css';
   import '@fontsource/inter/600.css';
-  import '$lib/ag-grid-modules';
-  import '@ag-grid-community/styles/ag-grid.css';
-  import '@ag-grid-community/styles/ag-theme-material.css';
   import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 
   import { goto } from '$app/navigation';
@@ -13148,6 +14973,17 @@ export default function makeSvelteCellRenderer(
   // Use regular imports - we'll fix the store files after
   import { authStore, isAuthenticated } from '$lib/stores/auth';
   import { gradebookStore } from '$lib/stores/gradebook';
+  
+  // Vercel Speed Insights
+  import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
+  
+  injectSpeedInsights();
+  
+  // Vercel Analytics
+  import { dev } from '$app/environment';
+  import { injectAnalytics } from '@vercel/analytics/sveltekit';
+  
+  injectAnalytics({ mode: dev ? 'development' : 'production' });
 
   // Get children prop for Svelte 5
   let { children } = $props();
@@ -13262,6 +15098,12 @@ export default function makeSvelteCellRenderer(
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                       </svg>
                       <span>Settings</span>
+                    </a>
+                    <a href="/test-sentry" class="menu-item text-sm" onclick={() => userMenuOpen = false}>
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      </svg>
+                      <span>Test Sentry</span>
                     </a>
                     <div class="separator mx-2 my-1"></div>
                     <button
@@ -14328,7 +16170,9 @@ export const prerender = false;
 <script lang="ts">
   import { onMount } from 'svelte';
   import { authStore } from '$lib/stores/auth';
+  import { filesActions, fileStats } from '$lib/stores/files';
   
+
   // Current date
   const today = new Date();
   const formattedDate = today.toLocaleDateString('en-US', {
@@ -14342,7 +16186,9 @@ export const prerender = false;
   let totalStudents = $state(25);
   let totalClasses = $state(4);
   let totalLessons = $state(32);
-  let totalFiles = $state(128);
+  
+  // File stats from store
+  let fileStatsData = $derived($fileStats);
   
   let recentUploads = $state([
     { name: 'Lesson Plan - Week 12.pdf', size: '1.2 MB', date: '2 hours ago' },
@@ -14366,7 +16212,10 @@ export const prerender = false;
   // Chart data
   let chartLoaded = $state(false);
   
-  onMount(() => {
+  onMount(async () => {
+    // Load file data
+    await filesActions.ensureDataLoaded();
+    
     // Simulate chart loading
     setTimeout(() => {
       chartLoaded = true;
@@ -14454,7 +16303,7 @@ export const prerender = false;
           <span class="text-text-base">Files</span>
         </div>
         
-        <div class="text-3xl font-bold text-highlight">{totalFiles}</div>
+        <div class="text-3xl font-bold text-highlight">{fileStatsData?.totalFiles ?? 0}</div>
       </div>
     </div>
     
@@ -18551,6 +20400,169 @@ export const prerender = false;
 </div>
 </file>
 
+<file path="src/routes/test-sentry/+page.svelte">
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import { trackAsyncOperation, trackUserInteraction, trackDatabaseOperation } from '$lib/utils/performance';
+	import * as Sentry from '@sentry/sveltekit';
+	
+	function throwTestError() {
+		trackUserInteraction('click', 'error-button');
+		throw new Error('This is a test error for Sentry!');
+	}
+	
+	async function throwAsyncError() {
+		trackUserInteraction('click', 'async-error-button');
+		await new Promise(resolve => setTimeout(resolve, 100));
+		throw new Error('This is an async test error for Sentry!');
+	}
+	
+	function captureMessage() {
+		trackUserInteraction('click', 'message-button');
+		// You can manually capture messages/errors if needed
+		import('@sentry/sveltekit').then(({ captureMessage }) => {
+			captureMessage('Test message sent to Sentry', 'info');
+		});
+	}
+	
+	// Performance monitoring examples
+	async function testSlowOperation() {
+		trackUserInteraction('click', 'slow-operation-button');
+		
+		await trackAsyncOperation(
+			'slow-api-call',
+			async () => {
+				// Simulate a slow API call
+				await new Promise(resolve => setTimeout(resolve, 2000));
+				return { success: true };
+			},
+			{ 'api.endpoint': '/test', 'api.type': 'simulation' }
+		);
+		
+		alert('Slow operation completed! Check Sentry performance tab.');
+	}
+	
+	async function testDatabaseOperation() {
+		trackUserInteraction('click', 'db-operation-button');
+		
+		await trackDatabaseOperation(
+			'users',
+			'select',
+			async () => {
+				// Simulate database query
+				await new Promise(resolve => setTimeout(resolve, 500));
+				return [{ id: 1, name: 'Test User' }];
+			}
+		);
+		
+		alert('Database operation completed! Check Sentry performance tab.');
+	}
+	
+	function testTransaction() {
+		trackUserInteraction('click', 'transaction-button');
+		
+		// Create a custom transaction
+		Sentry.startSpan({
+			name: 'Custom User Transaction',
+			op: 'ui.action',
+			tags: {
+				component: 'test-page',
+				action: 'custom-transaction'
+			}
+		}, () => {
+			// Simulate some work
+			const start = Date.now();
+			while (Date.now() - start < 100) {
+				// Busy wait for 100ms
+			}
+			
+			// Add breadcrumb
+			Sentry.addBreadcrumb({
+				message: 'Custom transaction completed',
+				level: 'info',
+				category: 'user-action'
+			});
+		});
+		
+		alert('Custom transaction completed! Check Sentry performance tab.');
+	}
+</script>
+
+<div class="container mx-auto p-8">
+	<h1 class="text-2xl font-bold mb-4">Sentry Test Page</h1>
+	
+	<div class="space-y-6">
+		<div>
+			<h2 class="text-xl font-semibold mb-3">Error Tracking</h2>
+			<div class="space-y-2">
+				<button
+					onclick={throwTestError}
+					class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 mr-2"
+				>
+					Throw Sync Error
+				</button>
+				
+				<button
+					onclick={throwAsyncError}
+					class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 mr-2"
+				>
+					Throw Async Error
+				</button>
+				
+				<button
+					onclick={captureMessage}
+					class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-2"
+				>
+					Send Test Message
+				</button>
+			</div>
+		</div>
+		
+		<div>
+			<h2 class="text-xl font-semibold mb-3">Performance Monitoring</h2>
+			<div class="space-y-2">
+				<button
+					onclick={testSlowOperation}
+					class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 mr-2"
+				>
+					Test Slow API Call (2s)
+				</button>
+				
+				<button
+					onclick={testDatabaseOperation}
+					class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 mr-2"
+				>
+					Test Database Operation
+				</button>
+				
+				<button
+					onclick={testTransaction}
+					class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 mr-2"
+				>
+					Test Custom Transaction
+				</button>
+			</div>
+		</div>
+	</div>
+	
+	<div class="mt-8 p-4 bg-gray-100 dark:bg-gray-800 rounded">
+		<h3 class="font-semibold mb-2">What to Check in Sentry:</h3>
+		<ul class="text-sm space-y-1">
+			<li>🐛 <strong>Issues</strong> - Error tracking and debugging info</li>
+			<li>⚡ <strong>Performance</strong> - Transaction traces and Web Vitals</li>
+			<li>📹 <strong>Replays</strong> - Session recordings when errors occur</li>
+			<li>🚀 <strong>Releases</strong> - Track deployments and related issues</li>
+		</ul>
+		<p class="text-sm mt-3">
+			Visit your 
+			<a href="https://sentry.io" target="_blank" class="text-blue-500 underline">
+				Sentry dashboard
+			</a> to see captured data.
+		</p>
+	</div>
+</div>
+</file>
+
 <file path="start-goose.sh">
 #!/bin/bash
 # Goose startup script with proper environment configuration
@@ -18781,9 +20793,6 @@ import vercel from '@sveltejs/adapter-vercel';
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	preprocess: vitePreprocess(),
-	compilerOptions: {
-		runes: true
-	},
 	kit: {
 		adapter: vercel({
 			runtime: 'nodejs20.x',
@@ -18922,9 +20931,9 @@ export default config;
 <file path="vercel.json">
 {
   "version": 2,
-  "buildCommand": "pnpm run build",
-  "devCommand": "pnpm run dev",
-  "installCommand": "pnpm install --no-frozen-lockfile",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
   "framework": "sveltekit",
   "regions": ["iad1"],
   "headers": [
@@ -18944,23 +20953,45 @@ export default config;
 <file path="vite.config.ts">
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig, loadEnv } from 'vite';
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 
 export default defineConfig(({ mode }) => {
   // Load environment variables based on mode
   const env = loadEnv(mode, process.cwd(), '');
   
   return {
-    plugins: [sveltekit()],
+    plugins: [
+      sveltekit(),
+      // Add Sentry plugin for production builds
+      mode === 'production' && sentryVitePlugin({
+        org: "frank-cottone", // Replace with your Sentry org name
+        project: "main", // Replace with your Sentry project name
+        authToken: env.SENTRY_AUTH_TOKEN, // Add this to your .env
+        telemetry: false,
+        release: {
+          name: process.env.SENTRY_RELEASE || `main@${process.env.VERCEL_GIT_COMMIT_SHA || process.env.GITHUB_SHA || Date.now()}`,
+          cleanArtifacts: true,
+          uploadLegacySourcemaps: {
+            paths: ['./build'],
+            ignore: ['node_modules'],
+          },
+          setCommits: {
+            auto: true,
+            ignoreMissing: true,
+          },
+        },
+        sourcemaps: {
+          assets: './build/**',
+          ignore: ['node_modules'],
+          filesToDeleteAfterUpload: './build/**/*.map',
+        },
+      })
+    ].filter(Boolean),
     
     build: {
       sourcemap: true,
       rollupOptions: {
         output: {
-          manualChunks: {
-            'svelte': ['svelte'],
-            'ag-grid': ['@ag-grid-community/core', '@ag-grid-community/client-side-row-model'],
-            'ui': ['@steeze-ui/svelte-icon', '@steeze-ui/heroicons']
-          },
           sourcemapExcludeSources: false
         }
       }
@@ -18970,9 +21001,9 @@ export default defineConfig(({ mode }) => {
       devSourcemap: true
     },
     
-    optimizeDeps: {
-      exclude: ['@ag-grid-community/core', '@ag-grid-community/client-side-row-model']
-    },
+    // optimizeDeps: {
+    //   exclude: ['@ag-grid-community/core', '@ag-grid-community/client-side-row-model']
+    // },
     
     define: {
       'import.meta.env.PUBLIC_SUPABASE_URL': JSON.stringify(env.PUBLIC_SUPABASE_URL || ''),
@@ -19051,7 +21082,10 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { svelteTesting } from '@testing-library/svelte/vite';
 
 export default defineConfig({
-  plugins: [sveltekit(), svelteTesting()],
+  plugins: [
+    sveltekit(), 
+    svelteTesting()
+  ],
   test: {
     globals: true,
     environment: 'jsdom',

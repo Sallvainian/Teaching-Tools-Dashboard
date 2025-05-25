@@ -1,4 +1,6 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
+  
   let { 
     frontTitle = "Title",
     frontBadge = "Badge",
@@ -12,7 +14,7 @@
     frontFooter?: string;
     backContent?: string;
     backIcon?: string;
-    iconSnippet?: any;
+    iconSnippet?: Snippet;
   }>();
   
   // Exported constant for external use
