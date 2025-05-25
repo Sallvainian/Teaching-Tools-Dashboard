@@ -3,13 +3,15 @@
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
   
+  import type { GameSettings } from '$lib/types/jeopardy';
+  
   interface Game {
     id: string;
     name: string;
     created_at: string;
     last_modified: string;
     is_public: boolean;
-    settings: any;
+    settings: GameSettings | null;
   }
   
   let ownGames = $state<Game[]>([]);

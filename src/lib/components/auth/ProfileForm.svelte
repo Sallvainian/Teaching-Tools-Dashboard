@@ -21,8 +21,8 @@
         full_name: fullName
       });
       success = true;
-    } catch (err: any) {
-      error = err.message || 'Failed to update profile';
+    } catch (err) {
+      error = err instanceof Error ? err.message : 'Failed to update profile';
     } finally {
       loading = false;
     }

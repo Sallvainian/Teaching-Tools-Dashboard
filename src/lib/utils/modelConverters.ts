@@ -76,7 +76,7 @@ interface JeopardyGameDB {
   owner_id: string;
   date_created: string;
   last_modified: string;
-  settings?: any;
+  settings?: GameSettings;
 }
 
 interface JeopardyCategoryDB {
@@ -108,16 +108,11 @@ interface JeopardyTeamDB {
 
 // Jeopardy model converters with explicit type casting
 export function dbGameToAppGame(
-  dbGame: any,
-  dbCategories: any[],
-  dbQuestions: any[],
-  dbTeams: any[]
+  dbGame: JeopardyGameDB,
+  dbCategories: JeopardyCategoryDB[],
+  dbQuestions: JeopardyQuestionDB[],
+  dbTeams: JeopardyTeamDB[]
 ): JeopardyGame {
-  // Cast to known types
-  const typedDbGame = dbGame as JeopardyGameDB;
-  const typedDbCategories = dbCategories as JeopardyCategoryDB[];
-  const typedDbQuestions = dbQuestions as JeopardyQuestionDB[];
-  const typedDbTeams = dbTeams as JeopardyTeamDB[];
   // Convert settings from JSON to typed object
   const settings: GameSettings = {
     defaultTimeLimit: 30,
@@ -126,18 +121,18 @@ export function dbGameToAppGame(
     autoShowAnswer: true,
     timerSize: 'large',
     allowWagers: true,
-    ...(typedDbGame.settings as Record<string, any> ?? {})
+    ...(dbGame.settings ?? {})
   };
 
   // Get categories for this game
-  const gameCategories = typedDbCategories
-    .filter(cat => cat.game_id === typedDbGame.id)
+  const gameCategories = dbCategories
+    .filter(cat => cat.game_id === dbGame.id)
     .sort((a, b) => a.display_order - b.display_order);
 
   // Process categories with their questions
   const categories: JeopardyCategory[] = gameCategories.map(dbCat => {
     // Get questions for this category
-    const categoryQuestions = typedDbQuestions
+    const categoryQuestions = dbQuestions
       .filter(q => q.category_id === dbCat.id)
       .map(dbQuestion => ({
         id: dbQuestion.id,
@@ -157,8 +152,8 @@ export function dbGameToAppGame(
   });
 
   // Get teams for this game
-  const teams: Team[] = typedDbTeams
-    .filter(team => team.game_id === typedDbGame.id)
+  const teams: Team[] = dbTeams
+    .filter(team => team.game_id === dbGame.id)
     .map(dbTeam => ({
       id: dbTeam.id,
       name: dbTeam.name,
@@ -167,36 +162,36 @@ export function dbGameToAppGame(
     }));
 
   return {
-    id: typedDbGame.id,
-    name: typedDbGame.name,
-    description: typedDbGame.description ?? undefined,
+    id: dbGame.id,
+    name: dbGame.name,
+    description: dbGame.description ?? undefined,
     categories,
     teams,
-    dateCreated: typedDbGame.date_created,
-    lastModified: typedDbGame.last_modified,
+    dateCreated: dbGame.date_created,
+    lastModified: dbGame.last_modified,
     settings
   };
 }
 
 // Convert from app model to database model for creating/updating
 export function appGameToDbModels(game: JeopardyGame, userId: string): {
-  gameData: any,
-  categoriesData: any[],
-  questionsData: any[],
-  teamsData: any[]
+  gameData: Omit<JeopardyGameDB, 'id'>,
+  categoriesData: Omit<JeopardyCategoryDB, 'id'>[],
+  questionsData: Omit<JeopardyQuestionDB, 'id'>[],
+  teamsData: Omit<JeopardyTeamDB, 'id'>[]
 } {
   // Prepare game data
-  const gameData: any = {
+  const gameData: Omit<JeopardyGameDB, 'id'> = {
     owner_id: userId,
     name: game.name,
     description: game.description ?? null,
     date_created: game.dateCreated,
     last_modified: game.lastModified,
-    settings: game.settings as any
+    settings: game.settings
   };
 
   // Prepare categories data
-  const categoriesData: any[] = 
+  const categoriesData: Omit<JeopardyCategoryDB, 'id'>[] = 
     game.categories.map((cat, index) => ({
       game_id: game.id,
       name: cat.name,
@@ -206,7 +201,7 @@ export function appGameToDbModels(game: JeopardyGame, userId: string): {
     }));
 
   // Prepare questions data
-  const questionsData: any[] = 
+  const questionsData: Omit<JeopardyQuestionDB, 'id'>[] = 
     game.categories.flatMap((cat) => 
       cat.questions.map(q => ({
         category_id: cat.id,
@@ -222,7 +217,7 @@ export function appGameToDbModels(game: JeopardyGame, userId: string): {
     );
 
   // Prepare teams data
-  const teamsData: any[] = 
+  const teamsData: Omit<JeopardyTeamDB, 'id'>[] = 
     game.teams.map(team => ({
       game_id: game.id,
       name: team.name,

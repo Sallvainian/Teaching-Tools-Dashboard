@@ -16,9 +16,25 @@
   let totalPages = $state(0);
   let scale = $state(1.2);
   
+  // PDF.js types
+  interface PDFPageProxy {
+    getViewport(params: { scale: number }): { width: number; height: number };
+    render(params: { canvasContext: CanvasRenderingContext2D; viewport: { width: number; height: number } }): { promise: Promise<void> };
+  }
+  
+  interface PDFDocumentProxy {
+    numPages: number;
+    getPage(pageNumber: number): Promise<PDFPageProxy>;
+  }
+  
+  interface PDFJSLib {
+    GlobalWorkerOptions: { workerSrc: string };
+    getDocument(url: string): { promise: Promise<PDFDocumentProxy> };
+  }
+  
   // PDF.js variables
-  let pdfjsLib: any = null;
-  let pdfDoc: any = null;
+  let pdfjsLib: PDFJSLib | null = null;
+  let pdfDoc: PDFDocumentProxy | null = null;
   
   onMount(async () => {
     try {
@@ -35,9 +51,9 @@
   });
   
   async function loadPDFJS() {
-    return new Promise((resolve, reject) => {
+    return new Promise<PDFJSLib>((resolve, reject) => {
       if (typeof window !== 'undefined' && (window as any).pdfjsLib) {
-        pdfjsLib = (window as any).pdfjsLib;
+        pdfjsLib = (window as any).pdfjsLib as PDFJSLib;
         resolve(pdfjsLib);
         return;
       }
@@ -46,7 +62,7 @@
       const script = document.createElement('script');
       script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
       script.onload = () => {
-        pdfjsLib = (window as any).pdfjsLib;
+        pdfjsLib = (window as any).pdfjsLib as PDFJSLib;
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         resolve(pdfjsLib);
       };

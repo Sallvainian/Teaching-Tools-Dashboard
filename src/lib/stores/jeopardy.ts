@@ -153,7 +153,7 @@ function createJeopardyStore() {
 			}
 
 			games.set(fullGames);
-		} catch (err: any) {
+		} catch (err) {
 			// Error loading games: err
 			error.set(err.message || 'Failed to load games');
 		} finally {
@@ -319,7 +319,7 @@ function createJeopardyStore() {
 			}
 
 			return savedGame.id;
-		} catch (err: any) {
+		} catch (err) {
 			console.error('🚨 Error saving game:', err);
 			console.error('🚨 Error details:', JSON.stringify(err, null, 2));
 			throw err;
@@ -363,7 +363,7 @@ function createJeopardyStore() {
 			if (get(activeGameId) === gameId) {
 				activeGameId.set(null);
 			}
-		} catch (err: any) {
+		} catch (err) {
 			// Error deleting game: err
 			error.set(err.message || 'Failed to delete game');
 		}

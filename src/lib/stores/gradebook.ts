@@ -107,7 +107,7 @@ function createGradebookStore() {
       // Mark data as loaded
       dataLoaded.set(true);
       
-    } catch (err: any) {
+    } catch (err) {
       // Error loading data: err
       error.set(err.message ?? 'Failed to load data');
     } finally {
@@ -133,7 +133,7 @@ function createGradebookStore() {
       students.update((arr: Student[]) => [...arr, newStudent]);
       
       return newStudent.id;
-    } catch (err: any) {
+    } catch (err) {
       // Error adding student: err
       error.set(err.message ?? 'Failed to add student');
       return null;
@@ -167,7 +167,7 @@ function createGradebookStore() {
       
       // Save selected category ID
       gradebookService.saveToStorage('selectedCategoryId', get(selectedCategoryId));
-    } catch (err: any) {
+    } catch (err) {
       // Error adding category: err
       error.set(err.message ?? 'Failed to add category');
     }
@@ -195,7 +195,7 @@ function createGradebookStore() {
             : cat
         )
       );
-    } catch (err: any) {
+    } catch (err) {
       // Error assigning student to category: err
       error.set(err.message ?? 'Failed to assign student');
     }
@@ -228,7 +228,7 @@ function createGradebookStore() {
       categories.update((cats: Category[]) =>
         cats.map((cat: Category) => removeStudentFromCategoryHelper(cat, categoryId, studentId))
       );
-    } catch (err: any) {
+    } catch (err) {
       // Error removing student from category: err
       error.set(err.message ?? 'Failed to remove student');
     }
@@ -252,7 +252,7 @@ function createGradebookStore() {
       // Update local store
       const newAssignment = dbAssignmentToAppAssignment(result);
       assignments.update((arr: Assignment[]) => [...arr, newAssignment]);
-    } catch (err: any) {
+    } catch (err) {
       // Error adding assignment: err
       error.set(err.message ?? 'Failed to add assignment');
     }
@@ -297,7 +297,7 @@ function createGradebookStore() {
         }
         return [...arr, { studentId, assignmentId, points: pts }];
       });
-    } catch (err: any) {
+    } catch (err) {
       // Error recording grade: err
       error.set(err.message ?? 'Failed to record grade');
     }
@@ -343,7 +343,7 @@ function createGradebookStore() {
       
       // Clear localStorage
       gradebookService.removeFromStorage('selectedCategoryId');
-    } catch (err: any) {
+    } catch (err) {
       // Error clearing data: err
       error.set(err.message ?? 'Failed to clear data');
     }

@@ -17,7 +17,7 @@
   
   // Container reference
   let container: HTMLDivElement;
-  let hotInstance = $state<any>(null);
+  let hotInstance = $state<Handsontable | null>(null);
   
   onMount(async () => {
     try {
@@ -271,7 +271,7 @@
         licenseKey,
         width,
         height,
-        afterChange: (changes: any[] | null, source: string) => {
+        afterChange: (changes: Array<[number, string | number, unknown, unknown]> | null, source: string) => {
           if (source !== 'loadData' && changes) {
             dispatch('afterChange', { changes, source });
           }
@@ -303,7 +303,7 @@
   });
   
   // Method to update data from outside  
-  export function updateData(newData: any[]) {
+  export function updateData(newData: unknown[][]) {
     if (hotInstance) {
       hotInstance.loadData(newData);
     }

@@ -40,7 +40,7 @@
     }
   }
 
-  function handleSelectClass(categoryId) {
+  function handleSelectClass(categoryId: string) {
     gradebookStore.selectCategory(categoryId);
     goto('/gradebook');
   }
@@ -61,8 +61,8 @@
     document.documentElement.setAttribute('data-ag-theme-mode', 'dark');
 
     // Close user menu when clicking outside
-    function handleClickOutside(event) {
-      const target = event.target;
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as HTMLElement;
       if (userMenuOpen && !target.closest('.user-menu')) {
         userMenuOpen = false;
       }
