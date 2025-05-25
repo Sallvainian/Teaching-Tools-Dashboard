@@ -12,11 +12,6 @@ export default defineConfig(({ mode }) => {
       sourcemap: true,
       rollupOptions: {
         output: {
-          manualChunks: {
-            'svelte': ['svelte'],
-            'ag-grid': ['@ag-grid-community/core', '@ag-grid-community/client-side-row-model'],
-            'ui': ['@steeze-ui/svelte-icon', '@steeze-ui/heroicons']
-          },
           sourcemapExcludeSources: false
         }
       }
@@ -26,9 +21,9 @@ export default defineConfig(({ mode }) => {
       devSourcemap: true
     },
     
-    optimizeDeps: {
-      exclude: ['@ag-grid-community/core', '@ag-grid-community/client-side-row-model']
-    },
+    // optimizeDeps: {
+    //   exclude: ['@ag-grid-community/core', '@ag-grid-community/client-side-row-model']
+    // },
     
     define: {
       'import.meta.env.PUBLIC_SUPABASE_URL': JSON.stringify(env.PUBLIC_SUPABASE_URL || ''),
