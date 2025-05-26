@@ -1,14 +1,14 @@
-import { authStore } from '$lib/stores/auth';
-import { initializeDB } from '$lib/supabaseClient';
-
-// Initialize Supabase client and auth store with minimal approach
-if (typeof window !== 'undefined') {
-	// Initialize Supabase client
-	void initializeDB();
-
-	// Initialize auth store to check existing session only
-	void authStore.initialize();
-}
+import { ensureAuthInitialized } from '$lib/utils/authInit';
+import type { LayoutLoad } from './$types';
 
 // Set prerender to false to allow auth state to be determined at runtime
 export const prerender = false;
+
+// Ensure auth is initialized before rendering any pages
+export const load: LayoutLoad = async () => {
+	if (typeof window !== 'undefined') {
+		await ensureAuthInitialized();
+	}
+	
+	return {};
+};

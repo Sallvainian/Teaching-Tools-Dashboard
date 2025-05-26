@@ -23,8 +23,13 @@
 
 		try {
 			const success = await authStore.signIn(email, password);
-			if (success) await goto('/dashboard');
-			else if (!error) error = 'Invalid email or password';
+			if (success) {
+				// Add a small delay to ensure auth state propagates
+				await new Promise(resolve => setTimeout(resolve, 200));
+				await goto('/dashboard');
+			} else if (!error) {
+				error = 'Invalid email or password';
+			}
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Invalid email or password';
 		} finally {

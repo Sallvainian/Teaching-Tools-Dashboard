@@ -77,6 +77,10 @@ function createAuthStore() {
 			if (data?.session) {
 				session.set(data.session);
 				user.set(data.session.user);
+				// Fetch user role immediately after sign in
+				await fetchUserRole(data.session.user.id);
+				// Give auth state time to propagate
+				await new Promise(resolve => setTimeout(resolve, 100));
 				return true;
 			}
 			error.set('Sign in failed');

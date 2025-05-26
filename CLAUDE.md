@@ -79,20 +79,20 @@ dispatch('click'); // ❌ Use callback props
 
 ```bash
 # Development
-pnpm dev            # Start dev server (http://localhost:5173)
-pnpm build          # Build for production
-pnpm preview        # Preview production build
+npm run dev         # Start dev server (http://localhost:5173)
+npm run build       # Build for production
+npm run preview     # Preview production build
 
 # Code Quality (MUST RUN BEFORE COMMIT)
-pnpm lint           # Run ESLint
-pnpm lint:fix       # Auto-fix linting issues
-pnpm check          # Run svelte-check for TypeScript
-pnpm validate       # Run both lint and check
+npm run lint        # Run ESLint
+npm run lint:fix    # Auto-fix linting issues
+npm run check       # Run svelte-check for TypeScript
+npm run validate    # Run both lint and check
 
 # Testing
-pnpm test           # Run tests with coverage
-pnpm test:unit      # Run tests in watch mode
-pnpm test -- path/to/file.test.ts  # Test specific file
+npm test            # Run tests with coverage
+npm run test:unit   # Run tests in watch mode
+npm test -- path/to/file.test.ts  # Test specific file
 
 # Database
 supabase gen types typescript --local > src/lib/types/database.ts
@@ -274,18 +274,18 @@ The project includes hardcoded development credentials in `src/lib/supabaseClien
 
 ## Debugging Tips
 
-1. **TypeScript Errors**: Run `pnpm check` to see all TS errors
+1. **TypeScript Errors**: Run `npm run check` to see all TS errors
 2. **Component State**: Use Svelte DevTools browser extension
 3. **Database Issues**: Check Supabase dashboard logs
-4. **Build Errors**: Check `pnpm build` output carefully
-5. **Test Failures**: Run `pnpm test -- --reporter=verbose`
+4. **Build Errors**: Check `npm run build` output carefully
+5. **Test Failures**: Run `npm test -- --reporter=verbose`
 
 ## Performance Guidelines
 
 1. **Lazy Loading**: Use dynamic imports for heavy components
 2. **Virtual Scrolling**: AG-Grid handles this automatically
 3. **Image Optimization**: Use appropriate formats and sizes
-4. **Bundle Size**: Monitor with `pnpm build --analyze`
+4. **Bundle Size**: Monitor with `npm run build --analyze`
 5. **State Updates**: Batch updates when possible
 
 ## Security Best Practices
@@ -298,10 +298,10 @@ The project includes hardcoded development credentials in `src/lib/supabaseClien
 
 ## When Working on This Codebase
 
-1. **Start with**: `pnpm install && pnpm dev`
-2. **Before committing**: `pnpm validate`
+1. **Start with**: `npm install && npm run dev`
+2. **Before committing**: `npm run validate`
 3. **Update types after DB changes**: `supabase gen types`
-4. **Check your work**: `pnpm build && pnpm preview`
+4. **Check your work**: `npm run build && npm run preview`
 5. **Write tests**: Especially for stores and utilities
 
 ## Need Help?
@@ -312,3 +312,63 @@ The project includes hardcoded development credentials in `src/lib/supabaseClien
 - **Build Failures**: Clear `.svelte-kit` and `node_modules`
 
 Remember: This is a production application for educators. Code quality, type safety, and user experience are paramount.
+
+## Session Memory - January 2025
+
+### Critical Fixes Applied
+
+#### 1. Fixed File Storage System
+**Problem**: File upload button was not working
+**Root Cause**: Incorrect Svelte 5 event handler syntax
+**Fix**: Changed from `onchange={handleFileUpload}` to `onchange={(e) => handleFileUpload(e)}`
+**File**: `src/routes/files/+page.svelte`
+
+#### 2. Fixed LogEntriesList.svelte Parsing Error
+**Problem**: Component had a parsing error due to duplicate content
+**Fix**: Removed orphaned duplicate section at line 285
+**File**: `src/lib/components/LogEntriesList.svelte`
+
+#### 3. Fixed All TypeScript Errors (40 total)
+**Key Issues Fixed**:
+- Catch clause type annotations (changed from `Error` to `any`)
+- Added missing auth store methods: `signUpStudent`, `signUpTeacher`, `role`
+- Fixed implicit any type errors throughout codebase
+- Fixed Handsontable prop types
+- Updated Sentry to v8 API (changed from `span.setTag` to `span.setAttribute`)
+- Fixed RoleSignupForm return type mismatch
+
+#### 4. Fixed PostCSS @apply Warning
+**Problem**: PostCSS @apply directive warning in PDFViewer.svelte
+**Fix**: Added `lang="postcss"` to style tag
+**File**: `src/lib/components/PDFViewer.svelte`
+
+### Important Learnings
+
+1. **Svelte 5 Event Handlers**: Always use callback syntax for events
+   - Wrong: `onchange={handler}`
+   - Right: `onchange={(e) => handler(e)}`
+
+2. **TypeScript Catch Clauses**: Must use `any` or `unknown` type
+   - Wrong: `catch (error: Error)`
+   - Right: `catch (error: any)`
+
+3. **Always Check Before Git Operations**: Never pull/push without checking status first
+
+4. **File Storage Tables**: The correct tables are:
+   - `file_folders` - For folder organization
+   - `file_metadata` - For file information
+   - Storage bucket: `teacher-files`
+
+### Current State
+- Zero TypeScript errors
+- File upload functionality restored
+- All components properly typed
+- Sentry integration working with v8 API
+- PostCSS properly configured
+
+### Development Workflow Reminders
+1. Always run `npm run check` before committing
+2. Use `npm run validate` to run both lint and type check
+3. Test file uploads after any changes to file-related components
+4. Keep TypeScript strict mode enabled
+5. IMPORTANT: This project uses npm, NOT pnpm

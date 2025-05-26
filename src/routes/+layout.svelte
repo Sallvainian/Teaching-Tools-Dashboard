@@ -11,7 +11,7 @@
 	import LoadingBounce from '$lib/components/LoadingBounce.svelte';
 
 	// Use regular imports - we'll fix the store files after
-	import { authStore, isAuthenticated } from '$lib/stores/auth';
+	import { authStore, isAuthenticated, loading as authLoading } from '$lib/stores/auth';
 	import { gradebookStore } from '$lib/stores/gradebook';
 
 	// Vercel Speed Insights
