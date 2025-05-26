@@ -290,7 +290,7 @@
 	{/if}
 </div>
 
-<style>
+<style lang="postcss">
 	.btn-icon {
 		@apply p-2 text-text-base hover:text-text-hover rounded-lg hover:bg-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
 	}
