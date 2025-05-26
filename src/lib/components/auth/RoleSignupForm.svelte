@@ -42,7 +42,7 @@
 		isLoading = true;
 
 		try {
-			let success = false;
+			let result: boolean | { needsEmailConfirmation: boolean } = false;
 
 			if (selectedRole === 'student') {
 				const data: StudentSignupData = {
@@ -51,7 +51,7 @@
 					fullName,
 					joinCode: joinCode || undefined
 				};
-				success = await authStore.signUpStudent(data);
+				result = await authStore.signUpStudent(data);
 			} else if (selectedRole === 'teacher') {
 				const data: TeacherSignupData = {
 					email,
@@ -59,10 +59,10 @@
 					fullName,
 					schoolName: schoolName || undefined
 				};
-				success = await authStore.signUpTeacher(data);
+				result = await authStore.signUpTeacher(data);
 			}
 
-			if (success) {
+			if (result === true || (typeof result === 'object' && result.needsEmailConfirmation)) {
 				// Check if email verification is required
 				error = 'Please check your email to verify your account';
 				setTimeout(() => {
