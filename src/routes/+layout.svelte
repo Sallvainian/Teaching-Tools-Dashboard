@@ -50,14 +50,10 @@
 	}
 
 	async function handleSignOut() {
-		console.log('Sign out clicked');
 		try {
 			const success = await authStore.signOut();
-			console.log('Sign out result:', success);
 			if (success) {
 				await goto('/auth/login');
-			} else {
-				console.error('Sign out failed');
 			}
 		} catch (error) {
 			console.error('Sign out error:', error);

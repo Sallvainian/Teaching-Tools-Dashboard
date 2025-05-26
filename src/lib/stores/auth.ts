@@ -33,7 +33,6 @@ function createAuthStore() {
 
 	async function initialize() {
 		if (authListenerSetup) {
-			console.log('Auth already initialized, skipping');
 			return;
 		}
 		
@@ -52,7 +51,6 @@ function createAuthStore() {
 			// Only set up auth listener once
 			if (!authListenerSetup) {
 				const { data: authListener } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-					console.log('Auth state change:', event, newSession?.user?.email || 'no user');
 					session.set(newSession);
 					user.set(newSession?.user ?? null);
 					if (newSession?.user) {

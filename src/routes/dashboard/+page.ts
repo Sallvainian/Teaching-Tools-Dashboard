@@ -2,8 +2,12 @@ import { redirect } from '@sveltejs/kit';
 import type { PageLoad } from './$types';
 import { get } from 'svelte/store';
 import { authStore } from '$lib/stores/auth';
+import { ensureAuthInitialized } from '$lib/utils/authInit';
 
 export const load: PageLoad = async () => {
+	// Ensure auth is initialized first
+	await ensureAuthInitialized();
+	
 	// Get current auth state
 	const auth = get(authStore);
 	
