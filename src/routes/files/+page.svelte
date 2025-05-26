@@ -412,13 +412,30 @@
                     </div>
                   </div>
                   <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button class="p-1 text-text-base hover:text-text-hover">
+                    <div 
+                      role="button"
+                      tabindex="0"
+                      class="p-1 text-text-base hover:text-text-hover cursor-pointer"
+                      on:click={(event) => {
+                        event.stopPropagation();
+                        // TODO: Implement actual options logic, e.g., showContextMenu(file);
+                        console.log('Options clicked for file:', file.name);
+                      }}
+                      on:keydown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          // TODO: Implement actual options logic, e.g., showContextMenu(file);
+                          console.log('Options activated by key for file:', file.name);
+                        }
+                      }}
+                    >
                       <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="1"></circle>
                         <circle cx="19" cy="12" r="1"></circle>
                         <circle cx="5" cy="12" r="1"></circle>
                       </svg>
-                    </button>
+                    </div>
                   </div>
                 </div>
               {/each}
