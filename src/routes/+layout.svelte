@@ -50,8 +50,18 @@
 	}
 
 	async function handleSignOut() {
-		await authStore.signOut();
-		await goto('/auth/login');
+		console.log('Sign out clicked');
+		try {
+			const success = await authStore.signOut();
+			console.log('Sign out result:', success);
+			if (success) {
+				await goto('/auth/login');
+			} else {
+				console.error('Sign out failed');
+			}
+		} catch (error) {
+			console.error('Sign out error:', error);
+		}
 	}
 
 	// Setup with $effect instead of onMount

@@ -10,6 +10,9 @@ function createAuthStore() {
 	const error = writable<string | null>(null);
 	const role = writable<UserRole | null>(null);
 	const isAuthenticated = derived(user, ($user) => !!$user);
+	
+	// Track if we've already set up auth listener
+	let authListenerSetup = false;
 
 	async function fetchUserRole(userId: string) {
 		try {
@@ -29,6 +32,11 @@ function createAuthStore() {
 	}
 
 	async function initialize() {
+		if (authListenerSetup) {
+			console.log('Auth already initialized, skipping');
+			return;
+		}
+		
 		loading.set(true);
 		error.set(null);
 		try {
@@ -40,16 +48,22 @@ function createAuthStore() {
 				user.set(data.session.user);
 				await fetchUserRole(data.session.user.id);
 			}
-			const { data: authListener } = supabase.auth.onAuthStateChange(async (_, newSession) => {
-				session.set(newSession);
-				user.set(newSession?.user ?? null);
-				if (newSession?.user) {
-					await fetchUserRole(newSession.user.id);
-				} else {
-					role.set(null);
-				}
-			});
-			return () => authListener.subscription.unsubscribe();
+			
+			// Only set up auth listener once
+			if (!authListenerSetup) {
+				const { data: authListener } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+					console.log('Auth state change:', event, newSession?.user?.email || 'no user');
+					session.set(newSession);
+					user.set(newSession?.user ?? null);
+					if (newSession?.user) {
+						await fetchUserRole(newSession.user.id);
+					} else {
+						role.set(null);
+					}
+				});
+				authListenerSetup = true;
+				return () => authListener.subscription.unsubscribe();
+			}
 		} catch (err) {
 			error.set(err instanceof Error ? err.message : 'Auth check failed');
 		} finally {
@@ -125,8 +139,18 @@ function createAuthStore() {
 			const { supabase } = await import('$lib/supabaseClient');
 			const { error: signOutError } = await supabase.auth.signOut();
 			if (signOutError) throw signOutError;
+			
+			// Clear all auth state
 			session.set(null);
 			user.set(null);
+			role.set(null);
+			
+			// Clear localStorage as well
+			if (typeof window !== 'undefined') {
+				window.localStorage.removeItem('teacher-dashboard-auth');
+				window.localStorage.removeItem('sb-' + supabase.supabaseUrl.split('//')[1] + '-auth-token');
+			}
+			
 			return true;
 		} catch (err) {
 			error.set(err instanceof Error ? err.message : 'Sign out failed');
@@ -263,7 +287,8 @@ function createAuthStore() {
 		}
 	}
 
-	void initialize();
+	// Don't auto-initialize - let ensureAuthInitialized handle it
+	// void initialize();
 
 	return {
 		subscribe: derived(
