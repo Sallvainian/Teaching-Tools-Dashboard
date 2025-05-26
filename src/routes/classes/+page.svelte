@@ -41,8 +41,8 @@
     showImportWizard = false;
   }
   
-  function handleLogin() {
-    goto('/auth/login?redirect=/classes');
+  async function handleLogin() {
+    await goto('/auth/login?redirect=/classes');
   }
 </script>
 

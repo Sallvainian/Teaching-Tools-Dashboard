@@ -21,12 +21,17 @@
         full_name: fullName
       });
       success = true;
-    } catch (err: any) {
-      error = err.message || 'Failed to update profile';
-    } finally {
-      loading = false;
+    } catch (err: unknown) {
+    if (err instanceof Error) {
+        error = err.message;
+    } else {
+        error = 'Failed to update profile';
     }
+
+  } finally {
+    loading = false;
   }
+}
 </script>
 
 <div class="w-full max-w-md">

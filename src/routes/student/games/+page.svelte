@@ -63,16 +63,16 @@
     }
   }
   
-  function createGame() {
-    goto('/jeopardy/editor/new');
+  async function createGame() {
+    await goto('/jeopardy/editor/new');
   }
   
-  function editGame(gameId: string) {
-    goto(`/jeopardy/editor/${gameId}`);
+  async function editGame(gameId: string) {
+    await goto(`/jeopardy/editor/${gameId}`);
   }
   
-  function playGame(gameId: string) {
-    goto(`/jeopardy/play/${gameId}`);
+  async function playGame(gameId: string) {
+    await goto(`/jeopardy/play/${gameId}`);
   }
   
   async function deleteGame(gameId: string) {

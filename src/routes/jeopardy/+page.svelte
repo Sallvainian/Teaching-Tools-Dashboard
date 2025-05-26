@@ -14,22 +14,22 @@
     isLoading = false;
   });
 
-  function handleCreateGame(e: Event) {
+  async function handleCreateGame(e: Event) {
     e.preventDefault();
     if (newGameName.trim()) {
       const gameId = createGame(newGameName.trim());
       newGameName = '';
       showCreateModal = false;
-      goto(`/jeopardy/editor/${gameId}`);
+      await goto(`/jeopardy/editor/${gameId}`);
     }
   }
 
-  function handlePlayGame(gameId: string) {
-    goto(`/jeopardy/play/${gameId}`);
+  async function handlePlayGame(gameId: string) {
+    await goto(`/jeopardy/play/${gameId}`);
   }
 
-  function handleEditGame(gameId: string) {
-    goto(`/jeopardy/editor/${gameId}`);
+  async function handleEditGame(gameId: string) {
+    await goto(`/jeopardy/editor/${gameId}`);
   }
 
   function handleDeleteGame(gameId: string) {

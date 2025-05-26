@@ -1,6 +1,6 @@
 <script lang="ts">
   import { logEntriesStore } from '$lib/stores/log-entries';
-  import type { LogEntry } from '$lib/types/log-entries';
+  // import type { LogEntry } from '$lib/types/log-entries'; // Removed unused import
   
   interface Props {
     logId: string;
@@ -27,7 +27,7 @@
       try {
         await logEntriesStore.deleteLog(logId);
         ondelete?.();
-      } catch (error) {
+      } catch (_error) { // Prefixed unused error with _
         alert('Failed to delete log entry. Please try again.');
       }
     }
@@ -108,7 +108,7 @@
           <div class="mb-6">
             <h3 class="text-sm font-medium text-muted mb-2">Tags</h3>
             <div class="flex flex-wrap gap-2">
-              {#each log.tags as tag}
+              {#each log.tags as tag (tag)} <!-- Added tag as key -->
                 <span class="px-3 py-1 bg-accent text-sm text-text-base rounded-full">
                   {tag}
                 </span>

@@ -6,7 +6,7 @@
   // Redirect if already authenticated
   $effect(() => {
     if ($isAuthenticated) {
-      goto('/dashboard');
+      void goto('/dashboard');
     }
   });
 </script>

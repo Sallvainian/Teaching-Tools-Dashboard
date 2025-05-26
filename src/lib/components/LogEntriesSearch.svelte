@@ -96,7 +96,7 @@
         class="w-full px-4 py-2 bg-surface border border-border rounded-lg text-highlight focus:outline-none focus:ring-2 focus:ring-purple"
       >
         <option value="">All Students</option>
-        {#each students as student}
+        {#each students as student (student)}
           <option value={student}>{student}</option>
         {/each}
       </select>
@@ -108,7 +108,7 @@
     <div class="mt-4">
       <label for="tagsFilter" class="block text-sm font-medium text-muted mb-2">Tags</label>
       <div class="flex flex-wrap gap-2" id="tagsFilter">
-        {#each availableTags as tag}
+        {#each availableTags as tag (tag)}
           <label class="inline-flex items-center">
             <input
               type="checkbox"

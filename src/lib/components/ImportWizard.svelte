@@ -39,12 +39,12 @@
         }
         
         for (const student of students) {
-          if (!student || typeof student !== 'object' || student === null) {
+          if (!student || typeof student !== 'object') {
             throw new Error('Each item must be an object with a "name" field');
           }
           
-          if (!student.name || typeof student.name !== 'string') {
-            throw new Error('Each student must have a "name" field of type string');
+          if (!student.name.trim()) { // Removed typeof student.name !== 'string'
+            throw new Error('Each student must have a non-empty "name" field');
           }
         }
       } catch (err) {

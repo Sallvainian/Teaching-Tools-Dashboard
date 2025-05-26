@@ -6,7 +6,7 @@
   // Redirect if not authenticated
   $effect(() => {
     if (!$authStore.user) {
-      goto('/auth/login');
+      void goto('/auth/login');
     }
   });
 </script>

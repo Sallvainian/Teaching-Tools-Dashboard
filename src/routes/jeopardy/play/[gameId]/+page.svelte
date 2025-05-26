@@ -93,7 +93,7 @@
         <div class="mb-6 flex justify-between items-center">
           <div class="flex items-center gap-4">
             <button
-              onclick={() => goto('/jeopardy')}
+              onclick={async () => await goto('/jeopardy')}
               class="text-gray-400 hover:text-gray-200 transition-colors"
               title="Back to Games"
               aria-label="Back to Games"
@@ -301,7 +301,7 @@
       <div class="text-center">
         <p class="text-gray-400 mb-4">Game not found</p>
         <button
-          onclick={() => goto('/jeopardy')}
+          onclick={async () => await goto('/jeopardy')}
           class="btn-primary"
         >
           Back to Games

@@ -4,4 +4,23 @@ pnpm-lock.yaml
 yarn.lock
 bun.lock
 bun.lockb
-/.vercel/
+
+# Build directories
+.svelte-kit
+build
+dist
+.vercel
+.output
+
+# Dependencies
+node_modules
+
+# Environment files
+.env*
+
+# Generated files
+**/*.min.js
+**/*.min.css
+
+# Large/Special files
+**/vendor/**

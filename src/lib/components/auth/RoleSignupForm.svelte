@@ -70,7 +70,7 @@
         }, 3000);
       } else {
         // Get error from store
-        const { error: authError } = await $authStore;
+        const { error: authError } = $authStore;
         error = authError || 'Signup failed';
       }
     } catch (err) {

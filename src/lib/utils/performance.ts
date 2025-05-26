@@ -10,13 +10,13 @@ import * as Sentry from '@sentry/sveltekit';
 export async function trackAsyncOperation<T>(
   name: string,
   operation: () => Promise<T>,
-  tags?: Record<string, string>
+  attributes?: Record<string, string>
 ): Promise<T> {
   return Sentry.startSpan(
     {
       name,
       op: 'function',
-      tags,
+      attributes,
     },
     async () => {
       try {
@@ -34,12 +34,16 @@ export async function trackAsyncOperation<T>(
 
 /**
  * Track component rendering performance
+ * Call this at the start of component initialization, then call the returned function when done
  */
-export function trackComponentRender(componentName: string) {
-  return Sentry.startSpan({
-    name: `${componentName} render`,
-    op: 'ui.svelte.render',
-  });
+export function trackComponentRender<T>(componentName: string, renderFn: () => T): T {
+  return Sentry.startSpan(
+    {
+      name: `${componentName} render`,
+      op: 'ui.svelte.render',
+    },
+    renderFn
+  );
 }
 
 /**
@@ -78,13 +82,16 @@ export async function trackDatabaseOperation<T>(
 /**
  * Track route changes manually (in addition to automatic tracking)
  */
-export function trackRouteChange(from: string, to: string) {
-  Sentry.startSpan({
-    name: `Route change: ${from} → ${to}`,
-    op: 'navigation',
-    tags: {
-      'route.from': from,
-      'route.to': to,
+export function trackRouteChange<T>(from: string, to: string, navigationFn: () => T): T {
+  return Sentry.startSpan(
+    {
+      name: `Route change: ${from} → ${to}`,
+      op: 'navigation',
+      attributes: {
+        'route.from': from,
+        'route.to': to,
+      },
     },
-  });
+    navigationFn
+  );
 }

@@ -3,7 +3,6 @@ import type { Database, Tables, Inserts, Updates } from '$lib/types/database';
 // Type helpers
 type TableRecord = Record<string, unknown>;
 type FilterOptions = Record<string, unknown>;
-type CompositeKey = Record<string, unknown>;
 type UserMetadata = Record<string, unknown>;
 
 // Main service class to handle all Supabase operations
@@ -45,7 +44,7 @@ export class SupabaseService {
       const stored = localStorage.getItem(`${this.storagePrefix}_${key}`);
       return stored ? JSON.parse(stored) : defaultValue;
     } catch (_e) {
-      // Error loading ${key} from localStorage: _e
+      console.error(`Error loading ${key} from localStorage:`, _e);
       return defaultValue;
     }
   }
@@ -56,7 +55,7 @@ export class SupabaseService {
     try {
       localStorage.setItem(`${this.storagePrefix}_${key}`, JSON.stringify(value));
     } catch (_e) {
-      // Error saving ${key} to localStorage: _e
+      console.error(`Error saving ${key} to localStorage:`, _e);
     }
   }
 
@@ -66,7 +65,7 @@ export class SupabaseService {
     try {
       localStorage.removeItem(`${this.storagePrefix}_${key}`);
     } catch (_e) {
-      // Error removing ${key} from localStorage: _e
+      console.error(`Error removing ${key} from localStorage:`, _e);
     }
   }
 
@@ -91,7 +90,8 @@ export class SupabaseService {
         
         // Add joins if provided
         if (options.joins) {
-          query = query.select(`*, ${options.joins}`) as any;
+          // Use type assertion to handle Supabase's complex query builder types
+          query = query.select(`*, ${options.joins}`) as typeof query;
         }
         
         // Add filters if provided
@@ -105,11 +105,11 @@ export class SupabaseService {
         
         if (error) throw error;
         
-        return (data as unknown) as Tables<T>[];
-      } catch (_err) {
-        // Error fetching data from ${String(table)}: _err
+        return data as unknown as Tables<T>[];
+      } catch (err) {
+        console.error(`Error fetching data from ${String(table)}:`, err);
         // Return localStorage data as fallback
-        return this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []);
+        return this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []) as unknown as Tables<T>[];
       }
     } else {
       // Just use localStorage if Supabase is disabled
@@ -137,7 +137,7 @@ export class SupabaseService {
         
         // Add joins if provided
         if (options.joins) {
-          query = query.select(`*, ${options.joins}`) as any;
+          query = query.select(`*, ${options.joins}`) as typeof query;
         }
         
         const { data, error } = await query.single();
@@ -145,8 +145,8 @@ export class SupabaseService {
         if (error) throw error;
         
         return (data as unknown) as Tables<T>;
-      } catch (_err) {
-        // Error fetching item from ${String(table)}: _err
+      } catch (err) {
+        console.error(`Error fetching item from ${String(table)}:`, err);
         // Fallback to localStorage - search for the item with matching ID
         const items = this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []);
         return items.find(item => (item as TableRecord).id === id) ?? null;
@@ -180,8 +180,8 @@ export class SupabaseService {
         this.saveToStorage(`${String(table)}`, [...existingItems, insertedData]);
         
         return insertedData as Tables<T>;
-      } catch (_err) {
-        // Error inserting into ${String(table)}: _err
+      } catch (err) {
+        console.error(`Error inserting into ${String(table)}:`, err);
         // Fallback to localStorage only
         const existingItems = this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []);
         // For localStorage we need an ID - use the one provided or generate a random one
@@ -239,8 +239,8 @@ export class SupabaseService {
         this.saveToStorage(`${String(table)}`, updatedItems);
         
         return updatedData as Tables<T>;
-      } catch (_err) {
-        // Error updating in ${String(table)}: _err
+      } catch (err) {
+        console.error(`Error updating in ${String(table)}:`, err);
         // Fallback to localStorage only
         const existingItems = this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []);
         const item = existingItems.find(item => (item as TableRecord).id === id);
@@ -272,7 +272,7 @@ export class SupabaseService {
 
   public async deleteItem<T extends keyof Database['public']['Tables']>(
     table: T,
-    id: string | Record<string, any>
+    id: string | Record<string, unknown>
   ): Promise<boolean> {
     try {
       if (this.useSupabase) {
@@ -325,8 +325,8 @@ export class SupabaseService {
       }
       
       return false; // Item didn't exist
-    } catch (_err) {
-      // Error deleting from ${String(table)}: err
+    } catch (err) {
+      console.error(`Error deleting from ${String(table)}:`, err);
       return false; // Return false on error
     }
   }
@@ -351,8 +351,8 @@ export class SupabaseService {
         if (error) throw error;
         
         return (data as unknown) as Tables<T>[];
-      } catch (_err) {
-        // Error fetching related data from ${String(table)}: err
+      } catch (err) {
+        console.error(`Error fetching related data from ${String(table)}:`, err);
         // Fallback to localStorage - this is harder with relations
         // A proper implementation would require understanding the schema
         return [];
@@ -374,12 +374,11 @@ export class SupabaseService {
       const { data, error } = await supabase.auth.getUser();
       if (error) throw error;
       return data.user;
-    } catch (_err) {
-      // Error getting current user: err
+    } catch (err) {
+      console.error('Error getting current user:', err);
       return null;
     }
   }
-
   public async signIn(email: string, password: string) {
     if (!this.useSupabase) return null;
     

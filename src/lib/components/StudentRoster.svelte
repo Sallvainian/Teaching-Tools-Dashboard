@@ -11,14 +11,14 @@
   
   // Derive students for this class
   const students = derived(
-    gradebookStore,
-    $gradebookStore => {
-      const allStudents = $gradebookStore.students || [];
-      return selectedClass.studentIds
-        .map(id => allStudents.find((s: Student) => s.id === id))
-        .filter(Boolean) as Student[];
-    }
-  );
+  gradebookStore,
+  $gradebookStore => {
+    const allStudents = $gradebookStore.students || [];
+    return selectedClass.studentIds
+      .map((id: string) => allStudents.find(s => s.id === id))
+      .filter(Boolean) as Student[];
+  }
+);
   
   async function addStudent(e: SubmitEvent): Promise<void> {
     e.preventDefault();
@@ -72,7 +72,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each $students as student, index}
+        {#each $students as student, index (student.id)}
           <tr class="border-b border-gray-700 hover:bg-gray-700/50">
             <td class="p-3 text-gray-400">{index + 1}</td>
             <td class="p-3 text-gray-100">{student.name}</td>

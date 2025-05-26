@@ -121,6 +121,7 @@
         selectedLogId = null;
         showNewLogForm = true;
       }}
+      aria-label="Create new log entry"
     >
       + New Entry
     </button>

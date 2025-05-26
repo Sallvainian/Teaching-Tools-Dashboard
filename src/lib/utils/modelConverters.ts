@@ -6,16 +6,17 @@ import type {
   Grade 
 } from '$lib/types/gradebook';
 
-import type {
-  JeopardyGame,
-  Category as JeopardyCategory,
-  Team,
-  GameSettings
-} from '$lib/types/jeopardy';
+// Commented out unused imports
+// import type {
+//   JeopardyGame,
+//   Category as JeopardyCategory,
+//   Team,
+//   GameSettings
+// } from '$lib/types/jeopardy';
 
-import type {
-  LogEntry
-} from '$lib/types/log-entries';
+// import type {
+//   LogEntry
+// } from '$lib/types/log-entries';
 
 // Type aliases for better readability and to fix type inference
 type DBStudent = Tables<'students'>;
@@ -24,9 +25,6 @@ type DBCategoryStudent = Tables<'category_students'>;
 type DBAssignment = Tables<'assignments'>;
 type DBGrade = Tables<'grades'>;
 type DBObservationLog = Tables<'log_entries'>;
-type DBGame = Tables<'games'>;
-type DBGameCategory = Tables<'game_categories'>;
-type DBQuestion = Tables<'questions'>;
 
 // Gradebook model converters
 export function dbStudentToAppStudent(dbStudent: DBStudent): Student {
@@ -68,201 +66,67 @@ export function dbGradeToAppGrade(dbGrade: DBGrade): Grade {
   };
 }
 
-// Define explicit interfaces for the database models we're working with
-interface JeopardyGameDB {
-  id: string;
-  name: string;
-  description?: string;
-  owner_id: string;
-  date_created: string;
-  last_modified: string;
-  settings?: any;
-}
+// Jeopardy interfaces - commented out as the converter functions are not currently used
+// interface JeopardyGameDB {
+//   id: string;
+//   name: string;
+//   description?: string;
+//   owner_id: string;
+//   date_created: string;
+//   last_modified: string;
+//   settings?: any;
+// }
 
-interface JeopardyCategoryDB {
-  id: string;
-  game_id: string;
-  name: string;
-  display_order: number;
-}
+// interface JeopardyCategoryDB {
+//   id: string;
+//   game_id: string;
+//   name: string;
+//   display_order: number;
+// }
 
-interface JeopardyQuestionDB {
-  id: string;
-  category_id: string;
-  text: string;
-  answer: string;
-  point_value: number;
-  is_answered: boolean;
-  is_double_jeopardy: boolean;
-  time_limit?: number;
-}
+// interface JeopardyQuestionDB {
+//   id: string;
+//   category_id: string;
+//   text: string;
+//   answer: string;
+//   point_value: number;
+//   is_answered: boolean;
+//   is_double_jeopardy: boolean;
+//   time_limit?: number;
+// }
 
-interface JeopardyTeamDB {
-  id: string;
-  game_id: string;
-  name: string;
-  score: number;
-  color: string;
-}
+// interface JeopardyTeamDB {
+//   id: string;
+//   game_id: string;
+//   name: string;
+//   score: number;
+//   color: string;
+// }
 
 
-// Jeopardy model converters with explicit type casting
-export function dbGameToAppGame(
-  dbGame: any,
-  dbCategories: any[],
-  dbQuestions: any[],
-  dbTeams: any[]
-): JeopardyGame {
-  // Cast to known types
-  const typedDbGame = dbGame as JeopardyGameDB;
-  const typedDbCategories = dbCategories as JeopardyCategoryDB[];
-  const typedDbQuestions = dbQuestions as JeopardyQuestionDB[];
-  const typedDbTeams = dbTeams as JeopardyTeamDB[];
-  // Convert settings from JSON to typed object
-  const settings: GameSettings = {
-    defaultTimeLimit: 30,
-    useTimer: true,
-    readingTime: 5,
-    autoShowAnswer: true,
-    timerSize: 'large',
-    allowWagers: true,
-    ...(typedDbGame.settings as Record<string, any> ?? {})
-  };
+// Log entries model converters - commented out as they're not used
+// export function dbLogToAppLog(dbLog: DBObservationLog): LogEntry {
+//   return {
+//     id: dbLog.id,
+//     observer: '', // Not in database, needs to be added or derived
+//     date: dbLog.date,
+//     student: dbLog.student,
+//     subject: null, // Not in database
+//     objective: null, // Not in database
+//     observation: dbLog.log_entry, // Database uses 'log_entry' field
+//     actions: dbLog.actions,
+//     follow_up: dbLog.follow_up,
+//     tags: dbLog.tags ?? null
+//   };
+// }
 
-  // Get categories for this game
-  const gameCategories = typedDbCategories
-    .filter(cat => cat.game_id === typedDbGame.id)
-    .sort((a, b) => a.display_order - b.display_order);
-
-  // Process categories with their questions
-  const categories: JeopardyCategory[] = gameCategories.map(dbCat => {
-    // Get questions for this category
-    const categoryQuestions = typedDbQuestions
-      .filter(q => q.category_id === dbCat.id)
-      .map(dbQuestion => ({
-        id: dbQuestion.id,
-        text: dbQuestion.text,
-        answer: dbQuestion.answer,
-        pointValue: dbQuestion.point_value,
-        isAnswered: dbQuestion.is_answered,
-        isDoubleJeopardy: dbQuestion.is_double_jeopardy,
-        timeLimit: dbQuestion.time_limit ?? undefined
-      }));
-    
-    return {
-      id: dbCat.id,
-      name: dbCat.name,
-      questions: categoryQuestions
-    };
-  });
-
-  // Get teams for this game
-  const teams: Team[] = typedDbTeams
-    .filter(team => team.game_id === typedDbGame.id)
-    .map(dbTeam => ({
-      id: dbTeam.id,
-      name: dbTeam.name,
-      score: dbTeam.score,
-      color: dbTeam.color
-    }));
-
-  return {
-    id: typedDbGame.id,
-    name: typedDbGame.name,
-    description: typedDbGame.description ?? undefined,
-    categories,
-    teams,
-    dateCreated: typedDbGame.date_created,
-    lastModified: typedDbGame.last_modified,
-    settings
-  };
-}
-
-// Convert from app model to database model for creating/updating
-export function appGameToDbModels(game: JeopardyGame, userId: string): {
-  gameData: any,
-  categoriesData: any[],
-  questionsData: any[],
-  teamsData: any[]
-} {
-  // Prepare game data
-  const gameData: any = {
-    owner_id: userId,
-    name: game.name,
-    description: game.description ?? null,
-    date_created: game.dateCreated,
-    last_modified: game.lastModified,
-    settings: game.settings as any
-  };
-
-  // Prepare categories data
-  const categoriesData: any[] = 
-    game.categories.map((cat, index) => ({
-      game_id: game.id,
-      name: cat.name,
-      display_order: index,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }));
-
-  // Prepare questions data
-  const questionsData: any[] = 
-    game.categories.flatMap((cat) => 
-      cat.questions.map(q => ({
-        category_id: cat.id,
-        text: q.text,
-        answer: q.answer,
-        point_value: q.pointValue,
-        is_answered: q.isAnswered,
-        is_double_jeopardy: q.isDoubleJeopardy ?? false,
-        time_limit: q.timeLimit ?? null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }))
-    );
-
-  // Prepare teams data
-  const teamsData: any[] = 
-    game.teams.map(team => ({
-      game_id: game.id,
-      name: team.name,
-      score: team.score,
-      color: team.color,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }));
-
-  return {
-    gameData,
-    categoriesData,
-    questionsData,
-    teamsData
-  };
-}
-
-// Log entries model converters
-export function dbLogToAppLog(dbLog: DBObservationLog): LogEntry {
-  return {
-    id: dbLog.id,
-    observer: '', // Not in database, needs to be added or derived
-    date: dbLog.date,
-    student: dbLog.student,
-    subject: null, // Not in database
-    objective: null, // Not in database
-    observation: dbLog.log_entry, // Database uses 'log_entry' field
-    actions: dbLog.actions,
-    follow_up: dbLog.follow_up,
-    tags: dbLog.tags ?? null
-  };
-}
-
-export function appLogToDbLog(log: Partial<LogEntry>): Partial<DBObservationLog> {
-  return {
-    date: log.date,
-    student: log.student,
-    log_entry: log.observation || '', // Map 'observation' to 'log_entry'
-    actions: log.actions ?? null,
-    follow_up: log.follow_up ?? null,
-    tags: log.tags ?? []
-  };
-}
+// export function appLogToDbLog(log: Partial<LogEntry>): Partial<DBObservationLog> {
+//   return {
+//     date: log.date,
+//     student: log.student,
+//     log_entry: log.observation ?? '', // Map 'observation' to 'log_entry' - using ?? for nullish coalescing
+//     actions: log.actions ?? null,
+//     follow_up: log.follow_up ?? null,
+//     tags: log.tags ?? []
+//   };
+// }

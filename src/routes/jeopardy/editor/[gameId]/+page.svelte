@@ -218,7 +218,7 @@
     <div class="mb-8">
       <div class="flex items-center gap-4 mb-2">
         <button
-          onclick={() => goto('/jeopardy')}
+          onclick={async () => await goto('/jeopardy')}
           class="text-dark-purple hover:text-dark-purple-hover transition-colors"
           aria-label="Back to Jeopardy games"
         >

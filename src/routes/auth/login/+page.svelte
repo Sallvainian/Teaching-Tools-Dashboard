@@ -9,7 +9,7 @@
     if ($authStore.isAuthenticated) {
       const role = $authStore.role;
       const redirectTo = role === 'student' ? '/student/dashboard' : '/dashboard';
-      goto(redirectTo);
+      void goto(redirectTo);
     }
   });
 

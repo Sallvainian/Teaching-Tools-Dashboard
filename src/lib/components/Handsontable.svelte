@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+  import type Handsontable from 'handsontable'; // Import Handsontable type
 
   // Define props with $props
   let { 
@@ -17,7 +18,7 @@
   
   // Container reference
   let container: HTMLDivElement;
-  let hotInstance = $state<any>(null);
+  let hotInstance = $state<Handsontable | null>(null); // Typed hotInstance
   
   onMount(async () => {
     try {
@@ -271,7 +272,7 @@
         licenseKey,
         width,
         height,
-        afterChange: (changes: any[] | null, source: string) => {
+        afterChange: (changes: Handsontable.CellChange[] | null, source: Handsontable.ChangeSource) => {
           if (source !== 'loadData' && changes) {
             dispatch('afterChange', { changes, source });
           }
@@ -303,7 +304,7 @@
   });
   
   // Method to update data from outside  
-  export function updateData(newData: any[]) {
+  export function updateData(newData: Handsontable.RowObject[]) {
     if (hotInstance) {
       hotInstance.loadData(newData);
     }

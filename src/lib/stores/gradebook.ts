@@ -107,9 +107,9 @@ function createGradebookStore() {
       // Mark data as loaded
       dataLoaded.set(true);
       
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Error loading data: err
-      error.set(err.message ?? 'Failed to load data');
+      error.set(err instanceof Error ? err.message : 'Failed to load data');
     } finally {
       isLoading.set(false);
     }
@@ -133,9 +133,9 @@ function createGradebookStore() {
       students.update((arr: Student[]) => [...arr, newStudent]);
       
       return newStudent.id;
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Error adding student: err
-      error.set(err.message ?? 'Failed to add student');
+      error.set(err instanceof Error ? err.message : 'Failed to add student');
       return null;
     }
   }
@@ -167,9 +167,9 @@ function createGradebookStore() {
       
       // Save selected category ID
       gradebookService.saveToStorage('selectedCategoryId', get(selectedCategoryId));
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Error adding category: err
-      error.set(err.message ?? 'Failed to add category');
+      error.set(err instanceof Error ? err.message : 'Failed to add category');
     }
   }
 
@@ -195,9 +195,9 @@ function createGradebookStore() {
             : cat
         )
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Error assigning student to category: err
-      error.set(err.message ?? 'Failed to assign student');
+      error.set(err instanceof Error ? err.message : 'Failed to assign student');
     }
   }
 
@@ -228,9 +228,9 @@ function createGradebookStore() {
       categories.update((cats: Category[]) =>
         cats.map((cat: Category) => removeStudentFromCategoryHelper(cat, categoryId, studentId))
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Error removing student from category: err
-      error.set(err.message ?? 'Failed to remove student');
+      error.set(err instanceof Error ? err.message : 'Failed to remove student');
     }
   }
 
@@ -241,7 +241,7 @@ function createGradebookStore() {
     
     try {
       // Insert into database or localStorage
-      const result = await gradebookService.insertItem('assignments', {
+      const result = await gradebookService.insertItem('assignments', { // Type assertion for Inserts<T>
         name: trimmed,
         max_points: maxPoints,
         category_id: categoryId
@@ -252,9 +252,9 @@ function createGradebookStore() {
       // Update local store
       const newAssignment = dbAssignmentToAppAssignment(result);
       assignments.update((arr: Assignment[]) => [...arr, newAssignment]);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Error adding assignment: err
-      error.set(err.message ?? 'Failed to add assignment');
+      error.set(err instanceof Error ? err.message : 'Failed to add assignment');
     }
   }
 
@@ -297,9 +297,9 @@ function createGradebookStore() {
         }
         return [...arr, { studentId, assignmentId, points: pts }];
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Error recording grade: err
-      error.set(err.message ?? 'Failed to record grade');
+      error.set(err instanceof Error ? err.message : 'Failed to record grade');
     }
   }
 
@@ -324,14 +324,24 @@ function createGradebookStore() {
   // Clear all data
   async function clearAllData(): Promise<void> {
     try {
-      // Clear all from database or localStorage
-      const tables = ['grades', 'category_students', 'assignments', 'categories', 'students'];
+      // Clear tables with id field
+      const tablesWithId = ['grades', 'assignments', 'categories', 'students'] as const;
       
-      for (const table of tables) {
-        const items = await gradebookService.getItems(table as any);
+      for (const table of tablesWithId) {
+        const items = await gradebookService.getItems(table);
         for (const item of items) {
-          await gradebookService.deleteItem(table as any, item.id);
+          await gradebookService.deleteItem(table, item.id);
         }
+      }
+      
+      // Handle category_students with composite key
+      const categoryStudents = await gradebookService.getItems('category_students');
+      for (const item of categoryStudents) {
+        // Pass composite key as an object
+        await gradebookService.deleteItem('category_students', {
+          category_id: item.category_id,
+          student_id: item.student_id
+        });
       }
       
       // Clear local stores
@@ -343,9 +353,8 @@ function createGradebookStore() {
       
       // Clear localStorage
       gradebookService.removeFromStorage('selectedCategoryId');
-    } catch (err: any) {
-      // Error clearing data: err
-      error.set(err.message ?? 'Failed to clear data');
+    } catch (err: unknown) {
+      error.set(err instanceof Error ? err.message : 'Failed to clear data');
     }
   }
 
@@ -380,7 +389,7 @@ function createGradebookStore() {
 
       // Check authentication state
       const { data: authData } = await supabase.auth.getSession();
-      const isAuthenticated = !!authData?.session?.user;
+      // const isAuthenticated = !!authData?.session?.user; // Removed unused variable
 
       // Log auth state and proceed with loading
       // GradebookStore: User is/is not authenticated

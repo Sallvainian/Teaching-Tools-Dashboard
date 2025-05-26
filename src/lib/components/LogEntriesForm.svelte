@@ -68,7 +68,7 @@
     return isValid;
   }
 
-  function handleSave(event: SubmitEvent) {
+  async function handleSave(event: SubmitEvent) {
     event.preventDefault();
     if (!validateForm()) return;
 
@@ -84,7 +84,7 @@
       tags: selectedTag ? [selectedTag] : null
     };
 
-    onsave?.(logEntry);
+    await onsave?.(logEntry);
   }
 
   function handleCancel() {
@@ -216,7 +216,7 @@
       class="w-full px-3 py-2 bg-surface border border-border rounded-lg text-highlight focus:outline-none focus:ring-2 focus:ring-purple"
     >
       <option value="">Select a tag</option>
-      {#each tagOptions as tag}
+      {#each tagOptions as tag (tag)} <!-- Added tag as key -->
         <option value={tag}>{tag}</option>
       {/each}
     </select>

@@ -60,16 +60,16 @@
     }
   }
   
-  function createNewGame() {
-    goto('/jeopardy/editor/new');
+  async function createNewGame() {
+    await goto('/jeopardy/editor/new');
   }
   
-  function playGame(gameId: string) {
-    goto(`/jeopardy/play/${gameId}`);
+  async function playGame(gameId: string) {
+    await goto(`/jeopardy/play/${gameId}`);
   }
   
-  function editGame(gameId: string) {
-    goto(`/jeopardy/editor/${gameId}`);
+  async function editGame(gameId: string) {
+    await goto(`/jeopardy/editor/${gameId}`);
   }
 </script>
 

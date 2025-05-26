@@ -83,7 +83,7 @@
   }
   
   // Handle table events
-  function handleAfterChange(event) {
+  async function handleAfterChange(event) {
     const { changes, source } = event.detail;
     
     if (source === 'edit' && changes) {
@@ -99,7 +99,7 @@
         
         if (student && assignment) {
           // Record the grade
-          gradebookStore.recordGrade(student.id, assignment.id, parseFloat(newValue) || 0);
+          await gradebookStore.recordGrade(student.id, assignment.id, parseFloat(newValue) || 0);
         }
       }
     }
@@ -117,14 +117,14 @@
   // Handle initial category selection with $effect
   $effect(() => {
     if ($gradebookStore.categories?.length > 0 && !categoryId) {
-      gradebookStore.selectCategory($gradebookStore.categories[0].id);
+      void gradebookStore.selectCategory($gradebookStore.categories[0].id);
       categoryId = $gradebookStore.categories[0].id;
     }
   });
 
-  function handleAddAssignment() {
+  async function handleAddAssignment() {
     if (categoryId && assignmentName.trim()) {
-      gradebookStore.addAssignmentToCategory(assignmentName.trim(), maxPoints || 0, categoryId);
+      await gradebookStore.addAssignmentToCategory(assignmentName.trim(), maxPoints || 0, categoryId);
       assignmentName = '';
       maxPoints = 100;
       showNewAssignmentModal = false;
@@ -135,16 +135,16 @@
     if (newStudentName.trim() && categoryId) {
       const studentId = await gradebookStore.addGlobalStudent(newStudentName.trim());
       if (studentId) {
-        gradebookStore.assignStudentToCategory(studentId, categoryId);
+        await gradebookStore.assignStudentToCategory(studentId, categoryId);
         newStudentName = '';
         showStudentModal = false;
       }
     }
   }
 
-  function handleAddClass() {
+  async function handleAddClass() {
     if (newClassName.trim()) {
-      gradebookStore.addCategory(newClassName.trim());
+      await gradebookStore.addCategory(newClassName.trim());
       newClassName = '';
       showNewClassModal = false;
     }

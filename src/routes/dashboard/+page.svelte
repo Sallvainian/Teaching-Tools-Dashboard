@@ -163,7 +163,7 @@
                   <td class="py-3 text-text-base">{file.size}</td>
                   <td class="py-3 text-text-base">{file.date}</td>
                   <td class="py-3 text-right">
-                    <button class="text-purple hover:text-purple-hover transition-colors">
+                    <button class="text-purple hover:text-purple-hover transition-colors" aria-label="Download file">
                       <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="7 10 12 15 17 10"></polyline>

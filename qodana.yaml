@@ -1,0 +1,33 @@
+version: "1.0"
+linter: jetbrains/qodana-js:latest
+profile:
+  name: qodana.starter
+
+exclude:
+  - name: All
+    paths:
+      - node_modules
+      - .svelte-kit
+      - build  
+      - dist
+      - coverage
+      - .vercel
+      - static
+  # Disable ESLint since we have our own setup
+  - name: Eslint
+  - name: ESLintInspection
+  # Disable "throw caught locally" - these are intentional try/catch blocks
+  - name: ExceptionCaughtLocallyJS
+  # Disable unused symbols - these are mostly cleanup tasks, not bugs
+  - name: JSUnusedGlobalSymbols
+  - name: JSUnusedLocalSymbols
+  - name: ES6UnusedImports
+  # Disable deprecated warnings - Svelte 4->5 migration patterns that still work
+  - name: JSDeprecatedSymbols
+
+# KEEPING THESE ENABLED - THEY'RE REAL BUGS:
+# - ES6MissingAwait (missing await for async functions)
+# - TypeScriptValidateJSTypes (incorrect return types)
+# - TypeScriptRedundantGenericType (type mismatches)
+# - TypeScriptUnresolvedVariable (undefined variables)
+# - BadExpressionStatementJS (malformed syntax)

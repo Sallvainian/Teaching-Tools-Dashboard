@@ -1,50 +1,47 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { authStore } from '$lib/stores/auth';
-  
-  // File storage state
-  let files = $state([
-    { id: '1', name: 'Lesson Plan - Week 12.pdf', type: 'pdf', size: '1.2 MB', modified: '2025-05-10T14:30:00', folder: 'Lesson Plans' },
-    { id: '2', name: 'Math Quiz - Fractions.docx', type: 'docx', size: '450 KB', modified: '2025-05-09T10:15:00', folder: 'Assessments' },
-    { id: '3', name: 'Science Project Guidelines.pdf', type: 'pdf', size: '2.8 MB', modified: '2025-05-08T16:45:00', folder: 'Projects' },
-    { id: '4', name: 'Student Progress Report.xlsx', type: 'xlsx', size: '1.5 MB', modified: '2025-05-08T09:20:00', folder: 'Reports' },
-    { id: '5', name: 'Reading Comprehension Worksheet.pdf', type: 'pdf', size: '890 KB', modified: '2025-05-07T13:10:00', folder: 'Worksheets' },
-    { id: '6', name: 'Classroom Rules Poster.png', type: 'image', size: '3.2 MB', modified: '2025-05-06T11:30:00', folder: 'Resources' },
-    { id: '7', name: 'Parent Conference Notes.docx', type: 'docx', size: '320 KB', modified: '2025-05-05T15:45:00', folder: 'Meetings' },
-    { id: '8', name: 'Geometry Lesson Slides.pptx', type: 'pptx', size: '4.5 MB', modified: '2025-05-04T10:00:00', folder: 'Presentations' }
-  ]);
-  
-  let folders = $state([
-    { id: '1', name: 'Lesson Plans', files: 12, size: '24.5 MB' },
-    { id: '2', name: 'Assessments', files: 8, size: '12.3 MB' },
-    { id: '3', name: 'Projects', files: 5, size: '18.7 MB' },
-    { id: '4', name: 'Reports', files: 10, size: '15.2 MB' },
-    { id: '5', name: 'Worksheets', files: 15, size: '22.8 MB' },
-    { id: '6', name: 'Resources', files: 7, size: '35.6 MB' },
-    { id: '7', name: 'Meetings', files: 4, size: '8.2 MB' },
-    { id: '8', name: 'Presentations', files: 6, size: '28.4 MB' }
-  ]);
+  import { filesActions, files, folders, currentFolderId, isLoading, error, userStats, uploadProgress } from '$lib/stores/files';
+  import FilePreviewModal from '$lib/components/FilePreviewModal.svelte';
+  import FileShareModal from '$lib/components/FileShareModal.svelte';
+  import type { FileMetadata, FileFolder } from '$lib/types/files';
+  import { formatFileSize, getFileType, getFileIcon } from '$lib/types/files';
   
   // UI state
   let currentView = $state('grid'); // 'grid' or 'list'
   let searchQuery = $state('');
-  let selectedFolder = $state('All Files');
   let sortBy = $state('name'); // 'name', 'modified', 'size'
   let sortDirection = $state('asc'); // 'asc' or 'desc'
-  let isUploading = $state(false);
-  let uploadProgress = $state(0);
   let showNewFolderModal = $state(false);
   let newFolderName = $state('');
   
-  // Filtered and sorted files
-  let filteredFiles = $derived(getFilteredFiles());
+  // File preview modal
+  let previewModalOpen = $state(false);
+  let selectedFile = $state<FileMetadata | null>(null);
   
-  function getFilteredFiles() {
-    let result = [...files];
+  // File sharing modal
+  let shareModalOpen = $state(false);
+  let fileToShare = $state<FileMetadata | null>(null);
+  
+  // File input for uploads
+  let fileInput: HTMLInputElement;
+  
+  // Get current folder name
+  const currentFolderName = $derived(() => {
+    const folderId = $currentFolderId;
+    if (!folderId) return 'All Files';
+    const folder = $folders.find(f => f.id === folderId);
+    return folder?.name || 'All Files';
+  });
+  
+  // Filtered and sorted files
+  const filteredFiles = $derived(() => {
+    let result = [...$files];
     
-    // Filter by folder
-    if (selectedFolder !== 'All Files') {
-      result = result.filter(file => file.folder === selectedFolder);
+    // Filter by current folder
+    if ($currentFolderId === null) {
+      result = result.filter(file => !file.folder_id);
+    } else {
+      result = result.filter(file => file.folder_id === $currentFolderId);
     }
     
     // Filter by search query
@@ -63,27 +60,20 @@
       if (sortBy === 'name') {
         comparison = a.name.localeCompare(b.name);
       } else if (sortBy === 'modified') {
-        comparison = new Date(b.modified).getTime() - new Date(a.modified).getTime();
+        comparison = new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
       } else if (sortBy === 'size') {
-        // Convert size strings to comparable numbers (rough approximation)
-        const sizeA = parseFileSize(a.size);
-        const sizeB = parseFileSize(b.size);
-        comparison = sizeA - sizeB;
+        comparison = a.size - b.size;
       }
       
       return sortDirection === 'asc' ? comparison : -comparison;
     });
     
     return result;
-  }
+  });
   
-  function parseFileSize(sizeStr: string): number {
-    const value = parseFloat(sizeStr);
-    if (sizeStr.includes('KB')) return value * 1024;
-    if (sizeStr.includes('MB')) return value * 1024 * 1024;
-    if (sizeStr.includes('GB')) return value * 1024 * 1024 * 1024;
-    return value;
-  }
+  onMount(async () => {
+    await filesActions.ensureDataLoaded();
+  });
   
   function toggleSort(column: string) {
     if (sortBy === column) {
@@ -91,51 +81,6 @@
     } else {
       sortBy = column;
       sortDirection = 'asc';
-    }
-  }
-  
-  function getFileIcon(fileType: string) {
-    switch (fileType) {
-      case 'pdf':
-        return `<svg class="w-8 h-8 text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                  <path d="M9 15h6"></path>
-                  <path d="M9 11h6"></path>
-                </svg>`;
-      case 'docx':
-        return `<svg class="w-8 h-8 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                  <line x1="16" y1="13" x2="8" y2="13"></line>
-                  <line x1="16" y1="17" x2="8" y2="17"></line>
-                  <polyline points="10 9 9 9 8 9"></polyline>
-                </svg>`;
-      case 'xlsx':
-        return `<svg class="w-8 h-8 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                  <line x1="8" y1="13" x2="16" y2="13"></line>
-                  <line x1="8" y1="17" x2="16" y2="17"></line>
-                  <line x1="8" y1="9" x2="10" y2="9"></line>
-                </svg>`;
-      case 'pptx':
-        return `<svg class="w-8 h-8 text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                  <rect x="8" y="12" width="8" height="6" rx="1"></rect>
-                </svg>`;
-      case 'image':
-        return `<svg class="w-8 h-8 text-purple" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                  <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                  <polyline points="21 15 16 10 5 21"></polyline>
-                </svg>`;
-      default:
-        return `<svg class="w-8 h-8 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                </svg>`;
     }
   }
   
@@ -150,49 +95,59 @@
     });
   }
   
-  function simulateUpload() {
-    if (isUploading) return;
+  async function handleFileUpload(event: Event) {
+    const target = event.target as HTMLInputElement;
+    const files = target.files;
+    if (!files || files.length === 0) return;
     
-    isUploading = true;
-    uploadProgress = 0;
+    for (const file of files) {
+      await filesActions.uploadFile(file, $currentFolderId || undefined);
+    }
     
-    const interval = setInterval(() => {
-      uploadProgress += 5;
-      
-      if (uploadProgress >= 100) {
-        clearInterval(interval);
-        setTimeout(() => {
-          isUploading = false;
-          
-          // Add a new mock file
-          const newFile = {
-            id: (files.length + 1).toString(),
-            name: 'New Uploaded File.pdf',
-            type: 'pdf',
-            size: '2.4 MB',
-            modified: new Date().toISOString(),
-            folder: selectedFolder === 'All Files' ? 'Resources' : selectedFolder
-          };
-          
-          files = [...files, newFile];
-        }, 500);
-      }
-    }, 100);
+    // Clear the input
+    target.value = '';
   }
   
-  function createNewFolder() {
+  async function createNewFolder() {
     if (!newFolderName.trim()) return;
     
-    const newFolder = {
-      id: (folders.length + 1).toString(),
-      name: newFolderName.trim(),
-      files: 0,
-      size: '0 KB'
-    };
-    
-    folders = [...folders, newFolder];
+    await filesActions.createFolder(newFolderName.trim(), $currentFolderId || undefined);
     newFolderName = '';
     showNewFolderModal = false;
+  }
+  
+  async function deleteFile(file: FileMetadata) {
+    if (confirm(`Are you sure you want to delete "${file.name}"?`)) {
+      await filesActions.deleteFile(file.id);
+    }
+  }
+  
+  async function downloadFile(file: FileMetadata) {
+    await filesActions.downloadFile(file.id, file.name);
+  }
+  
+  function shareFile(file: FileMetadata) {
+    fileToShare = file;
+    shareModalOpen = true;
+  }
+  
+  function openFilePreview(file: FileMetadata) {
+    selectedFile = file;
+    previewModalOpen = true;
+  }
+  
+  function navigateToFolder(folderId: string | null) {
+    filesActions.setCurrentFolder(folderId);
+  }
+  
+  // Compute folder stats
+  function getFolderStats(folder: FileFolder) {
+    const folderFiles = $files.filter(f => f.folder_id === folder.id);
+    const totalSize = folderFiles.reduce((sum, file) => sum + file.size, 0);
+    return {
+      fileCount: folderFiles.length,
+      size: formatFileSize(totalSize)
+    };
   }
 </script>
 
@@ -222,17 +177,24 @@
       </div>
       
       <div class="flex gap-2">
+        <input 
+          type="file" 
+          multiple 
+          bind:this={fileInput}
+          onchange={handleFileUpload}
+          class="hidden"
+        />
         <button 
           class="btn btn-primary"
-          onclick={simulateUpload}
-          disabled={isUploading}
+          onclick={() => fileInput?.click()}
+          disabled={$isLoading}
         >
           <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
             <polyline points="17 8 12 3 7 8"></polyline>
             <line x1="12" y1="3" x2="12" y2="15"></line>
           </svg>
-          {isUploading ? 'Uploading...' : 'Upload'}
+          Upload
         </button>
         
         <button 
@@ -252,6 +214,7 @@
             class={`p-2 ${currentView === 'grid' ? 'bg-purple text-white' : 'bg-surface text-text-base hover:bg-accent hover:text-text-hover'}`}
             onclick={() => currentView = 'grid'}
             title="Grid view"
+            aria-label="Grid view"
           >
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="7" height="7"></rect>
@@ -264,6 +227,7 @@
             class={`p-2 ${currentView === 'list' ? 'bg-purple text-white' : 'bg-surface text-text-base hover:bg-accent hover:text-text-hover'}`}
             onclick={() => currentView = 'list'}
             title="List view"
+            aria-label="List view"
           >
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="8" y1="6" x2="21" y2="6"></line>
@@ -278,21 +242,49 @@
       </div>
     </div>
     
-    {#if isUploading}
-      <div class="card-dark mb-6">
-        <div class="flex items-center gap-3 mb-2">
-          <svg class="w-5 h-5 text-purple animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-            <polyline points="17 8 12 3 7 8"></polyline>
-            <line x1="12" y1="3" x2="12" y2="15"></line>
-          </svg>
-          <span class="text-highlight">Uploading file...</span>
-          <span class="text-text-base ml-auto">{uploadProgress}%</span>
-        </div>
-        
-        <div class="w-full bg-surface rounded-full h-2 overflow-hidden">
-          <div class="bg-purple h-full transition-all duration-300" style={`width: ${uploadProgress}%`}></div>
-        </div>
+    <!-- Upload Progress -->
+    {#if $uploadProgress.length > 0}
+      <div class="card-dark mb-6 space-y-3">
+        {#each $uploadProgress as progress}
+          <div>
+            <div class="flex items-center gap-3 mb-2">
+              {#if progress.status === 'uploading'}
+                <svg class="w-5 h-5 text-purple animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              {:else if progress.status === 'success'}
+                <svg class="w-5 h-5 text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M9 12l2 2 4-4"></path>
+                </svg>
+              {:else}
+                <svg class="w-5 h-5 text-error" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="15" y1="9" x2="9" y2="15"></line>
+                  <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+              {/if}
+              <span class="text-highlight flex-1">{progress.file.name}</span>
+              <span class="text-text-base">{progress.progress}%</span>
+            </div>
+            
+            <div class="w-full bg-surface rounded-full h-2 overflow-hidden">
+              <div 
+                class={`h-full transition-all duration-300 ${
+                  progress.status === 'error' ? 'bg-error' : 
+                  progress.status === 'success' ? 'bg-success' : 'bg-purple'
+                }`} 
+                style={`width: ${progress.progress}%`}
+              ></div>
+            </div>
+            
+            {#if progress.error}
+              <p class="text-error text-sm mt-1">{progress.error}</p>
+            {/if}
+          </div>
+        {/each}
       </div>
     {/if}
     
@@ -305,8 +297,8 @@
           
           <div class="space-y-1">
             <button 
-              class={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 transition-colors ${selectedFolder === 'All Files' ? 'bg-purple-bg text-highlight' : 'hover:bg-surface text-text-base hover:text-text-hover'}`}
-              onclick={() => selectedFolder = 'All Files'}
+              class={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 transition-colors ${$currentFolderId === null ? 'bg-purple-bg text-highlight' : 'hover:bg-surface text-text-base hover:text-text-hover'}`}
+              onclick={() => navigateToFolder(null)}
             >
               <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M3 6l9-4 9 4v12l-9 4-9-4V6z"></path>
@@ -316,32 +308,38 @@
               All Files
             </button>
             
-            {#each folders as folder}
+            {#each $folders.filter(f => !f.parent_id) as folder}
+              {@const stats = getFolderStats(folder)}
               <button 
-                class={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 transition-colors ${selectedFolder === folder.name ? 'bg-purple-bg text-highlight' : 'hover:bg-surface text-text-base hover:text-text-hover'}`}
-                onclick={() => selectedFolder = folder.name}
+                class={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 transition-colors ${$currentFolderId === folder.id ? 'bg-purple-bg text-highlight' : 'hover:bg-surface text-text-base hover:text-text-hover'}`}
+                onclick={() => navigateToFolder(folder.id)}
               >
                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                 </svg>
                 <div class="flex-1 flex justify-between items-center">
                   <span>{folder.name}</span>
-                  <span class="text-xs text-muted">{folder.files}</span>
+                  <span class="text-xs text-muted">{stats.fileCount}</span>
                 </div>
               </button>
             {/each}
           </div>
           
-          <div class="mt-6 pt-6 border-t border-border">
-            <div class="text-sm text-text-base mb-2">Storage</div>
-            <div class="w-full bg-surface rounded-full h-2 mb-2">
-              <div class="bg-purple h-full" style="width: 65%"></div>
+          {#if $userStats}
+            <div class="mt-6 pt-6 border-t border-border">
+              <div class="text-sm text-text-base mb-2">Storage</div>
+              <div class="w-full bg-surface rounded-full h-2 mb-2">
+                <div 
+                  class="bg-purple h-full" 
+                  style={`width: ${Math.min(($userStats.total_size_bytes / (1024 * 1024 * 1024)) * 100, 100)}%`}
+                ></div>
+              </div>
+              <div class="flex justify-between text-xs">
+                <span class="text-text-base">{formatFileSize($userStats.total_size_bytes)} used</span>
+                <span class="text-text-base">1 GB total</span>
+              </div>
             </div>
-            <div class="flex justify-between text-xs">
-              <span class="text-text-base">6.5 GB used</span>
-              <span class="text-text-base">10 GB total</span>
-            </div>
-          </div>
+          {/if}
         </div>
       </div>
       
@@ -349,7 +347,7 @@
       <div class="flex-1">
         <div class="card-dark">
           <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-bold text-highlight">{selectedFolder}</h2>
+            <h2 class="text-xl font-bold text-highlight">{currentFolderName()}</h2>
             
             <div class="flex items-center gap-2">
               <span class="text-sm text-text-base">Sort by:</span>
@@ -382,7 +380,17 @@
             </div>
           </div>
           
-          {#if filteredFiles.length === 0}
+          {#if $error}
+            <div class="bg-error/20 text-error px-4 py-3 rounded mb-4" role="alert">
+              <p>{$error}</p>
+            </div>
+          {/if}
+          
+          {#if $isLoading}
+            <div class="flex justify-center py-12">
+              <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple"></div>
+            </div>
+          {:else if filteredFiles().length === 0}
             <div class="flex flex-col items-center justify-center py-12">
               <svg class="w-16 h-16 text-muted mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -393,34 +401,56 @@
               <h3 class="text-lg font-medium text-highlight mb-2">No files found</h3>
               <p class="text-text-base text-center max-w-md">
                 {searchQuery 
-                  ? `No files matching "${searchQuery}" in ${selectedFolder}` 
+                  ? `No files matching "${searchQuery}" in ${currentFolderName()}` 
                   : `This folder is empty. Upload files to get started.`}
               </p>
             </div>
           {:else if currentView === 'grid'}
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {#each filteredFiles as file}
-                <div class="bg-surface/50 rounded-lg p-4 hover:bg-surface transition-colors cursor-pointer group">
+              {#each filteredFiles() as file}
+                <button 
+                  class="bg-surface/50 rounded-lg p-4 hover:bg-surface transition-colors cursor-pointer group relative w-full text-left"
+                  onclick={() => openFilePreview(file)}
+                  aria-label={`Open ${file.name}`}
+                >
                   <div class="flex justify-center mb-3">
-                    {@html getFileIcon(file.type)}
+                    <div class="w-12 h-12 text-purple text-3xl flex items-center justify-center">
+                      {getFileIcon(file.type)}
+                    </div>
                   </div>
                   <div class="text-center">
                     <div class="font-medium text-highlight mb-1 truncate" title={file.name}>{file.name}</div>
                     <div class="flex justify-between text-xs text-text-base">
-                      <span>{file.size}</span>
-                      <span>{formatDate(file.modified).split(',')[0]}</span>
+                      <span>{formatFileSize(file.size)}</span>
+                      <span>{formatDate(file.updated_at).split(',')[0]}</span>
                     </div>
                   </div>
                   <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button class="p-1 text-text-base hover:text-text-hover">
+                    <div 
+                      class="p-1 text-text-base hover:text-text-hover cursor-pointer"
+                      onclick={(e) => {
+                        e.stopPropagation();
+                        // Show context menu
+                      }}
+                      onkeydown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          // Show context menu
+                        }
+                      }}
+                      role="button"
+                      tabindex="0"
+                      aria-label="File options"
+                    >
                       <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="1"></circle>
                         <circle cx="19" cy="12" r="1"></circle>
                         <circle cx="5" cy="12" r="1"></circle>
                       </svg>
-                    </button>
+                    </div>
                   </div>
-                </div>
+                </button>
               {/each}
             </div>
           {:else}
@@ -484,27 +514,30 @@
                   </tr>
                 </thead>
                 <tbody>
-                  {#each filteredFiles as file}
+                  {#each filteredFiles() as file}
                     <tr class="border-b border-border/50 hover:bg-surface/50 transition-colors">
                       <td class="py-3 text-highlight">
-                        <div class="flex items-center gap-2">
-                          {@html getFileIcon(file.type)}
+                        <button 
+                          class="flex items-center gap-2 hover:underline"
+                          onclick={() => openFilePreview(file)}
+                        >
+                          <div class="w-5 h-5 text-purple">
+                            {getFileIcon(file.type)}
+                          </div>
                           <span>{file.name}</span>
-                        </div>
+                        </button>
                       </td>
                       <td class="py-3 text-text-base uppercase text-xs">{file.type}</td>
-                      <td class="py-3 text-text-base">{file.size}</td>
-                      <td class="py-3 text-text-base">{formatDate(file.modified)}</td>
+                      <td class="py-3 text-text-base">{formatFileSize(file.size)}</td>
+                      <td class="py-3 text-text-base">{formatDate(file.updated_at)}</td>
                       <td class="py-3 text-right">
                         <div class="flex justify-end gap-2">
-                          <button class="p-1 text-text-base hover:text-purple transition-colors" title="Download">
-                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                              <polyline points="7 10 12 15 17 10"></polyline>
-                              <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                          </button>
-                          <button class="p-1 text-text-base hover:text-purple transition-colors" title="Share">
+                          <button 
+                            class="p-1 text-text-base hover:text-purple transition-colors" 
+                            title="Share"
+                            aria-label="Share file"
+                            onclick={() => shareFile(file)}
+                          >
                             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                               <circle cx="18" cy="5" r="3"></circle>
                               <circle cx="6" cy="12" r="3"></circle>
@@ -513,7 +546,24 @@
                               <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
                             </svg>
                           </button>
-                          <button class="p-1 text-text-base hover:text-error transition-colors" title="Delete">
+                          <button 
+                            class="p-1 text-text-base hover:text-purple transition-colors" 
+                            title="Download"
+                            aria-label="Download file"
+                            onclick={() => downloadFile(file)}
+                          >
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                              <polyline points="7 10 12 15 17 10"></polyline>
+                              <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                          </button>
+                          <button 
+                            class="p-1 text-text-base hover:text-error transition-colors" 
+                            title="Delete"
+                            aria-label="Delete file"
+                            onclick={() => deleteFile(file)}
+                          >
                             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                               <polyline points="3 6 5 6 21 6"></polyline>
                               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -547,13 +597,17 @@
           bind:value={newFolderName}
           placeholder="Enter folder name"
           class="input w-full"
+          onkeydown={(e) => e.key === 'Enter' && createNewFolder()}
         />
       </div>
       
       <div class="flex justify-end gap-3">
         <button 
           class="btn btn-secondary"
-          onclick={() => showNewFolderModal = false}
+          onclick={() => {
+            showNewFolderModal = false;
+            newFolderName = '';
+          }}
         >
           Cancel
         </button>
@@ -568,3 +622,20 @@
     </div>
   </div>
 {/if}
+
+<!-- File Preview Modal -->
+<FilePreviewModal 
+  bind:isOpen={previewModalOpen} 
+  bind:file={selectedFile}
+  onDelete={deleteFile}
+/>
+
+<!-- File Share Modal -->
+<FileShareModal
+  bind:isOpen={shareModalOpen}
+  file={fileToShare}
+  onClose={() => {
+    shareModalOpen = false;
+    fileToShare = null;
+  }}
+/>
