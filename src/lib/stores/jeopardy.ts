@@ -24,23 +24,20 @@ function createJeopardyStore() {
 	const dataLoaded = writable<boolean>(false);
 
 	// Derived stores
-	const getGames = derived(games, $games => $games);
-	
-	const getActiveGame = derived(
-		[games, activeGameId],
-		([$games, $activeGameId]) => {
-			if (!$activeGameId) return null;
-			return $games.find(game => game.id === $activeGameId) || null;
-		}
-	);
+	const getGames = derived(games, ($games) => $games);
+
+	const getActiveGame = derived([games, activeGameId], ([$games, $activeGameId]) => {
+		if (!$activeGameId) return null;
+		return $games.find((game) => game.id === $activeGameId) || null;
+	});
 
 	const getActiveQuestion = derived(
 		[getActiveGame, activeQuestionId],
 		([$activeGame, $activeQuestionId]) => {
 			if (!$activeGame || !$activeQuestionId) return null;
-			
+
 			for (const category of $activeGame.categories) {
-				const question = category.questions.find(q => q.id === $activeQuestionId);
+				const question = category.questions.find((q) => q.id === $activeQuestionId);
 				if (question) {
 					return {
 						...question,
@@ -53,16 +50,13 @@ function createJeopardyStore() {
 		}
 	);
 
-	const getLeadingTeam = derived(
-		getActiveGame,
-		($activeGame) => {
-			if (!$activeGame || $activeGame.teams.length === 0) return null;
-			return $activeGame.teams.reduce((leader, team) => 
-				team.score > leader.score ? team : leader,
-				$activeGame.teams[0]
-			);
-		}
-	);
+	const getLeadingTeam = derived(getActiveGame, ($activeGame) => {
+		if (!$activeGame || $activeGame.teams.length === 0) return null;
+		return $activeGame.teams.reduce(
+			(leader, team) => (team.score > leader.score ? team : leader),
+			$activeGame.teams[0]
+		);
+	});
 
 	// Helper function to get current user
 	async function getCurrentUser(): Promise<User | null> {
@@ -74,7 +68,7 @@ function createJeopardyStore() {
 	async function loadAllGames() {
 		loading.set(true);
 		error.set(null);
-		
+
 		try {
 			const user = await getCurrentUser();
 			if (!user) {
@@ -89,7 +83,7 @@ function createJeopardyStore() {
 
 			// Load all related data and construct full game objects
 			const fullGames: JeopardyGame[] = [];
-			
+
 			for (const dbGame of dbGames) {
 				// Load categories for this game
 				const categories = await supabaseService.getItems('game_categories', {
@@ -106,7 +100,7 @@ function createJeopardyStore() {
 					fullCategories.push({
 						id: cat.id,
 						name: cat.category_name,
-						questions: questions.map(q => ({
+						questions: questions.map((q) => ({
 							id: q.id,
 							text: q.question_text,
 							answer: q.answer_text,
@@ -136,7 +130,7 @@ function createJeopardyStore() {
 					categories: fullCategories,
 					teams: teams,
 					settings: settings,
-					lastModified: (dbGame.last_modified ?? dbGame.created_at) ?? new Date().toISOString()
+					lastModified: dbGame.last_modified ?? dbGame.created_at ?? new Date().toISOString()
 				});
 			}
 
@@ -173,24 +167,24 @@ function createJeopardyStore() {
 				is_public: false,
 				owner_role: 'teacher' as const
 			};
-			
+
 			console.log('🔍 Saving game data:', JSON.stringify(gameData, null, 2));
 
 			let savedGame;
-			
+
 			// Check if game exists in database first
 			let gameExistsInDb = false;
 			if (game.id && game.id !== 'new') {
 				try {
-					const existingGame = await supabaseService.getItems('games', { 
-						filters: { id: game.id } 
+					const existingGame = await supabaseService.getItems('games', {
+						filters: { id: game.id }
 					});
 					gameExistsInDb = existingGame.length > 0;
 				} catch (_e) {
 					gameExistsInDb = false;
 				}
 			}
-			
+
 			if (gameExistsInDb) {
 				// Update existing game
 				savedGame = await supabaseService.updateItem('games', game.id, gameData);
@@ -216,20 +210,20 @@ function createJeopardyStore() {
 				};
 
 				let savedCategory;
-				
+
 				// Check if category exists in database
 				let categoryExistsInDb = false;
 				if (cat.id && cat.id !== 'new') {
 					try {
-						const existingCategory = await supabaseService.getItems('game_categories', { 
-							filters: { id: cat.id } 
+						const existingCategory = await supabaseService.getItems('game_categories', {
+							filters: { id: cat.id }
 						});
 						categoryExistsInDb = existingCategory.length > 0;
 					} catch (_e) {
 						categoryExistsInDb = false;
 					}
 				}
-				
+
 				if (categoryExistsInDb) {
 					savedCategory = await supabaseService.updateItem('game_categories', cat.id, categoryData);
 				} else {
@@ -258,15 +252,15 @@ function createJeopardyStore() {
 					let questionExistsInDb = false;
 					if (q.id && q.id !== 'new') {
 						try {
-							const existingQuestion = await supabaseService.getItems('questions', { 
-								filters: { id: q.id } 
+							const existingQuestion = await supabaseService.getItems('questions', {
+								filters: { id: q.id }
 							});
 							questionExistsInDb = existingQuestion.length > 0;
 						} catch (_e) {
 							questionExistsInDb = false;
 						}
 					}
-					
+
 					if (questionExistsInDb) {
 						await supabaseService.updateItem('questions', q.id, questionData);
 					} else {
@@ -304,23 +298,23 @@ function createJeopardyStore() {
 			},
 			lastModified: new Date().toISOString()
 		};
-		
-		games.update(g => [...g, newGame]);
+
+		games.update((g) => [...g, newGame]);
 		setActiveGame(gameId);
-		
+
 		// Save to Supabase asynchronously
-		saveGameToSupabase(newGame).catch(err => {
+		saveGameToSupabase(newGame).catch((err) => {
 			console.error('Error saving new game:', err);
 		});
-		
+
 		return gameId;
 	}
 
 	async function deleteGame(gameId: string): Promise<void> {
 		try {
 			await supabaseService.deleteItem('games', gameId);
-			games.update(g => g.filter(game => game.id !== gameId));
-			
+			games.update((g) => g.filter((game) => game.id !== gameId));
+
 			if (get(activeGameId) === gameId) {
 				activeGameId.set(null);
 			}
@@ -340,35 +334,39 @@ function createJeopardyStore() {
 			name: categoryName,
 			questions: []
 		};
-		
-		games.update(allGames => 
-			allGames.map(game => 
+
+		games.update((allGames) =>
+			allGames.map((game) =>
 				game.id === gameId
-					? { ...game, categories: [...game.categories, newCategory], lastModified: new Date().toISOString() }
+					? {
+							...game,
+							categories: [...game.categories, newCategory],
+							lastModified: new Date().toISOString()
+						}
 					: game
 			)
 		);
-		
+
 		// Save to Supabase asynchronously
-		const game = get(games).find(g => g.id === gameId);
+		const game = get(games).find((g) => g.id === gameId);
 		if (game) {
-			saveGameToSupabase(game).catch(err => {
+			saveGameToSupabase(game).catch((err) => {
 				console.error('Error saving game after adding category:', err);
 			});
 		}
 	}
 
 	function deleteCategory(categoryId: string): void {
-		games.update(allGames => 
-			allGames.map(game => ({
+		games.update((allGames) =>
+			allGames.map((game) => ({
 				...game,
-				categories: game.categories.filter(cat => cat.id !== categoryId),
+				categories: game.categories.filter((cat) => cat.id !== categoryId),
 				lastModified: new Date().toISOString()
 			}))
 		);
-		
+
 		// Delete from Supabase asynchronously
-		supabaseService.deleteItem('game_categories', categoryId).catch(err => {
+		supabaseService.deleteItem('game_categories', categoryId).catch((err) => {
 			console.error('Error deleting category from Supabase:', err);
 		});
 	}
@@ -380,70 +378,72 @@ function createJeopardyStore() {
 			...question,
 			isAnswered: false
 		};
-		
-		games.update(allGames =>
-			allGames.map(game => ({
+
+		games.update((allGames) =>
+			allGames.map((game) => ({
 				...game,
-				categories: game.categories.map(cat =>
-					cat.id === categoryId
-						? { ...cat, questions: [...cat.questions, newQuestion] }
-						: cat
+				categories: game.categories.map((cat) =>
+					cat.id === categoryId ? { ...cat, questions: [...cat.questions, newQuestion] } : cat
 				),
 				lastModified: new Date().toISOString()
 			}))
 		);
-		
+
 		// Save to Supabase asynchronously
-		const game = get(games).find(g => g.categories.some(c => c.id === categoryId));
+		const game = get(games).find((g) => g.categories.some((c) => c.id === categoryId));
 		if (game) {
-			saveGameToSupabase(game).catch(err => {
+			saveGameToSupabase(game).catch((err) => {
 				console.error('Error saving game after adding question:', err);
 			});
 		}
 	}
 
-	function updateQuestion(categoryId: string, questionId: string, updatedQuestion: Partial<Question>): void {
-		games.update(allGames =>
-			allGames.map(game => ({
+	function updateQuestion(
+		categoryId: string,
+		questionId: string,
+		updatedQuestion: Partial<Question>
+	): void {
+		games.update((allGames) =>
+			allGames.map((game) => ({
 				...game,
-				categories: game.categories.map(cat =>
+				categories: game.categories.map((cat) =>
 					cat.id === categoryId
 						? {
-							...cat,
-							questions: cat.questions.map(q =>
-								q.id === questionId ? { ...q, ...updatedQuestion } : q
-							)
-						}
+								...cat,
+								questions: cat.questions.map((q) =>
+									q.id === questionId ? { ...q, ...updatedQuestion } : q
+								)
+							}
 						: cat
 				),
 				lastModified: new Date().toISOString()
 			}))
 		);
-		
+
 		// Update in Supabase asynchronously
-		const game = get(games).find(g => g.categories.some(c => c.id === categoryId));
+		const game = get(games).find((g) => g.categories.some((c) => c.id === categoryId));
 		if (game) {
-			saveGameToSupabase(game).catch(err => {
+			saveGameToSupabase(game).catch((err) => {
 				console.error('Error saving game after updating question:', err);
 			});
 		}
 	}
 
 	function deleteQuestion(categoryId: string, questionId: string): void {
-		games.update(allGames =>
-			allGames.map(game => ({
+		games.update((allGames) =>
+			allGames.map((game) => ({
 				...game,
-				categories: game.categories.map(cat =>
+				categories: game.categories.map((cat) =>
 					cat.id === categoryId
-						? { ...cat, questions: cat.questions.filter(q => q.id !== questionId) }
+						? { ...cat, questions: cat.questions.filter((q) => q.id !== questionId) }
 						: cat
 				),
 				lastModified: new Date().toISOString()
 			}))
 		);
-		
+
 		// Delete from Supabase asynchronously
-		supabaseService.deleteItem('questions', questionId).catch(err => {
+		supabaseService.deleteItem('questions', questionId).catch((err) => {
 			console.error('Error deleting question from Supabase:', err);
 		});
 	}
@@ -451,72 +451,71 @@ function createJeopardyStore() {
 	// Team operations
 	function addTeam(gameId: string, teamName: string): void {
 		const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
-		const existingColors = get(games)
-			.find(g => g.id === gameId)
-			?.teams.map(t => t.color) || [];
-		
-		const availableColors = colors.filter(c => !existingColors.includes(c));
+		const existingColors =
+			get(games)
+				.find((g) => g.id === gameId)
+				?.teams.map((t) => t.color) || [];
+
+		const availableColors = colors.filter((c) => !existingColors.includes(c));
 		const teamColor = availableColors[0] || colors[Math.floor(Math.random() * colors.length)];
-		
+
 		const newTeam: Team = {
 			id: uuidv4(),
 			name: teamName,
 			score: 0,
 			color: teamColor
 		};
-		
-		games.update(allGames =>
-			allGames.map(game =>
+
+		games.update((allGames) =>
+			allGames.map((game) =>
 				game.id === gameId
 					? { ...game, teams: [...game.teams, newTeam], lastModified: new Date().toISOString() }
 					: game
 			)
 		);
-		
+
 		// Save to Supabase asynchronously
-		const game = get(games).find(g => g.id === gameId);
+		const game = get(games).find((g) => g.id === gameId);
 		if (game) {
-			saveGameToSupabase(game).catch(_err => {
+			saveGameToSupabase(game).catch((_err) => {
 				console.error('Error saving game after adding team');
 			});
 		}
 	}
 
 	function deleteTeam(teamId: string): void {
-		games.update(allGames =>
-			allGames.map(game => ({
+		games.update((allGames) =>
+			allGames.map((game) => ({
 				...game,
-				teams: game.teams.filter(team => team.id !== teamId),
+				teams: game.teams.filter((team) => team.id !== teamId),
 				lastModified: new Date().toISOString()
 			}))
 		);
-		
+
 		// Save game after team deletion
-		const game = get(games).find(g => g.teams.some(t => t.id === teamId));
+		const game = get(games).find((g) => g.teams.some((t) => t.id === teamId));
 		if (game) {
-			saveGameToSupabase(game).catch(_err => {
+			saveGameToSupabase(game).catch((_err) => {
 				console.error('Error saving game after deleting team');
 			});
 		}
 	}
 
 	function updateTeamScore(teamId: string, points: number): void {
-		games.update(allGames =>
-			allGames.map(game => ({
+		games.update((allGames) =>
+			allGames.map((game) => ({
 				...game,
-				teams: game.teams.map(team =>
-					team.id === teamId
-						? { ...team, score: team.score + points }
-						: team
+				teams: game.teams.map((team) =>
+					team.id === teamId ? { ...team, score: team.score + points } : team
 				),
 				lastModified: new Date().toISOString()
 			}))
 		);
-		
+
 		// Update in Supabase asynchronously
-		const game = get(games).find(g => g.teams.some(t => t.id === teamId));
+		const game = get(games).find((g) => g.teams.some((t) => t.id === teamId));
 		if (game) {
-			saveGameToSupabase(game).catch(_err => {
+			saveGameToSupabase(game).catch((_err) => {
 				console.error('Error saving game after updating team score');
 			});
 		}
@@ -524,18 +523,22 @@ function createJeopardyStore() {
 
 	// Settings operations
 	function updateGameSettings(gameId: string, settings: Partial<GameSettings>): void {
-		games.update(allGames =>
-			allGames.map(game =>
+		games.update((allGames) =>
+			allGames.map((game) =>
 				game.id === gameId
-					? { ...game, settings: { ...game.settings, ...settings }, lastModified: new Date().toISOString() }
+					? {
+							...game,
+							settings: { ...game.settings, ...settings },
+							lastModified: new Date().toISOString()
+						}
 					: game
 			)
 		);
-		
+
 		// Save to Supabase asynchronously
-		const game = get(games).find(g => g.id === gameId);
+		const game = get(games).find((g) => g.id === gameId);
 		if (game) {
-			saveGameToSupabase(game).catch(_err => {
+			saveGameToSupabase(game).catch((_err) => {
 				console.error('Error saving game after updating settings');
 			});
 		}
@@ -546,32 +549,34 @@ function createJeopardyStore() {
 		activeGameId.set(gameId);
 	}
 
-	function setActiveQuestion(question: (Question & { categoryId: string; categoryName: string }) | null): void {
+	function setActiveQuestion(
+		question: (Question & { categoryId: string; categoryName: string }) | null
+	): void {
 		activeQuestionId.set(question?.id ?? null);
 	}
 
 	function markQuestionAnswered(categoryId: string, questionId: string): void {
-		games.update(allGames =>
-			allGames.map(game => ({
+		games.update((allGames) =>
+			allGames.map((game) => ({
 				...game,
-				categories: game.categories.map(cat =>
+				categories: game.categories.map((cat) =>
 					cat.id === categoryId
 						? {
-							...cat,
-							questions: cat.questions.map(q =>
-								q.id === questionId ? { ...q, isAnswered: true } : q
-							)
-						}
+								...cat,
+								questions: cat.questions.map((q) =>
+									q.id === questionId ? { ...q, isAnswered: true } : q
+								)
+							}
 						: cat
 				),
 				lastModified: new Date().toISOString()
 			}))
 		);
-		
+
 		// Update in Supabase asynchronously
-		const game = get(games).find(g => g.categories.some(c => c.id === categoryId));
+		const game = get(games).find((g) => g.categories.some((c) => c.id === categoryId));
 		if (game) {
-			saveGameToSupabase(game).catch(_err => {
+			saveGameToSupabase(game).catch((_err) => {
 				console.error('Error saving game after marking question answered');
 			});
 		}
@@ -583,40 +588,40 @@ function createJeopardyStore() {
 
 	// Reset operations
 	function resetAllScores(): void {
-		games.update(allGames =>
-			allGames.map(game => ({
+		games.update((allGames) =>
+			allGames.map((game) => ({
 				...game,
-				teams: game.teams.map(team => ({ ...team, score: 0 })),
+				teams: game.teams.map((team) => ({ ...team, score: 0 })),
 				lastModified: new Date().toISOString()
 			}))
 		);
-		
+
 		// Update in Supabase asynchronously
 		const game = get(getActiveGame);
 		if (game) {
-			saveGameToSupabase(game).catch(_err => {
+			saveGameToSupabase(game).catch((_err) => {
 				console.error('Error saving game after resetting scores');
 			});
 		}
 	}
 
 	function resetGameBoard(): void {
-		games.update(allGames =>
-			allGames.map(game => ({
+		games.update((allGames) =>
+			allGames.map((game) => ({
 				...game,
-				categories: game.categories.map(cat => ({
+				categories: game.categories.map((cat) => ({
 					...cat,
-					questions: cat.questions.map(q => ({ ...q, isAnswered: false }))
+					questions: cat.questions.map((q) => ({ ...q, isAnswered: false }))
 				})),
-				teams: game.teams.map(team => ({ ...team, score: 0 })),
+				teams: game.teams.map((team) => ({ ...team, score: 0 })),
 				lastModified: new Date().toISOString()
 			}))
 		);
-		
+
 		// Update in Supabase asynchronously
 		const game = get(getActiveGame);
 		if (game) {
-			saveGameToSupabase(game).catch(_err => {
+			saveGameToSupabase(game).catch((_err) => {
 				console.error('Error saving game after resetting board');
 			});
 		}
@@ -636,14 +641,14 @@ function createJeopardyStore() {
 			}
 
 			const categories: Category[] = [];
-			
+
 			for (const catData of jsonData.categories) {
 				if (!catData.name || !Array.isArray(catData.questions)) {
 					continue;
 				}
 
 				const questions: Question[] = [];
-				
+
 				for (const qData of catData.questions) {
 					if (!qData.text || !qData.answer || typeof qData.pointValue !== 'number') {
 						continue;
@@ -668,22 +673,22 @@ function createJeopardyStore() {
 			}
 
 			// Update the game with imported data
-			games.update(allGames =>
-				allGames.map(game =>
+			games.update((allGames) =>
+				allGames.map((game) =>
 					game.id === gameId
 						? { ...game, categories, lastModified: new Date().toISOString() }
 						: game
 				)
 			);
-			
+
 			// Save to Supabase asynchronously
-			const game = get(games).find(g => g.id === gameId);
+			const game = get(games).find((g) => g.id === gameId);
 			if (game) {
-				saveGameToSupabase(game).catch(_err => {
+				saveGameToSupabase(game).catch((_err) => {
 					console.error('Error saving game after import');
 				});
 			}
-			
+
 			return true;
 		} catch (_error) {
 			return false;
@@ -691,14 +696,14 @@ function createJeopardyStore() {
 	}
 
 	function exportGameData(gameId: string): string {
-		const game = get(games).find(g => g.id === gameId);
+		const game = get(games).find((g) => g.id === gameId);
 		if (!game) return '';
 
 		const exportData = {
 			name: game.name,
-			categories: game.categories.map(cat => ({
+			categories: game.categories.map((cat) => ({
 				name: cat.name,
-				questions: cat.questions.map(q => ({
+				questions: cat.questions.map((q) => ({
 					text: q.text,
 					answer: q.answer,
 					pointValue: q.pointValue,
@@ -722,20 +727,48 @@ function createJeopardyStore() {
 					{
 						name: 'Biology',
 						questions: [
-							{ text: 'What is the largest organ in the human body?', answer: 'Skin', pointValue: 100 },
-							{ text: 'How many chambers does a human heart have?', answer: 'Four', pointValue: 200 },
-							{ text: 'What is the process by which plants make their own food?', answer: 'Photosynthesis', pointValue: 300 },
-							{ text: 'What is the powerhouse of the cell?', answer: 'Mitochondria', pointValue: 400 },
-							{ text: 'What type of blood cells carry oxygen?', answer: 'Red blood cells', pointValue: 500 }
+							{
+								text: 'What is the largest organ in the human body?',
+								answer: 'Skin',
+								pointValue: 100
+							},
+							{
+								text: 'How many chambers does a human heart have?',
+								answer: 'Four',
+								pointValue: 200
+							},
+							{
+								text: 'What is the process by which plants make their own food?',
+								answer: 'Photosynthesis',
+								pointValue: 300
+							},
+							{
+								text: 'What is the powerhouse of the cell?',
+								answer: 'Mitochondria',
+								pointValue: 400
+							},
+							{
+								text: 'What type of blood cells carry oxygen?',
+								answer: 'Red blood cells',
+								pointValue: 500
+							}
 						]
 					},
 					{
 						name: 'Chemistry',
 						questions: [
 							{ text: 'What is the chemical symbol for gold?', answer: 'Au', pointValue: 100 },
-							{ text: 'What is the most abundant element in the universe?', answer: 'Hydrogen', pointValue: 200 },
+							{
+								text: 'What is the most abundant element in the universe?',
+								answer: 'Hydrogen',
+								pointValue: 200
+							},
 							{ text: 'What is the pH of pure water?', answer: '7', pointValue: 300 },
-							{ text: 'What are the three states of matter?', answer: 'Solid, liquid, gas', pointValue: 400 },
+							{
+								text: 'What are the three states of matter?',
+								answer: 'Solid, liquid, gas',
+								pointValue: 400
+							},
 							{ text: 'What is the chemical formula for water?', answer: 'H2O', pointValue: 500 }
 						]
 					}
@@ -749,7 +782,11 @@ function createJeopardyStore() {
 					{
 						name: 'Ancient History',
 						questions: [
-							{ text: 'Which ancient wonder of the world still stands today?', answer: 'Great Pyramid of Giza', pointValue: 100 },
+							{
+								text: 'Which ancient wonder of the world still stands today?',
+								answer: 'Great Pyramid of Giza',
+								pointValue: 100
+							},
 							{ text: 'Who was the first emperor of Rome?', answer: 'Augustus', pointValue: 200 },
 							{ text: 'What year did the Roman Empire fall?', answer: '476 AD', pointValue: 300 },
 							{ text: 'Which civilization built Machu Picchu?', answer: 'Inca', pointValue: 400 },
@@ -762,13 +799,13 @@ function createJeopardyStore() {
 	}
 
 	function applyGameTemplate(gameId: string, templateId: string): void {
-		const template = getGameTemplates().find(t => t.id === templateId);
+		const template = getGameTemplates().find((t) => t.id === templateId);
 		if (!template) return;
 
-		const categories: Category[] = template.categories.map(cat => ({
+		const categories: Category[] = template.categories.map((cat) => ({
 			id: uuidv4(),
 			name: cat.name,
-			questions: cat.questions.map(q => ({
+			questions: cat.questions.map((q) => ({
 				id: uuidv4(),
 				...q,
 				isDoubleJeopardy: false,
@@ -776,18 +813,16 @@ function createJeopardyStore() {
 			}))
 		}));
 
-		games.update(allGames =>
-			allGames.map(game =>
-				game.id === gameId
-					? { ...game, categories, lastModified: new Date().toISOString() }
-					: game
+		games.update((allGames) =>
+			allGames.map((game) =>
+				game.id === gameId ? { ...game, categories, lastModified: new Date().toISOString() } : game
 			)
 		);
-		
+
 		// Save to Supabase asynchronously
-		const game = get(games).find(g => g.id === gameId);
+		const game = get(games).find((g) => g.id === gameId);
 		if (game) {
-			saveGameToSupabase(game).catch(_err => {
+			saveGameToSupabase(game).catch((_err) => {
 				console.error('Error saving game after applying template');
 			});
 		}
@@ -804,46 +839,46 @@ function createJeopardyStore() {
 		wagerAmount,
 		loading: { subscribe: loading.subscribe },
 		error: { subscribe: error.subscribe },
-		
+
 		// Data loading
 		ensureDataLoaded,
 		loadAllGames,
-		
+
 		// Game CRUD
 		createGame,
 		deleteGame,
-		
+
 		// Category operations
 		addCategory,
 		deleteCategory,
-		
+
 		// Question operations
 		addQuestion,
 		updateQuestion,
 		deleteQuestion,
-		
+
 		// Team operations
 		addTeam,
 		deleteTeam,
 		updateTeamScore,
-		
+
 		// Settings
 		updateGameSettings,
-		
+
 		// Game state
 		setActiveGame,
 		setActiveQuestion,
 		markQuestionAnswered,
 		setWagerAmount,
-		
+
 		// Reset operations
 		resetAllScores,
 		resetGameBoard,
-		
+
 		// Import/Export
 		importGameData,
 		exportGameData,
-		
+
 		// Templates
 		getGameTemplates,
 		applyGameTemplate

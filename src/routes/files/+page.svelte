@@ -104,10 +104,8 @@
 	}
 
 	async function handleFileUpload(event: Event) {
-		console.log('handleFileUpload called', event);
 		const target = event.target as HTMLInputElement;
 		const files = target.files;
-		console.log('Selected files:', files);
 		if (!files || files.length === 0) return;
 
 		for (const file of files) {
@@ -200,14 +198,7 @@
 					onchange={(e) => handleFileUpload(e)}
 					class="hidden"
 				/>
-				<button
-					class="btn btn-primary"
-					onclick={() => {
-						console.log('Upload button clicked', fileInput);
-						fileInput?.click();
-					}}
-					disabled={$isLoading}
-				>
+				<button class="btn btn-primary" onclick={() => fileInput?.click()} disabled={$isLoading}>
 					<svg
 						class="w-5 h-5 mr-2"
 						viewBox="0 0 24 24"

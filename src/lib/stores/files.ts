@@ -213,7 +213,6 @@ export const filesActions = {
 
 	// Upload file
 	async uploadFile(file: File, folderId?: string) {
-		console.log('filesActions.uploadFile called', { file, folderId });
 		try {
 			setError(null);
 

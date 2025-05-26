@@ -1,36 +1,36 @@
 <script lang="ts">
-  import { onMount, onDestroy, createEventDispatcher } from 'svelte';
-  import type Handsontable from 'handsontable'; // Import Handsontable type
+	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+	import type Handsontable from 'handsontable'; // Import Handsontable type
 
-  // Define props with $props
-  let { 
-    data = [], 
-    colHeaders = true,
-    rowHeaders = true,
-    height = 400,
-    width = '100%',
-    licenseKey = 'non-commercial-and-evaluation',
-    settings = {}
-  } = $props();
-  
-  // Create Svelte event dispatcher
-  const dispatch = createEventDispatcher();
-  
-  // Container reference
-  let container: HTMLDivElement;
-  let hotInstance = $state<Handsontable | null>(null); // Typed hotInstance
-  
-  onMount(async () => {
-    try {
-      // Dynamically import Handsontable to avoid SSR issues
-      const Handsontable = (await import('handsontable')).default;
-      
-      // Also import CSS
-      await import('handsontable/dist/handsontable.full.min.css');
-      
-      // Additional CSS for dark theme
-      const darkStyles = document.createElement('style');
-      darkStyles.textContent = `
+	// Define props with $props
+	let {
+		data = [],
+		colHeaders = true,
+		rowHeaders = true,
+		height = 400,
+		width = '100%',
+		licenseKey = 'non-commercial-and-evaluation',
+		settings = {}
+	} = $props();
+
+	// Create Svelte event dispatcher
+	const dispatch = createEventDispatcher();
+
+	// Container reference
+	let container: HTMLDivElement;
+	let hotInstance = $state<Handsontable | null>(null); // Typed hotInstance
+
+	onMount(async () => {
+		try {
+			// Dynamically import Handsontable to avoid SSR issues
+			const Handsontable = (await import('handsontable')).default;
+
+			// Also import CSS
+			await import('handsontable/dist/handsontable.full.min.css');
+
+			// Additional CSS for dark theme
+			const darkStyles = document.createElement('style');
+			darkStyles.textContent = `
         .dark-theme .handsontable {
           background-color: #111827;
           color: #F9FAFB;
@@ -262,72 +262,75 @@
           background-color: #DC2626;
         }
       `;
-      document.head.appendChild(darkStyles);
-      
-      // Initialize Handsontable with merged settings
-      const mergedSettings = {
-        data,
-        colHeaders,
-        rowHeaders,
-        licenseKey,
-        width,
-        height,
-        afterChange: (changes: Handsontable.CellChange[] | null, source: Handsontable.ChangeSource) => {
-          if (source !== 'loadData' && changes) {
-            dispatch('afterChange', { changes, source });
-          }
-        },
-        afterSelection: (row: number, column: number, row2: number, column2: number) => {
-          dispatch('afterSelection', { row, column, row2, column2 });
-        },
-        ...settings
-      };
-      
-      // Add the dark theme to the container
-      container.classList.add('dark-theme');
-      
-      // Initialize Handsontable
-      hotInstance = new Handsontable(container, mergedSettings);
-      
-      // Make the instance available to parent components
-      dispatch('init', { hotInstance });
-    } catch (error) {
-      console.error('Error initializing Handsontable:', error);
-    }
-  });
-  
-  onDestroy(() => {
-    // Clean up
-    if (hotInstance) {
-      hotInstance.destroy();
-    }
-  });
-  
-  // Method to update data from outside  
-  export function updateData(newData: Handsontable.RowObject[]) {
-    if (hotInstance) {
-      hotInstance.loadData(newData);
-    }
-  }
-  
-  // Method to get current data
-  export function getData() {
-    return hotInstance ? hotInstance.getData() : [];
-  }
-  
-  // Method to refresh the table
-  export function render() {
-    if (hotInstance) {
-      hotInstance.render();
-    }
-  }
+			document.head.appendChild(darkStyles);
+
+			// Initialize Handsontable with merged settings
+			const mergedSettings = {
+				data,
+				colHeaders,
+				rowHeaders,
+				licenseKey,
+				width,
+				height,
+				afterChange: (
+					changes: Handsontable.CellChange[] | null,
+					source: Handsontable.ChangeSource
+				) => {
+					if (source !== 'loadData' && changes) {
+						dispatch('afterChange', { changes, source });
+					}
+				},
+				afterSelection: (row: number, column: number, row2: number, column2: number) => {
+					dispatch('afterSelection', { row, column, row2, column2 });
+				},
+				...settings
+			};
+
+			// Add the dark theme to the container
+			container.classList.add('dark-theme');
+
+			// Initialize Handsontable
+			hotInstance = new Handsontable(container, mergedSettings);
+
+			// Make the instance available to parent components
+			dispatch('init', { hotInstance });
+		} catch (error) {
+			console.error('Error initializing Handsontable:', error);
+		}
+	});
+
+	onDestroy(() => {
+		// Clean up
+		if (hotInstance) {
+			hotInstance.destroy();
+		}
+	});
+
+	// Method to update data from outside
+	export function updateData(newData: Handsontable.RowObject[]) {
+		if (hotInstance) {
+			hotInstance.loadData(newData);
+		}
+	}
+
+	// Method to get current data
+	export function getData() {
+		return hotInstance ? hotInstance.getData() : [];
+	}
+
+	// Method to refresh the table
+	export function render() {
+		if (hotInstance) {
+			hotInstance.render();
+		}
+	}
 </script>
 
 <div class="relative" bind:this={container} style="width: {width}; height: {height}px;"></div>
 
 <style>
-  /* Your custom styles */
-  .relative {
-    position: relative;
-  }
+	/* Your custom styles */
+	.relative {
+		position: relative;
+	}
 </style>

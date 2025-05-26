@@ -150,7 +150,6 @@ export class FileService {
 		folderId?: string,
 		onProgress?: (progress: number) => void
 	): Promise<FileMetadata | null> {
-		console.log('fileService.uploadFile called', { file, folderId });
 		try {
 			// Validate file
 			const validation = validateFile(file);

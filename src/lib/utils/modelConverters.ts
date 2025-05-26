@@ -1,10 +1,5 @@
 import type { Tables } from '$lib/types/database';
-import type { 
-  Student, 
-  Category, 
-  Assignment, 
-  Grade 
-} from '$lib/types/gradebook';
+import type { Student, Category, Assignment, Grade } from '$lib/types/gradebook';
 
 // Commented out unused imports
 // import type {
@@ -28,42 +23,42 @@ type DBObservationLog = Tables<'log_entries'>;
 
 // Gradebook model converters
 export function dbStudentToAppStudent(dbStudent: DBStudent): Student {
-  return {
-    id: dbStudent.id,
-    name: dbStudent.name
-  };
+	return {
+		id: dbStudent.id,
+		name: dbStudent.name
+	};
 }
 
 export function dbCategoryToAppCategory(
-  dbCategory: DBCategory, 
-  categoryStudents: DBCategoryStudent[]
+	dbCategory: DBCategory,
+	categoryStudents: DBCategoryStudent[]
 ): Category {
-  // Handle categories from both schema versions
-  return {
-    id: dbCategory.id,
-    name: dbCategory.name,
-    // Filter category_students relationships for this category
-    studentIds: categoryStudents
-      .filter(cs => cs.category_id === dbCategory.id)
-      .map(cs => cs.student_id)
-  };
+	// Handle categories from both schema versions
+	return {
+		id: dbCategory.id,
+		name: dbCategory.name,
+		// Filter category_students relationships for this category
+		studentIds: categoryStudents
+			.filter((cs) => cs.category_id === dbCategory.id)
+			.map((cs) => cs.student_id)
+	};
 }
 
 export function dbAssignmentToAppAssignment(dbAssignment: DBAssignment): Assignment {
-  return {
-    id: dbAssignment.id,
-    name: dbAssignment.name,
-    maxPoints: dbAssignment.max_points,
-    categoryId: dbAssignment.category_id
-  };
+	return {
+		id: dbAssignment.id,
+		name: dbAssignment.name,
+		maxPoints: dbAssignment.max_points,
+		categoryId: dbAssignment.category_id
+	};
 }
 
 export function dbGradeToAppGrade(dbGrade: DBGrade): Grade {
-  return {
-    studentId: dbGrade.student_id,
-    assignmentId: dbGrade.assignment_id,
-    points: dbGrade.points ?? 0 // Handle null as 0 for Grade type compatibility
-  };
+	return {
+		studentId: dbGrade.student_id,
+		assignmentId: dbGrade.assignment_id,
+		points: dbGrade.points ?? 0 // Handle null as 0 for Grade type compatibility
+	};
 }
 
 // Jeopardy interfaces - commented out as the converter functions are not currently used
@@ -102,7 +97,6 @@ export function dbGradeToAppGrade(dbGrade: DBGrade): Grade {
 //   score: number;
 //   color: string;
 // }
-
 
 // Log entries model converters - commented out as they're not used
 // export function dbLogToAppLog(dbLog: DBObservationLog): LogEntry {

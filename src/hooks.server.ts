@@ -1,8 +1,8 @@
-import { sequence } from "@sveltejs/kit/hooks";
-import type { Handle } from "@sveltejs/kit";
-import { handleErrorWithSentry, sentryHandle } from "@sentry/sveltekit";
+import { sequence } from '@sveltejs/kit/hooks';
+import type { Handle } from '@sveltejs/kit';
+import { handleErrorWithSentry, sentryHandle } from '@sentry/sveltekit';
 import * as Sentry from '@sentry/sveltekit';
-import { nodeProfilingIntegration } from "@sentry/profiling-node";
+import { nodeProfilingIntegration } from '@sentry/profiling-node';
 
 Sentry.init({
 	dsn: 'https://2644904ccddbf49afacdccf14cae13d2@o4509381050957824.ingest.us.sentry.io/4509381155553280',
@@ -25,9 +25,9 @@ Sentry.init({
 
 // Custom handler to add Document-Policy header for JS profiling
 const documentPolicyHandler: Handle = async ({ event, resolve }) => {
-  const response = await resolve(event);
-  response.headers.set('Document-Policy', 'js-profiling');
-  return response;
+	const response = await resolve(event);
+	response.headers.set('Document-Policy', 'js-profiling');
+	return response;
 };
 
 // If you have custom handlers, make sure to place them after `sentryHandle()` in the `sequence` function.
