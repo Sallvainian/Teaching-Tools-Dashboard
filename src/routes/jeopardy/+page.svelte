@@ -9,9 +9,10 @@
 	let isLoading = $state(true);
 	let showCreateModal = $state(false);
 
-	$effect(async () => {
-		await jeopardyStore.ensureDataLoaded();
-		isLoading = false;
+	$effect(() => {
+		jeopardyStore.ensureDataLoaded().then(() => {
+			isLoading = false;
+		});
 	});
 
 	async function handleCreateGame(e: Event) {

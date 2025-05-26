@@ -22,7 +22,7 @@
 			} else {
 				error = 'Failed to resend confirmation email';
 			}
-		} catch (err: Error) {
+		} catch (err: any) {
 			error = err.message || 'Failed to resend confirmation email';
 		} finally {
 			loading = false;
@@ -51,7 +51,7 @@
 		try {
 			await authStore.signUp(email, password, { full_name: fullName });
 			// Success - no need to do anything as the auth store will update
-		} catch (err: Error) {
+		} catch (err: any) {
 			error = err.message || 'Failed to sign up';
 
 			// Check if this is a "user already exists" error

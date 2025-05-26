@@ -33,7 +33,7 @@
 
 		return categoryStudents.map((student, index) => {
 			// Start with student number and name
-			const row = [index + 1, student.name];
+			const row: (string | number | null)[] = [index + 1, student.name];
 
 			// Add grades for each assignment
 			if (categoryAssignments && categoryAssignments.length > 0) {
@@ -72,7 +72,7 @@
 		return headers;
 	}
 
-	function getGradeColor(value) {
+	function getGradeColor(value: any) {
 		if (value === null || value === undefined) return 'rgba(139, 92, 246, 0.1)'; // Default purple
 
 		if (value >= 90) return 'rgba(52, 211, 153, 0.2)'; // Green for A
@@ -83,7 +83,7 @@
 	}
 
 	// Handle table events
-	async function handleAfterChange(event) {
+	async function handleAfterChange(event: any) {
 		const { changes, source } = event.detail;
 
 		if (source === 'edit' && changes) {
@@ -105,7 +105,7 @@
 		}
 	}
 
-	function handleTableInit(event) {
+	function handleTableInit(event: any) {
 		hotInstance = event.detail.hotInstance;
 	}
 
@@ -344,7 +344,14 @@
 											numericFormat: { pattern: '0.0' },
 											width: 80,
 											className: 'htCenter font-bold',
-											renderer: function (instance, td, row, col, prop, value) {
+											renderer: function (
+												instance: any,
+												td: any,
+												row: any,
+												col: any,
+												prop: any,
+												value: any
+											) {
 												td.style.backgroundColor = getGradeColor(value);
 												td.innerHTML = value ? `${value}%` : '—';
 
@@ -363,7 +370,7 @@
 											numericFormat: { pattern: '0.0' },
 											width: 100,
 											className: 'htCenter',
-											validator: function (value, callback) {
+											validator: function (value: any, callback: any) {
 												callback(
 													value === null ||
 														value === '' ||
@@ -371,7 +378,14 @@
 												);
 											},
 											allowInvalid: false,
-											renderer: function (instance, td, row, col, prop, value) {
+											renderer: function (
+												instance: any,
+												td: any,
+												row: any,
+												col: any,
+												prop: any,
+												value: any
+											) {
 												// Calculate percentage for background color
 												const percentage =
 													value !== null ? (value / assignment.maxPoints) * 100 : 0;

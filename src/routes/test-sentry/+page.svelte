@@ -61,12 +61,11 @@
 		// Create a custom transaction
 		Sentry.startSpan({
 			name: 'Custom User Transaction',
-			op: 'ui.action',
-			tags: {
-				component: 'test-page',
-				action: 'custom-transaction'
-			}
-		}, () => {
+			op: 'ui.action'
+		}, (span) => {
+			// Set tags on the span
+			span.setTag('component', 'test-page');
+			span.setTag('action', 'custom-transaction');
 			// Simulate some work
 			const start = Date.now();
 			while (Date.now() - start < 100) {

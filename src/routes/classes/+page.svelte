@@ -10,9 +10,9 @@
 
 	// State variables with $state
 	let showImportWizard = $state(false);
-	let selectedClassId = $state(null);
+	let selectedClassId = $state<string | null>(null);
 	let isLoading = $state(true);
-	let error = $state(null);
+	let error = $state<string | null>(null);
 
 	// Reactive values with $derived
 	let selectedClass = $derived(

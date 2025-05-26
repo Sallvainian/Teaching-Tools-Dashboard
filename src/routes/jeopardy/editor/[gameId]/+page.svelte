@@ -3,7 +3,7 @@
 	import { jeopardyStore } from '$lib/stores/jeopardy';
 	import { goto } from '$app/navigation';
 	import LoadingBounce from '$lib/components/LoadingBounce.svelte';
-	import type { Question } from '$lib/types/jeopardy';
+	import type { Question, TimerSize } from '$lib/types/jeopardy';
 
 	const {
 		getGames,
@@ -453,7 +453,7 @@
 								onchange={(e) =>
 									updateGameSettings($getActiveGame.id, {
 										...$getActiveGame.settings,
-										timerSize: e.currentTarget.value
+										timerSize: e.currentTarget.value as TimerSize
 									})}
 								class="w-full px-3 py-2 bg-surface text-highlight border border-border rounded-lg focus:outline-none focus:border-purple"
 							>

@@ -19,7 +19,7 @@
 		try {
 			await authStore.resetPassword(email);
 			success = true;
-		} catch (err: Error) {
+		} catch (err: any) {
 			error = err.message || 'Failed to reset password';
 		} finally {
 			loading = false;

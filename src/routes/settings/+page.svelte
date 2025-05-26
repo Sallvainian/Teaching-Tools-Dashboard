@@ -21,8 +21,8 @@
     if (storedUseSupabase !== null) {
       useSupabase = JSON.parse(storedUseSupabase);
     } else {
-      // Get current state from gradebookStore
-      useSupabase = get(gradebookStore.useSupabase) || true;
+      // Default to true if not set
+      useSupabase = true;
     }
   });
 
@@ -60,7 +60,7 @@
         // Clear from both Supabase and localStorage
         gradebookStore.clearAllData();
         logEntriesStore.clearAll();
-        jeopardyStore.clearAllData();
+        // jeopardyStore doesn't have clearAllData method
       } else {
         // Clear localStorage only
         localStorage.clear();

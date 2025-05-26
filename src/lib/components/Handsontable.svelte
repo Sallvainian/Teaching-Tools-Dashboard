@@ -5,13 +5,21 @@
 	// Define props with $props
 	let {
 		data = [],
-		colHeaders = true,
+		colHeaders = true as boolean | string[],
 		rowHeaders = true,
 		height = 400,
 		width = '100%',
 		licenseKey = 'non-commercial-and-evaluation',
 		settings = {}
-	} = $props();
+	} = $props<{
+		data?: any[][];
+		colHeaders?: boolean | string[];
+		rowHeaders?: boolean;
+		height?: number;
+		width?: string | number;
+		licenseKey?: string;
+		settings?: any;
+	}>();
 
 	// Create Svelte event dispatcher
 	const dispatch = createEventDispatcher();
