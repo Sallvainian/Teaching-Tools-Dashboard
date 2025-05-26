@@ -197,7 +197,7 @@
 					type="file"
 					multiple
 					bind:this={fileInput}
-					on:change={handleFileUpload}
+					onchange={(e) => handleFileUpload(e)}
 					class="hidden"
 				/>
 				<button
