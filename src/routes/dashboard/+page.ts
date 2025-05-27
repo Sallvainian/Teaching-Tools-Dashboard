@@ -7,14 +7,14 @@ import { ensureAuthInitialized } from '$lib/utils/authInit';
 export const load: PageLoad = async () => {
 	// Ensure auth is initialized first
 	await ensureAuthInitialized();
-	
+
 	// Get current auth state
 	const auth = get(authStore);
-	
+
 	// If not authenticated, redirect to login
 	if (!auth.isAuthenticated) {
 		throw redirect(307, '/auth/login');
 	}
-	
+
 	return {};
 };

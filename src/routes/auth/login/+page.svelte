@@ -25,22 +25,22 @@
 	});
 </script>
 
-<div class="min-h-screen bg-dark-bg flex items-center justify-center p-6">
+<div class="min-h-screen bg-bg-base flex items-center justify-center p-6">
 	<div class="w-full max-w-md">
 		<div class="text-center mb-8">
-			<h1 class="text-3xl font-bold text-white">Teacher Dashboard</h1>
-			<p class="text-gray-400 mt-2">Sign in to continue</p>
+			<h1 class="text-3xl font-bold text-highlight">Teacher Dashboard</h1>
+			<p class="text-muted mt-2">Sign in to continue</p>
 		</div>
 
 		<LoginForm />
 
 		<div class="text-center mt-6">
-			<p class="text-gray-400">
+			<p class="text-muted">
 				Don't have an account?
-				<a href="/auth/signup" class="text-dark-highlight hover:underline font-medium"> Sign up </a>
+				<a href="/auth/signup" class="text-purple hover:underline font-medium"> Sign up </a>
 			</p>
-			<p class="text-gray-400 mt-2">
-				<a href="/auth/reset-password" class="text-dark-highlight hover:underline">
+			<p class="text-muted mt-2">
+				<a href="/auth/reset-password" class="text-purple hover:underline">
 					Forgot password?
 				</a>
 			</p>

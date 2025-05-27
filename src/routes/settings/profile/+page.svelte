@@ -12,7 +12,7 @@
 </script>
 
 <div class="max-w-2xl mx-auto py-8 px-4">
-	<h1 class="text-2xl font-bold text-white mb-8">Profile Settings</h1>
+	<h1 class="text-2xl font-bold text-highlight mb-8">Profile Settings</h1>
 
 	{#if $user}
 		<ProfileForm />

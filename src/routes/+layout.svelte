@@ -7,11 +7,11 @@
 	import ThemeToggle from '$lib/components/ThemeToggle.svelte';
 
 	import { goto } from '$app/navigation';
-	import { navigating } from '$app/stores';
+	import { navigating, page } from '$app/stores';
 	import LoadingBounce from '$lib/components/LoadingBounce.svelte';
 
 	// Use regular imports - we'll fix the store files after
-	import { authStore, isAuthenticated, loading as authLoading } from '$lib/stores/auth';
+	import { authStore, isAuthenticated, loading as authLoading, isInitialized } from '$lib/stores/auth';
 	import { gradebookStore } from '$lib/stores/gradebook';
 
 	// Vercel Speed Insights
@@ -62,10 +62,6 @@
 
 	// Setup with $effect instead of onMount
 	$effect(() => {
-		// Set dark mode
-		document.documentElement.classList.add('dark');
-		document.documentElement.setAttribute('data-ag-theme-mode', 'dark');
-
 		// Close user menu when clicking outside
 		function handleClickOutside(event: MouseEvent) {
 			const target = event.target as HTMLElement;
@@ -85,9 +81,23 @@
 	$effect(() => {
 		void gradebookStore.ensureDataLoaded();
 	});
+
+	// Helper function to check if current path matches menu item
+	function isActivePath(path: string): boolean {
+		return $page.url.pathname === path || $page.url.pathname.startsWith(path + '/');
+	}
 </script>
 
-<div class="min-h-screen bg-bg-base text-text-base flex flex-col transition-colors">
+<!-- Show loading state while auth is initializing -->
+{#if !$isInitialized}
+	<div class="min-h-screen bg-bg-base flex items-center justify-center">
+		<div class="text-center">
+			<LoadingBounce />
+			<p class="text-muted mt-4">Initializing...</p>
+		</div>
+	</div>
+{:else}
+	<div class="min-h-screen bg-bg-base text-text-base flex flex-col transition-colors">
 	<nav class="bg-surface/80 backdrop-blur-md border-b border-border/50 relative z-50">
 		<div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
 			<div class="flex items-center gap-3">
@@ -95,7 +105,7 @@
 					class="h-8 w-8 bg-gradient-to-br from-purple to-purple-light rounded-md flex items-center justify-center shadow-glow"
 				>
 					<svg
-						class="w-5 h-5 text-white"
+						class="w-5 h-5 text-highlight"
 						viewBox="0 0 24 24"
 						fill="none"
 						stroke="currentColor"
@@ -129,17 +139,17 @@
 								class="flex items-center gap-3 hover:bg-accent/20 p-1 rounded-lg"
 							>
 								<div
-									class="w-8 h-8 bg-purple rounded-full flex items-center justify-center text-white font-medium"
+									class="w-8 h-8 bg-purple rounded-full flex items-center justify-center text-highlight font-medium"
 								>
 									{$authStore.user?.user_metadata?.full_name?.[0] ||
 										$authStore.user?.email?.[0]?.toUpperCase() ||
 										'T'}
 								</div>
-								<span class="text-sm text-gray-300"
+								<span class="text-sm text-muted"
 									>{$authStore.user?.user_metadata?.full_name || 'Teacher'}</span
 								>
 								<svg
-									class="w-4 h-4 text-gray-300"
+									class="w-4 h-4 text-muted"
 									xmlns="http://www.w3.org/2000/svg"
 									fill="none"
 									viewBox="0 0 24 24"
@@ -258,7 +268,7 @@
 						{:else}
 							<a
 								href="/auth/login"
-								class="text-gray-300 hover:text-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-purple-bg"
+								class="text-text-hover hover:text-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-purple-bg"
 							>
 								Sign in
 							</a>
@@ -306,12 +316,12 @@
 			>
 				<div>
 					{#if !sidebarCollapsed}
-						<h3 class="text-gray-400 uppercase text-xs font-semibold mb-3 px-3">Menu</h3>
+						<h3 class="text-muted uppercase text-xs font-semibold mb-3 px-3">Menu</h3>
 					{/if}
 					<div class="space-y-1">
 						<a
 							href="/dashboard"
-							class="menu-item relative group hover:bg-purple-bg"
+							class="menu-item relative group hover:bg-purple-bg text-text-hover hover:text-highlight"
 							class:px-3={!sidebarCollapsed}
 							class:px-1={sidebarCollapsed}
 							class:justify-center={sidebarCollapsed}
@@ -343,7 +353,7 @@
 
 						<a
 							href="/files"
-							class="menu-item relative group hover:bg-purple-bg"
+							class="menu-item relative group hover:bg-purple-bg text-text-hover hover:text-highlight"
 							class:px-3={!sidebarCollapsed}
 							class:px-1={sidebarCollapsed}
 							class:justify-center={sidebarCollapsed}
@@ -374,7 +384,7 @@
 
 						<a
 							href="/chat"
-							class="menu-item relative group hover:bg-purple-bg"
+							class="menu-item relative group hover:bg-purple-bg text-text-hover hover:text-highlight"
 							class:px-3={!sidebarCollapsed}
 							class:px-1={sidebarCollapsed}
 							class:justify-center={sidebarCollapsed}
@@ -403,7 +413,7 @@
 
 						<a
 							href="/classes"
-							class="menu-item relative group hover:bg-purple-bg"
+							class="menu-item relative group hover:bg-purple-bg text-text-hover hover:text-highlight"
 							class:px-3={!sidebarCollapsed}
 							class:px-1={sidebarCollapsed}
 							class:justify-center={sidebarCollapsed}
@@ -435,7 +445,7 @@
 
 						<a
 							href="/gradebook"
-							class="menu-item relative group hover:bg-purple-bg"
+							class="menu-item relative group hover:bg-purple-bg text-text-hover hover:text-highlight"
 							class:px-3={!sidebarCollapsed}
 							class:px-1={sidebarCollapsed}
 							class:justify-center={sidebarCollapsed}
@@ -598,7 +608,7 @@
 				{#if $isAuthenticated}
 					<div>
 						{#if !sidebarCollapsed}
-							<h3 class="text-gray-400 uppercase text-xs font-semibold mb-3 px-3">Classes</h3>
+							<h3 class="text-muted uppercase text-xs font-semibold mb-3 px-3">Classes</h3>
 						{/if}
 						<div class="space-y-1">
 							{#each $gradebookStore.getCategories as category (category.id)}
@@ -609,7 +619,7 @@
 								>
 									{#if !sidebarCollapsed}
 										<span>{category.name}</span>
-										<span class="bg-purple text-white text-xs rounded-full px-2 py-1"
+										<span class="bg-purple text-highlight text-xs rounded-full px-2 py-1"
 											>{category.studentIds.length}</span
 										>
 									{:else}
@@ -623,7 +633,7 @@
 								</button>
 							{:else}
 								{#if !sidebarCollapsed}
-									<p class="text-gray-400 text-sm px-3">No classes added yet</p>
+									<p class="text-muted text-sm px-3">No classes added yet</p>
 								{/if}
 							{/each}
 
@@ -638,7 +648,7 @@
 										/>
 										<button
 											onclick={handleAddClass}
-											class="bg-purple text-white p-2 rounded-lg text-sm hover:bg-purple-hover transition-all duration-300"
+											class="bg-purple text-highlight p-2 rounded-lg text-sm hover:bg-purple-hover transition-all duration-300"
 											aria-label="Add new class"
 										>
 											+
@@ -671,3 +681,4 @@
 		Teacher Dashboard • {new Date().getFullYear()}
 	</footer>
 </div>
+{/if}

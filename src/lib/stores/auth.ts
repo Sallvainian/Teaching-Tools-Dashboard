@@ -10,7 +10,8 @@ function createAuthStore() {
 	const error = writable<string | null>(null);
 	const role = writable<UserRole | null>(null);
 	const isAuthenticated = derived(user, ($user) => !!$user);
-	
+	const isInitialized = writable(false);
+
 	// Track if we've already set up auth listener
 	let authListenerSetup = false;
 
@@ -35,37 +36,68 @@ function createAuthStore() {
 		if (authListenerSetup) {
 			return;
 		}
-		
+
 		loading.set(true);
 		error.set(null);
 		try {
 			const { supabase } = await import('$lib/supabaseClient');
+			
+			// First try to get session from local storage quickly
+			const storedSession = typeof window !== 'undefined' 
+				? window.localStorage.getItem('teacher-dashboard-auth')
+				: null;
+			
+			if (storedSession) {
+				try {
+					const parsed = JSON.parse(storedSession);
+					if (parsed?.currentSession?.access_token) {
+						// Optimistically set the session while we verify it
+						session.set(parsed.currentSession);
+						user.set(parsed.currentSession.user);
+						// Don't wait for role fetch in the critical path
+						fetchUserRole(parsed.currentSession.user.id).catch(console.error);
+					}
+				} catch (e) {
+					console.error('Error parsing stored session:', e);
+				}
+			}
+			
+			// Now verify/refresh the session with Supabase
 			const { data, error: sessionError } = await supabase.auth.getSession();
 			if (sessionError) throw sessionError;
+			
 			if (data?.session) {
 				session.set(data.session);
 				user.set(data.session.user);
 				await fetchUserRole(data.session.user.id);
+			} else if (!storedSession) {
+				// Only clear if we didn't have a stored session
+				session.set(null);
+				user.set(null);
+				role.set(null);
 			}
-			
+
 			// Only set up auth listener once
 			if (!authListenerSetup) {
-				const { data: authListener } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-					session.set(newSession);
-					user.set(newSession?.user ?? null);
-					if (newSession?.user) {
-						await fetchUserRole(newSession.user.id);
-					} else {
-						role.set(null);
+				const { data: authListener } = supabase.auth.onAuthStateChange(
+					async (event, newSession) => {
+						session.set(newSession);
+						user.set(newSession?.user ?? null);
+						if (newSession?.user) {
+							await fetchUserRole(newSession.user.id);
+						} else {
+							role.set(null);
+						}
 					}
-				});
+				);
 				authListenerSetup = true;
-				return () => authListener.subscription.unsubscribe();
 			}
 		} catch (err) {
 			error.set(err instanceof Error ? err.message : 'Auth check failed');
 		} finally {
 			loading.set(false);
+			// Always set initialized to true after the first attempt
+			isInitialized.set(true);
 		}
 	}
 
@@ -92,7 +124,7 @@ function createAuthStore() {
 				// Fetch user role immediately after sign in
 				await fetchUserRole(data.session.user.id);
 				// Give auth state time to propagate
-				await new Promise(resolve => setTimeout(resolve, 100));
+				await new Promise((resolve) => setTimeout(resolve, 100));
 				return true;
 			}
 			error.set('Sign in failed');
@@ -137,18 +169,18 @@ function createAuthStore() {
 			const { supabase } = await import('$lib/supabaseClient');
 			const { error: signOutError } = await supabase.auth.signOut();
 			if (signOutError) throw signOutError;
-			
+
 			// Clear all auth state
 			session.set(null);
 			user.set(null);
 			role.set(null);
-			
+
 			// Clear localStorage as well
 			if (typeof window !== 'undefined') {
 				window.localStorage.removeItem('teacher-dashboard-auth');
 				window.localStorage.removeItem('sb-' + supabase.supabaseUrl.split('//')[1] + '-auth-token');
 			}
-			
+
 			return true;
 		} catch (err) {
 			error.set(err instanceof Error ? err.message : 'Sign out failed');
@@ -290,14 +322,15 @@ function createAuthStore() {
 
 	return {
 		subscribe: derived(
-			[user, session, loading, error, isAuthenticated, role],
-			([$user, $session, $loading, $error, $isAuthenticated, $role]) => ({
+			[user, session, loading, error, isAuthenticated, role, isInitialized],
+			([$user, $session, $loading, $error, $isAuthenticated, $role, $isInitialized]) => ({
 				user: $user,
 				session: $session,
 				loading: $loading,
 				error: $error,
 				isAuthenticated: $isAuthenticated,
-				role: $role
+				role: $role,
+				isInitialized: $isInitialized
 			})
 		).subscribe,
 		signIn,
@@ -318,3 +351,4 @@ export const loading = derived(authStore, ($store) => $store.loading);
 export const error = derived(authStore, ($store) => $store.error);
 export const isAuthenticated = derived(authStore, ($store) => $store.isAuthenticated);
 export const role = derived(authStore, ($store) => $store.role);
+export const isInitialized = derived(authStore, ($store) => $store.isInitialized);

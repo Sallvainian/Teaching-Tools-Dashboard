@@ -37,7 +37,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 					window.localStorage.removeItem(key);
 				}
 			}
-		}
+		},
+		// Speed up session restoration
+		flowType: 'pkce'
 	}
 });
 

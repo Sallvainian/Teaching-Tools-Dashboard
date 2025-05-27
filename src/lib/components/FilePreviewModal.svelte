@@ -60,6 +60,7 @@
 
 			try {
 				const url = await fileService.getFileUrl(file.storage_path);
+				console.log('PDF URL:', url);
 				if (url) {
 					pdfUrl = url;
 				} else {
@@ -75,10 +76,10 @@
 	}
 
 	function cleanup() {
-		if (imageUrl) {
+		if (imageUrl && imageUrl.startsWith('blob:')) {
 			URL.revokeObjectURL(imageUrl);
-			imageUrl = null;
 		}
+		imageUrl = null;
 		pdfUrl = null;
 		error = null;
 		isLoading = false;
@@ -158,17 +159,30 @@
 			<!-- Header -->
 			<div class="flex items-center justify-between p-4 border-b border-border">
 				<div class="flex items-center gap-3">
-					<div class="w-8 h-8 rounded-lg bg-purple-bg flex items-center justify-center text-purple">
-						<svg
-							class="w-4 h-4"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-						>
-							<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-							<polyline points="14 2 14 8 20 8"></polyline>
-						</svg>
+					<div class="w-8 h-8 rounded-lg bg-purple-bg flex items-center justify-center">
+						{#if file.type.toLowerCase() === 'pdf'}
+							<svg
+								class="w-5 h-5 text-red-500"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+								<polyline points="14 2 14 8 20 8"></polyline>
+							</svg>
+						{:else}
+							<svg
+								class="w-4 h-4 text-purple"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+								<polyline points="14 2 14 8 20 8"></polyline>
+							</svg>
+						{/if}
 					</div>
 					<div>
 						<h3 class="text-lg font-bold text-highlight">{file.name}</h3>
@@ -179,9 +193,13 @@
 				</div>
 
 				<div class="flex items-center gap-2">
-					<button class="btn btn-secondary" onclick={openInNewTab} title="Open in new tab">
+					<button 
+						class="btn btn-secondary flex items-center gap-2" 
+						onclick={openInNewTab} 
+						title="Open in new tab"
+					>
 						<svg
-							class="w-4 h-4 mr-2"
+							class="w-4 h-4"
 							viewBox="0 0 24 24"
 							fill="none"
 							stroke="currentColor"
@@ -194,9 +212,13 @@
 						Open
 					</button>
 					{#if onDelete}
-						<button class="btn btn-error" onclick={handleDelete} title="Delete file">
+						<button 
+							class="btn btn-error flex items-center gap-2" 
+							onclick={handleDelete} 
+							title="Delete file"
+						>
 							<svg
-								class="w-4 h-4 mr-2"
+								class="w-4 h-4"
 								viewBox="0 0 24 24"
 								fill="none"
 								stroke="currentColor"
@@ -291,8 +313,10 @@
 							</button>
 						</div>
 					{:else if pdfUrl}
-						<div class="h-[70vh]">
-							<PDFViewer {pdfUrl} height="100%" />
+						<div class="h-[70vh] relative">
+							{#key pdfUrl}
+								<PDFViewer {pdfUrl} height="100%" />
+							{/key}
 						</div>
 					{/if}
 				{:else}

@@ -10,7 +10,7 @@
 
 <div class="flex items-center justify-center h-screen">
 	<div class="text-center">
-		<h1 class="text-2xl font-bold text-white mb-4">Teacher Dashboard</h1>
+		<h1 class="text-2xl font-bold text-highlight mb-4">Teacher Dashboard</h1>
 		<p class="text-dark-muted mb-6">Redirecting to dashboard...</p>
 		<div
 			class="w-12 h-12 border-4 border-dark-purple border-t-dark-highlight rounded-full animate-spin mx-auto"

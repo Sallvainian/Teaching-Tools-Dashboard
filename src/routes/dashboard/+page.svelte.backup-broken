@@ -46,6 +46,30 @@
 			chartLoaded = true;
 		}, 500);
 	});
+
+	// Button handlers
+	function handleDownloadFile(fileName: string) {
+		// Placeholder for file download functionality
+		console.log('Downloading file:', fileName);
+		// TODO: Implement actual file download
+	}
+
+	function handleUpgradeStorage() {
+		// Navigate to settings or show upgrade modal
+		goto('/settings');
+	}
+
+	function navigateToFiles() {
+		goto('/files');
+	}
+
+	function navigateToChat() {
+		goto('/chat');
+	}
+
+	function navigateToLessonPlanner() {
+		goto('/lesson-planner');
+	}
 </script>
 
 <div class="min-h-screen">
@@ -208,6 +232,7 @@
 									<td class="py-3 text-text-base">{file.date}</td>
 									<td class="py-3 text-right">
 										<button
+											onclick={(e) => handleDownloadFile(file.name)}
 											class="text-purple hover:text-purple-hover transition-colors"
 											aria-label="Download file"
 										>
@@ -231,8 +256,8 @@
 				</div>
 
 				<div class="mt-4 flex justify-end">
-					<a
-						href="/files"
+					<button
+						onclick={(e) => navigateToFiles()}
 						class="text-purple hover:text-purple-hover transition-colors text-sm flex items-center gap-1"
 					>
 						View all files
@@ -245,7 +270,7 @@
 						>
 							<polyline points="9 18 15 12 9 6"></polyline>
 						</svg>
-					</a>
+					</button>
 				</div>
 			</div>
 
@@ -266,7 +291,7 @@
 				</div>
 
 				<div class="mt-4 flex justify-center">
-					<a href="/lesson-planner" class="btn btn-primary">
+					<button onclick={(e) => navigateToLessonPlanner()} class="btn btn-primary">
 						<svg
 							class="w-4 h-4 mr-2"
 							viewBox="0 0 24 24"
@@ -277,7 +302,7 @@
 							<path d="M12 5v14M5 12h14"></path>
 						</svg>
 						Add New Lesson
-					</a>
+					</button>
 				</div>
 			</div>
 		</div>
@@ -301,8 +326,8 @@
 				</div>
 
 				<div class="mt-4 flex justify-end">
-					<a
-						href="/chat"
+					<button
+						onclick={(e) => navigateToChat()}
 						class="text-purple hover:text-purple-hover transition-colors text-sm flex items-center gap-1"
 					>
 						Open Chat
@@ -315,7 +340,7 @@
 						>
 							<polyline points="9 18 15 12 9 6"></polyline>
 						</svg>
-					</a>
+					</button>
 				</div>
 			</div>
 
@@ -357,7 +382,7 @@
 					<div class="text-center">
 						<p class="text-text-base mb-1">6.5 GB of 10 GB used</p>
 						<button 
-							onclick={() => goto('/settings')}
+							onclick={(e) => handleUpgradeStorage()}
 							class="text-sm text-purple hover:text-purple-hover transition-colors">
 							Upgrade Storage
 						</button>

@@ -372,3 +372,7 @@ Remember: This is a production application for educators. Code quality, type saf
 3. Test file uploads after any changes to file-related components
 4. Keep TypeScript strict mode enabled
 5. IMPORTANT: This project uses npm, NOT pnpm
+
+## Coding Memories
+
+- When using puppeteer, always make the window 1440p

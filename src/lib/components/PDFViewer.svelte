@@ -1,17 +1,35 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 
 	let { pdfUrl = '', height = '600px' } = $props<{
 		pdfUrl: string;
 		height?: string;
 	}>();
+	
+	// Log when pdfUrl prop changes
+	$effect(() => {
+		console.log('PDFViewer received pdfUrl:', pdfUrl);
+		// Reset when URL changes
+		if (pdfUrl && pdfDoc) {
+			cleanup();
+			isLoading = true;
+		}
+		// Clear loadedPdfUrl if the URL becomes null
+		if (!pdfUrl) {
+			loadedPdfUrl = null;
+		}
+	});
 
 	let pdfContainer: HTMLDivElement | undefined = $state();
-	let isLoading = $state(true);
+	let isLoading = $state(false); // Start with false since we check for URL first
 	let error = $state<string | null>(null);
 	let currentPage = $state(1);
 	let totalPages = $state(0);
 	let scale = $state(1.2);
+	let isMounted = $state(false);
+	let isPDFJSLoaded = $state(false);
+	let isLoadingPDF = $state(false);
+	let loadedPdfUrl = $state<string | null>(null);
 
 	// PDF.js types
 	interface PDFPageProxy {
@@ -39,17 +57,42 @@
 	let pdfDoc: PDFDocumentProxy | null = null;
 
 	onMount(async () => {
+		console.log('PDFViewer mounted with URL:', pdfUrl);
+		isMounted = true;
+		
+		// If no PDF URL, stay in non-loading state
+		if (!pdfUrl) {
+			console.log('No PDF URL provided');
+			isLoading = false;
+			return;
+		}
+		
 		try {
+			// Set loading state when we have a URL
+			isLoading = true;
 			// Load PDF.js from CDN
 			await loadPDFJS();
-			if (pdfUrl) {
-				await loadPDF();
-			}
+			console.log('PDF.js loaded successfully');
+			// Initial load will be handled by the $effect when container is ready
 		} catch (err) {
 			console.error('Error initializing PDF viewer:', err);
 			error = 'Failed to load PDF viewer';
 			isLoading = false;
 		}
+	});
+
+	function cleanup() {
+		pdfDoc = null;
+		currentPage = 1;
+		totalPages = 0;
+		error = null;
+		loadedPdfUrl = null;
+	}
+
+	onDestroy(() => {
+		isMounted = false;
+		isLoadingPDF = false;
+		cleanup();
 	});
 
 	async function loadPDFJS() {
@@ -59,6 +102,7 @@
 				(window as Window & typeof globalThis & { pdfjsLib: PDFJSLib }).pdfjsLib
 			) {
 				pdfjsLib = (window as Window & typeof globalThis & { pdfjsLib: PDFJSLib }).pdfjsLib;
+				isPDFJSLoaded = true;
 				resolve(pdfjsLib);
 				return;
 			}
@@ -71,51 +115,87 @@
 				if (pdfjsLib) {
 					pdfjsLib.GlobalWorkerOptions.workerSrc =
 						'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+					isPDFJSLoaded = true;
 					resolve(pdfjsLib);
 				} else {
 					reject(new Error('pdfjsLib not found on window after script load'));
 				}
 			};
-			script.onerror = reject;
+			script.onerror = (err) => {
+				console.error('Failed to load PDF.js script:', err);
+				reject(err);
+			};
 			document.head.appendChild(script);
 		});
 	}
 
 	async function loadPDF() {
-		if (!pdfjsLib || !pdfUrl) return;
+		console.log('loadPDF called', {
+			isMounted,
+			pdfjsLib: !!pdfjsLib,
+			pdfUrl,
+			pdfContainer: !!pdfContainer,
+			isLoadingPDF
+		});
+		
+		if (!isMounted || !pdfjsLib || !pdfUrl || !pdfContainer || isLoadingPDF) {
+			console.warn('Cannot load PDF - missing requirements');
+			return;
+		}
+
+		isLoadingPDF = true;
 
 		try {
 			isLoading = true;
 			error = null;
 
+			console.log('Loading PDF document from:', pdfUrl);
 			const loadingTask = pdfjsLib.getDocument(pdfUrl);
 			pdfDoc = await loadingTask.promise;
 			totalPages = pdfDoc.numPages;
+			console.log('PDF loaded successfully, pages:', totalPages);
 
 			await renderPage(1);
-			isLoading = false;
+			// isLoading will be set to false in renderPage
+			loadedPdfUrl = pdfUrl;
 		} catch (err) {
 			console.error('Error loading PDF:', err);
 			error = 'Failed to load PDF document';
 			isLoading = false;
+		} finally {
+			isLoadingPDF = false;
 		}
 	}
 
 	async function renderPage(pageNumber: number) {
-		if (!pdfDoc || !pdfContainer) return;
+		if (!isMounted || !pdfDoc) {
+			console.warn('Cannot render page - component not ready', {
+				isMounted,
+				pdfDoc: !!pdfDoc
+			});
+			return;
+		}
+		
+		// Store reference to container at start of render
+		const container = pdfContainer;
+		if (!container) {
+			console.error('No PDF container available');
+			return;
+		}
 		isLoading = true;
 		error = null;
 
 		try {
 			const page = await pdfDoc.getPage(pageNumber);
 			const viewport = page.getViewport({ scale });
-
-			// Ensure canvas is a child of pdfContainer before manipulating it
-			let canvas = pdfContainer.querySelector('canvas');
+			
+			// Ensure container is visible
+			container.style.display = 'block';
+			
+			let canvas = container.querySelector('canvas');
 			if (!canvas) {
 				canvas = document.createElement('canvas');
-				// svelte-ignore-next-line no-dom-manipulating
-				pdfContainer.appendChild(canvas);
+				container.appendChild(canvas);
 			}
 
 			const context = canvas.getContext('2d');
@@ -126,10 +206,8 @@
 			canvas.height = viewport.height;
 			canvas.width = viewport.width;
 
-			// svelte-ignore-next-line no-dom-manipulating
-			pdfContainer.style.width = `${viewport.width}px`;
-			// svelte-ignore-next-line no-dom-manipulating
-			pdfContainer.style.height = `${viewport.height}px`;
+			container.style.width = `${viewport.width}px`;
+			container.style.height = `${viewport.height}px`;
 
 			const renderContext = {
 				canvasContext: context,
@@ -138,51 +216,66 @@
 
 			await page.render(renderContext).promise;
 			currentPage = pageNumber;
+			isLoading = false;
 		} catch (err) {
 			console.error('Error rendering page:', err);
 			error = 'Failed to render PDF page';
+			isLoading = false;
 		}
 	}
 
 	async function nextPage() {
-		if (currentPage < totalPages) {
+		if (currentPage < totalPages && pdfContainer) {
 			await renderPage(currentPage + 1);
 		}
 	}
 
 	async function prevPage() {
-		if (currentPage > 1) {
+		if (currentPage > 1 && pdfContainer) {
 			await renderPage(currentPage - 1);
 		}
 	}
 
 	async function zoomIn() {
-		scale = Math.min(scale + 0.2, 3.0);
-		await renderPage(currentPage);
+		if (pdfContainer) {
+			scale = Math.min(scale + 0.2, 3.0);
+			await renderPage(currentPage);
+		}
 	}
 
 	async function zoomOut() {
-		scale = Math.max(scale - 0.2, 0.5);
-		await renderPage(currentPage);
+		if (pdfContainer) {
+			scale = Math.max(scale - 0.2, 0.5);
+			await renderPage(currentPage);
+		}
 	}
 
 	// Watch for URL changes
 	$effect(() => {
-		if (pdfjsLib && pdfUrl) {
-			loadPDF();
+		console.log('Effect triggered:', {
+			isMounted,
+			isPDFJSLoaded,
+			pdfUrl,
+			pdfContainer: !!pdfContainer,
+			isLoadingPDF,
+			loadedPdfUrl
+		});
+		
+		// Only load if we haven't already loaded this PDF URL
+		if (isMounted && isPDFJSLoaded && pdfUrl && pdfContainer && !isLoadingPDF && pdfUrl !== loadedPdfUrl) {
+			console.log('All conditions met, loading new PDF...', pdfUrl);
+			// Add a small delay to ensure container is fully rendered
+			setTimeout(() => {
+				if (pdfContainer && !isLoadingPDF && pdfUrl !== loadedPdfUrl) {
+					loadPDF();
+				}
+			}, 100);
 		}
 	});
 </script>
 
-<div class="pdf-viewer bg-surface rounded-lg" style="height: {height}">
-	{#if isLoading}
-		<div class="flex items-center justify-center h-full">
-			<div class="text-center">
-				<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple mx-auto mb-4"></div>
-				<p class="text-text-base">Loading PDF...</p>
-			</div>
-		</div>
-	{:else if error}
+<div class="pdf-viewer bg-surface rounded-lg h-full flex flex-col" style="height: {height}; min-height: 400px;">
+	{#if error}
 		<div class="flex items-center justify-center h-full">
 			<div class="text-center">
 				<svg
@@ -201,90 +294,115 @@
 			</div>
 		</div>
 	{:else}
-		<!-- PDF Controls -->
-		<div class="flex items-center justify-between p-3 border-b border-border bg-card">
-			<div class="flex items-center gap-2">
-				<button
-					class="btn-icon"
-					onclick={prevPage}
-					disabled={currentPage <= 1}
-					title="Previous page"
-					aria-label="Previous page"
-				>
-					<svg
-						class="w-4 h-4"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
+		{#if !isLoading}
+			<!-- PDF Controls -->
+			<div class="flex items-center justify-between p-3 border-b border-border bg-card">
+				<div class="flex items-center gap-2">
+					<button
+						class="btn-icon"
+						onclick={() => prevPage()}
+						disabled={currentPage <= 1}
+						title="Previous page"
+						aria-label="Previous page"
 					>
-						<polyline points="15 18 9 12 15 6"></polyline>
-					</svg>
-				</button>
+						<svg
+							class="w-4 h-4"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<polyline points="15 18 9 12 15 6"></polyline>
+						</svg>
+					</button>
 
-				<span class="text-sm text-text-base">
-					Page {currentPage} of {totalPages}
-				</span>
+					<span class="text-sm text-text-base">
+						Page {currentPage} of {totalPages}
+					</span>
 
-				<button
-					class="btn-icon"
-					onclick={nextPage}
-					disabled={currentPage >= totalPages}
-					title="Next page"
-					aria-label="Next page"
-				>
-					<svg
-						class="w-4 h-4"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
+					<button
+						class="btn-icon"
+						onclick={() => nextPage()}
+						disabled={currentPage >= totalPages}
+						title="Next page"
+						aria-label="Next page"
 					>
-						<polyline points="9 18 15 12 9 6"></polyline>
-					</svg>
-				</button>
+						<svg
+							class="w-4 h-4"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<polyline points="9 18 15 12 9 6"></polyline>
+						</svg>
+					</button>
+				</div>
+
+				<div class="flex items-center gap-2">
+					<button class="btn-icon" onclick={() => zoomOut()} title="Zoom out" aria-label="Zoom out">
+						<svg
+							class="w-4 h-4"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<circle cx="11" cy="11" r="8"></circle>
+							<line x1="8" y1="11" x2="14" y2="11"></line>
+							<line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+						</svg>
+					</button>
+
+					<span class="text-sm text-text-base">
+						{Math.round(scale * 100)}%
+					</span>
+
+					<button class="btn-icon" onclick={() => zoomIn()} title="Zoom in" aria-label="Zoom in">
+						<svg
+							class="w-4 h-4"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<circle cx="11" cy="11" r="8"></circle>
+							<line x1="8" y1="11" x2="14" y2="11"></line>
+							<line x1="11" y1="8" x2="11" y2="14"></line>
+							<line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+						</svg>
+					</button>
+				</div>
 			</div>
+		{/if}
 
-			<div class="flex items-center gap-2">
-				<button class="btn-icon" onclick={zoomOut} title="Zoom out" aria-label="Zoom out">
-					<svg
-						class="w-4 h-4"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-					>
-						<circle cx="11" cy="11" r="8"></circle>
-						<line x1="8" y1="11" x2="14" y2="11"></line>
-						<line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-					</svg>
-				</button>
-
-				<span class="text-sm text-text-base">
-					{Math.round(scale * 100)}%
-				</span>
-
-				<button class="btn-icon" onclick={zoomIn} title="Zoom in" aria-label="Zoom in">
-					<svg
-						class="w-4 h-4"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-					>
-						<circle cx="11" cy="11" r="8"></circle>
-						<line x1="8" y1="11" x2="14" y2="11"></line>
-						<line x1="11" y1="8" x2="11" y2="14"></line>
-						<line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-					</svg>
-				</button>
-			</div>
-		</div>
-
-		<!-- PDF Content -->
-		<div class="flex-1 overflow-auto p-4 bg-gray-100 dark:bg-gray-800">
+		<!-- PDF Content Area - Always rendered -->
+		<div class="flex-1 overflow-auto p-4 bg-gray-100 dark:bg-gray-800 relative">
+			{#if isLoading}
+				<div class="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 z-10">
+					<div class="text-center">
+						<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple mx-auto mb-4"></div>
+						<p class="text-text-base">Loading PDF...</p>
+						<p class="text-xs text-muted mt-2">
+							{#if !isPDFJSLoaded}
+								Loading PDF viewer library...
+							{:else if !pdfDoc}
+								Loading document...
+							{:else}
+								Rendering page...
+							{/if}
+						</p>
+					</div>
+				</div>
+			{/if}
+			
+			<!-- PDF Container - Always present but may be hidden by loading overlay -->
 			<div class="flex justify-center">
-				<div bind:this={pdfContainer} class="pdf-canvas-container shadow-lg bg-white"></div>
+				<div 
+					bind:this={pdfContainer} 
+					class="pdf-canvas-container shadow-lg bg-white"
+					style="opacity: {isLoading ? 0 : 1}; transition: opacity 0.3s;"
+				></div>
 			</div>
 		</div>
 	{/if}
@@ -298,5 +416,6 @@
 	.pdf-canvas-container {
 		min-height: 200px;
 		border-radius: 4px;
+		display: block;
 	}
 </style>

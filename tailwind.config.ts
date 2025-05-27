@@ -4,76 +4,77 @@ import formsPlugin from '@tailwindcss/forms';
 import daisyuiPlugin from 'daisyui';
 
 const config: Config = {
-  content: ['./src/**/*.{html,js,svelte,ts}'],
-  darkMode: 'class',
-  theme: {
-    extend: {
-      fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-      },
-      colors: {
-        'bg-base': '#0B0F19',
-        'bg-gradient': '#0D1120',
-        'card': '#111827',
-        'surface': '#1F2937',
-        'accent': 'rgba(99, 102, 241, 0.1)',
-        'accent-hover': '#6366F1',
-        'purple': '#8B5CF6',
-        'purple-light': '#A78BFA',
-        'purple-bg': 'rgba(139, 92, 246, 0.08)',
-        'purple-hover': '#7C3AED',
-        'error': '#EF4444',
-        'error-hover': '#DC2626',
-        'text-base': '#9CA3AF',
-        'text-hover': '#F9FAFB',
-        'highlight': '#F9FAFB',
-        'muted': '#4B5563',
-        'border': '#1F2937',
-        'separator': '#374151',
-      },
-      backgroundImage: {
-        'gradient-radial': 'radial-gradient(50% 50% at 50% 50%, var(--tw-gradient-stops))',
-        'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
-      },
-      boxShadow: {
-        'card': '0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2)',
-        'themed-card': '0 8px 16px rgba(0, 0, 0, 0.4), 0 4px 6px rgba(0, 0, 0, 0.3)',
-        'dropdown': '0 10px 20px rgba(0, 0, 0, 0.5), 0 6px 8px rgba(0, 0, 0, 0.4)',
-        'glow': '0 0 20px rgba(139, 92, 246, 0.15)',
-        'button': '0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06)',
-      },
-      animation: {
-        'gradient': 'gradient 8s ease infinite',
-        'float': 'float 3s ease-in-out infinite',
-        'pulse-subtle': 'pulse-subtle 2s ease-in-out infinite',
-      },
-      keyframes: {
-        gradient: {
-          '0%, 100%': { backgroundPosition: '0% 50%' },
-          '50%': { backgroundPosition: '100% 50%' },
-        },
-        float: {
-          '0%, 100%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(-5px)' },
-        },
-        'pulse-subtle': {
-          '0%, 100%': { opacity: '1' },
-          '50%': { opacity: '0.8' },
-        },
-      },
-    },
-  },
-  plugins: [daisyuiPlugin, typographyPlugin, formsPlugin],
-  daisyui: {
-    themes: ["dark", "light"],
-    darkTheme: "dark",
-    base: false,
-    styled: true,
-    utils: false,
-    logs: false,
-    rtl: false,
-    prefix: "d-",
-  },
+	content: ['./src/**/*.{html,js,svelte,ts}'],
+	darkMode: 'class',
+	theme: {
+		extend: {
+			fontFamily: {
+				sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif']
+			},
+			colors: {
+				// Dark mode colors (default)
+				'bg-base': 'var(--bg-base)',
+				'bg-gradient': 'var(--bg-gradient)',
+				card: 'var(--card)',
+				surface: 'var(--surface)',
+				accent: 'var(--accent)',
+				'accent-hover': 'var(--accent-hover)',
+				purple: 'var(--purple)',
+				'purple-light': 'var(--purple-light)',
+				'purple-bg': 'var(--purple-bg)',
+				'purple-hover': 'var(--purple-hover)',
+				error: 'var(--error)',
+				'error-hover': 'var(--error-hover)',
+				'text-base': 'var(--text-base)',
+				'text-hover': 'var(--text-hover)',
+				highlight: 'var(--highlight)',
+				muted: 'var(--muted)',
+				border: 'var(--border)',
+				separator: 'var(--separator)'
+			},
+			backgroundImage: {
+				'gradient-radial': 'radial-gradient(50% 50% at 50% 50%, var(--tw-gradient-stops))',
+				'gradient-conic': 'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))'
+			},
+			boxShadow: {
+				card: 'var(--shadow-card)',
+				'themed-card': 'var(--shadow-themed-card)',
+				dropdown: 'var(--shadow-dropdown)',
+				glow: 'var(--shadow-glow)',
+				button: 'var(--shadow-button)'
+			},
+			animation: {
+				gradient: 'gradient 8s ease infinite',
+				float: 'float 3s ease-in-out infinite',
+				'pulse-subtle': 'pulse-subtle 2s ease-in-out infinite'
+			},
+			keyframes: {
+				gradient: {
+					'0%, 100%': { backgroundPosition: '0% 50%' },
+					'50%': { backgroundPosition: '100% 50%' }
+				},
+				float: {
+					'0%, 100%': { transform: 'translateY(0)' },
+					'50%': { transform: 'translateY(-5px)' }
+				},
+				'pulse-subtle': {
+					'0%, 100%': { opacity: '1' },
+					'50%': { opacity: '0.8' }
+				}
+			}
+		}
+	},
+	plugins: [daisyuiPlugin, typographyPlugin, formsPlugin],
+	daisyui: {
+		themes: false, // Disable DaisyUI themes since we're using CSS variables
+		darkTheme: 'dark',
+		base: false,
+		styled: false, // Disable DaisyUI styling
+		utils: false,
+		logs: false,
+		rtl: false,
+		prefix: 'd-'
+	}
 };
 
 export default config;

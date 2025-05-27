@@ -1,16 +1,6 @@
 {
-    "nuxt.isNuxtApp": false,
-    "explorer.excludeGitIgnore": true,
-    "files.exclude": {
-        "**/.github": true,
-        "**/.qodana": true,
-        "**/.sonarlint": true,
-        "**/.vscode": true,
-        "**/~": true
-    },
     "sonarlint.connectedMode.project": {
         "connectionId": "sallvainian",
         "projectKey": "Sallvainian_Teaching-Tools-Dashboard"
-    },
-    "files.autoSave": "onWindowChange"
+    }
 }

@@ -2,8 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Cache bust - v2 */
-
 @layer base {
 	/* Define CSS variables for themes */
 	:root {
@@ -20,11 +18,11 @@
 		--purple-hover: #7c3aed;
 		--error: #ef4444;
 		--error-hover: #dc2626;
-		--text-base: #374151;
+		--text-base: #4b5563;
 		--text-hover: #111827;
 		--highlight: #111827;
 		--muted: #9ca3af;
-		--border: #d1d5db;
+		--border: #e5e7eb;
 		--separator: #e5e7eb;
 
 		/* Light mode shadows */
@@ -36,32 +34,32 @@
 	}
 
 	.dark {
-		/* Dark mode colors - Black theme */
-		--bg-base: #000000;
-		--bg-gradient: #0a0a0a;
-		--card: #0f0f0f;
-		--surface: #1a1a1a;
-		--accent: rgba(99, 102, 241, 0.15);
+		/* Dark mode colors */
+		--bg-base: #0b0f19;
+		--bg-gradient: #0d1120;
+		--card: #111827;
+		--surface: #1f2937;
+		--accent: rgba(99, 102, 241, 0.1);
 		--accent-hover: #6366f1;
 		--purple: #8b5cf6;
 		--purple-light: #a78bfa;
-		--purple-bg: rgba(139, 92, 246, 0.12);
-		--purple-hover: #9333ea;
+		--purple-bg: rgba(139, 92, 246, 0.08);
+		--purple-hover: #7c3aed;
 		--error: #ef4444;
 		--error-hover: #dc2626;
-		--text-base: #e5e5e5;
-		--text-hover: #ffffff;
-		--highlight: #ffffff;
-		--muted: #a3a3a3;
-		--border: #262626;
-		--separator: #262626;
+		--text-base: #9ca3af;
+		--text-hover: #f9fafb;
+		--highlight: #f9fafb;
+		--muted: #4b5563;
+		--border: #1f2937;
+		--separator: #374151;
 
 		/* Dark mode shadows */
-		--shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
-		--shadow-themed-card: 0 8px 16px rgba(0, 0, 0, 0.6), 0 4px 6px rgba(0, 0, 0, 0.5);
-		--shadow-dropdown: 0 10px 20px rgba(0, 0, 0, 0.7), 0 6px 8px rgba(0, 0, 0, 0.6);
-		--shadow-glow: 0 0 20px rgba(139, 92, 246, 0.2);
-		--shadow-button: 0 2px 4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+		--shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+		--shadow-themed-card: 0 8px 16px rgba(0, 0, 0, 0.4), 0 4px 6px rgba(0, 0, 0, 0.3);
+		--shadow-dropdown: 0 10px 20px rgba(0, 0, 0, 0.5), 0 6px 8px rgba(0, 0, 0, 0.4);
+		--shadow-glow: 0 0 20px rgba(139, 92, 246, 0.15);
+		--shadow-button: 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 	}
 
 	body {
@@ -101,12 +99,7 @@
 	}
 
 	.input {
-		@apply bg-surface border border-border rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple focus:border-transparent outline-none transition text-text-hover;
-	}
-
-	.input::placeholder {
-		color: var(--text-hover);
-		opacity: 0.7;
+		@apply bg-surface border border-border rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple focus:border-transparent outline-none transition text-text-hover placeholder-muted;
 	}
 
 	/* Navigation */
@@ -141,7 +134,7 @@
 	}
 
 	.table-header-cell {
-		@apply px-6 py-3 text-left text-xs font-medium text-text-hover uppercase tracking-wider;
+		@apply px-6 py-3 text-left text-xs font-medium text-text-base uppercase tracking-wider;
 	}
 
 	.table-body {
@@ -153,7 +146,7 @@
 	}
 
 	.table-cell {
-		@apply px-6 py-4 whitespace-nowrap text-sm text-text-hover;
+		@apply px-6 py-4 whitespace-nowrap text-sm text-text-base;
 	}
 }
 
@@ -167,62 +160,18 @@
 }
 
 .bg-gradient-card {
-	background: linear-gradient(135deg, rgba(15, 15, 15, 0.9) 0%, rgba(0, 0, 0, 0.9) 100%);
+	background: linear-gradient(135deg, rgba(17, 24, 39, 0.8) 0%, rgba(13, 17, 32, 0.8) 100%);
 	backdrop-filter: blur(10px);
-}
-
-.dark .bg-gradient-card {
-	background: linear-gradient(135deg, rgba(20, 20, 20, 0.9) 0%, rgba(5, 5, 5, 0.9) 100%);
-	backdrop-filter: blur(12px);
 }
 
 /* Enhanced purple hover effect */
 .nav-button {
-	@apply text-text-hover hover:text-highlight font-medium px-3 py-2 rounded-md hover:bg-purple-bg;
-	transition: background-color 50ms ease-out, color 50ms ease-out;
-}
-
-/* Black theme enhancements */
-.dark .nav-button:hover {
-	background-color: rgba(139, 92, 246, 0.15);
-	box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
-}
-
-/* Enhanced card effects for black theme */
-.dark .card {
-	border-color: rgba(255, 255, 255, 0.05);
-}
-
-.dark .card:hover {
-	border-color: rgba(139, 92, 246, 0.3);
-	box-shadow: 0 0 20px rgba(139, 92, 246, 0.1);
-}
-
-.dark .card-dark {
-	background-color: rgba(15, 15, 15, 0.8);
-	border-color: rgba(255, 255, 255, 0.08);
-}
-
-/* Enhanced input styling for black theme */
-.dark .input {
-	background-color: rgba(20, 20, 20, 0.8);
-	border-color: rgba(255, 255, 255, 0.1);
-}
-
-.dark .input:focus {
-	background-color: rgba(25, 25, 25, 0.9);
-	border-color: var(--purple);
-	box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+	@apply text-text-base hover:text-highlight transition-all duration-300 font-medium px-3 py-2 rounded-md hover:bg-purple-bg hover:shadow-glow;
 }
 
 /* Menu item styles */
 .menu-item {
-	@apply flex items-center gap-3 px-3 py-2 rounded-md text-text-hover cursor-pointer hover:bg-purple-bg hover:text-highlight;
-	transition: background-color 50ms ease-out, color 50ms ease-out;
-}
-
-.menu-item.active {
-	@apply bg-purple-bg text-highlight border-l-4 border-purple font-medium;
+	@apply flex items-center gap-3 px-3 py-2 rounded-md text-text-base transition-all duration-200 cursor-pointer hover:bg-purple-bg hover:text-highlight active:scale-[0.99];
 }
 
 .menu-item.danger {
@@ -231,16 +180,6 @@
 
 .menu-item.special {
 	@apply text-purple hover:bg-purple-hover hover:text-white;
-}
-
-/* Black theme menu enhancements */
-.dark .menu-item:hover {
-	background-color: rgba(139, 92, 246, 0.12);
-}
-
-.dark .menu-item.active {
-	background-color: rgba(139, 92, 246, 0.18);
-	box-shadow: inset 0 0 20px rgba(139, 92, 246, 0.1);
 }
 
 /* Separator */
@@ -272,12 +211,6 @@
 	--ag-range-selection-background-color: var(--purple-bg);
 }
 
-/* Enhanced AG Grid dark mode styling */
-.dark .ag-theme-material {
-	--ag-row-hover-color: rgba(139, 92, 246, 0.15);
-	--ag-selected-row-background-color: rgba(139, 92, 246, 0.2);
-}
-
 /* Button styles */
 .btn {
 	@apply px-4 py-2 rounded-lg transition-all duration-300 font-medium;
@@ -289,16 +222,11 @@
 
 .btn-secondary {
 	@apply bg-surface hover:bg-surface text-text-hover shadow-button;
-	&:hover {
-		opacity: 0.8;
-	}
+	opacity: 0.8;
 }
 
-.btn-error {
-	@apply bg-error hover:bg-error-hover text-white shadow-button;
-	&:focus {
-		@apply ring-2 ring-error ring-offset-2 ring-offset-bg-base;
-	}
+.btn-secondary:hover {
+	opacity: 1;
 }
 
 .btn-sm {
@@ -319,38 +247,25 @@
 
 /* Custom scrollbar for webkit browsers */
 ::-webkit-scrollbar {
-	width: 10px;
-	height: 10px;
+	width: 8px;
+	height: 8px;
 }
 
 ::-webkit-scrollbar-track {
 	@apply bg-surface;
-	opacity: 0.5;
-	border-radius: 5px;
+	opacity: 0.2;
+	border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
 	@apply bg-purple;
-	opacity: 0.5;
-	border-radius: 5px;
+	opacity: 0.3;
+	border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-	@apply bg-purple-hover;
-	opacity: 0.8;
-}
-
-/* Dark mode scrollbar enhancement */
-.dark ::-webkit-scrollbar-track {
-	background: #0a0a0a;
-}
-
-.dark ::-webkit-scrollbar-thumb {
-	background: #333333;
-}
-
-.dark ::-webkit-scrollbar-thumb:hover {
-	background: #4a4a4a;
+	@apply bg-purple;
+	opacity: 0.5;
 }
 
 /* Smooth transitions for theme changes */

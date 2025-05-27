@@ -12,6 +12,7 @@
 	} from '$lib/stores/files';
 	import FilePreviewModal from '$lib/components/FilePreviewModal.svelte';
 	import FileShareModal from '$lib/components/FileShareModal.svelte';
+	import FolderTree from '$lib/components/FolderTree.svelte';
 	import type { FileMetadata, FileFolder } from '$lib/types/files';
 	import { formatFileSize, getFileType, getFileIcon } from '$lib/types/files';
 
@@ -34,12 +35,39 @@
 	// File input for uploads
 	let fileInput: HTMLInputElement;
 
-	// Get current folder name
-	const currentFolderName = $derived(() => {
+	// Get current folder name and breadcrumb path
+	const currentFolderData = $derived(() => {
 		const folderId = $currentFolderId;
-		if (!folderId) return 'All Files';
+		if (!folderId) return { name: 'All Files', path: [] };
+		
 		const folder = $folders.find((f) => f.id === folderId);
-		return folder?.name || 'All Files';
+		if (!folder) return { name: 'All Files', path: [] };
+		
+		// Build breadcrumb path
+		const path: FileFolder[] = [];
+		let current = folder;
+		
+		while (current) {
+			path.unshift(current);
+			if (current.parent_id) {
+				current = $folders.find((f) => f.id === current.parent_id) || null;
+			} else {
+				current = null;
+			}
+		}
+		
+		return { name: folder.name, path };
+	});
+
+	// Get folders in current directory
+	const currentFolders = $derived(() => {
+		if ($currentFolderId === null) {
+			// Show root folders when in "All Files"
+			return $folders.filter((f) => !f.parent_id);
+		} else {
+			// Show subfolders of current folder
+			return $folders.filter((f) => f.parent_id === $currentFolderId);
+		}
 	});
 
 	// Filtered and sorted files
@@ -81,6 +109,8 @@
 
 	onMount(async () => {
 		await filesActions.ensureDataLoaded();
+		console.log('Folders loaded:', $folders);
+		console.log('Files loaded:', $files);
 	});
 
 	function toggleSort(column: string) {
@@ -367,29 +397,20 @@
 							All Files
 						</button>
 
-						{#each $folders.filter((f) => !f.parent_id) as folder}
-							{@const stats = getFolderStats(folder)}
-							<button
-								class={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 transition-colors ${$currentFolderId === folder.id ? 'bg-purple-bg text-highlight' : 'hover:bg-surface text-text-base hover:text-text-hover'}`}
-								onclick={() => navigateToFolder(folder.id)}
-							>
-								<svg
-									class="w-5 h-5"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
+						<!-- Folder Tree -->
+						{#if $folders.length === 0}
+							<div class="px-3 py-4 text-center">
+								<p class="text-sm text-muted mb-2">No folders yet</p>
+								<button 
+									class="text-xs text-purple hover:text-purple-hover transition-colors"
+									onclick={() => (showNewFolderModal = true)}
 								>
-									<path
-										d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
-									></path>
-								</svg>
-								<div class="flex-1 flex justify-between items-center">
-									<span>{folder.name}</span>
-									<span class="text-xs text-muted">{stats.fileCount}</span>
-								</div>
-							</button>
-						{/each}
+									Create your first folder
+								</button>
+							</div>
+						{:else}
+							<FolderTree folders={$folders} parentId={null} />
+						{/if}
 					</div>
 
 					{#if $userStats}
@@ -415,8 +436,41 @@
 			<!-- Files Display -->
 			<div class="flex-1">
 				<div class="card-dark">
+					<!-- Breadcrumb Navigation -->
+					{#if currentFolderData().path.length > 0}
+						<div class="flex items-center gap-2 mb-4 text-sm">
+							<button
+								onclick={() => navigateToFolder(null)}
+								class="text-text-base hover:text-highlight transition-colors"
+							>
+								All Files
+							</button>
+							{#each currentFolderData().path as folder, i}
+								<svg
+									class="w-4 h-4 text-muted"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+								>
+									<polyline points="9 18 15 12 9 6"></polyline>
+								</svg>
+								{#if i === currentFolderData().path.length - 1}
+									<span class="text-highlight font-medium">{folder.name}</span>
+								{:else}
+									<button
+										onclick={() => navigateToFolder(folder.id)}
+										class="text-text-base hover:text-highlight transition-colors"
+									>
+										{folder.name}
+									</button>
+								{/if}
+							{/each}
+						</div>
+					{/if}
+
 					<div class="flex justify-between items-center mb-6">
-						<h2 class="text-xl font-bold text-highlight">{currentFolderName()}</h2>
+						<h2 class="text-xl font-bold text-highlight">{currentFolderData().name}</h2>
 
 						<div class="flex items-center gap-2">
 							<span class="text-sm text-text-base">Sort by:</span>
@@ -465,7 +519,7 @@
 						<div class="flex justify-center py-12">
 							<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple"></div>
 						</div>
-					{:else if filteredFiles().length === 0}
+					{:else if filteredFiles().length === 0 && currentFolders().length === 0}
 						<div class="flex flex-col items-center justify-center py-12">
 							<svg
 								class="w-16 h-16 text-muted mb-4"
@@ -479,71 +533,160 @@
 								<line x1="12" y1="18" x2="12" y2="12"></line>
 								<line x1="9" y1="15" x2="15" y2="15"></line>
 							</svg>
-							<h3 class="text-lg font-medium text-highlight mb-2">No files found</h3>
+							<h3 class="text-lg font-medium text-highlight mb-2">No files or folders found</h3>
 							<p class="text-text-base text-center max-w-md">
 								{searchQuery
-									? `No files matching "${searchQuery}" in ${currentFolderName()}`
-									: `This folder is empty. Upload files to get started.`}
+									? `No items matching "${searchQuery}"`
+									: `This folder is empty. Create folders or upload files to get started.`}
 							</p>
 						</div>
 					{:else if currentView === 'grid'}
-						<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-							{#each filteredFiles() as file}
-								<button
-									class="bg-surface/50 rounded-lg p-4 hover:bg-surface transition-colors cursor-pointer group relative w-full text-left"
-									onclick={() => openFilePreview(file)}
-									aria-label={`Open ${file.name}`}
-								>
-									<div class="flex justify-center mb-3">
-										<div class="w-12 h-12 text-purple text-3xl flex items-center justify-center">
-											{getFileIcon(file.type)}
-										</div>
-									</div>
-									<div class="text-center">
-										<div class="font-medium text-highlight mb-1 truncate" title={file.name}>
-											{file.name}
-										</div>
-										<div class="flex justify-between text-xs text-text-base">
-											<span>{formatFileSize(file.size)}</span>
-											<span>{formatDate(file.updated_at).split(',')[0]}</span>
-										</div>
-									</div>
-									<div
-										class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-									>
+						<!-- Folders Section -->
+						{#if currentFolders().length > 0}
+							<div class="mb-8">
+								<h3 class="text-sm font-medium text-text-base mb-3">Folders</h3>
+								<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+									{#each currentFolders() as folder}
+										{@const stats = getFolderStats(folder)}
 										<div
-											class="p-1 text-text-base hover:text-text-hover cursor-pointer"
-											onclick={(e) => {
-												e.stopPropagation();
-												// Show context menu
-											}}
+											class="bg-surface/50 border border-border rounded-lg hover:bg-surface hover:border-purple/50 transition-all duration-200 cursor-pointer group relative p-2"
+											onclick={() => navigateToFolder(folder.id)}
 											onkeydown={(e) => {
 												if (e.key === 'Enter' || e.key === ' ') {
 													e.preventDefault();
-													e.stopPropagation();
-													// Show context menu
+													navigateToFolder(folder.id);
 												}
 											}}
 											role="button"
 											tabindex="0"
-											aria-label="File options"
+											aria-label={`Open folder ${folder.name}`}
 										>
-											<svg
-												class="w-4 h-4"
-												viewBox="0 0 24 24"
-												fill="none"
-												stroke="currentColor"
-												stroke-width="2"
-											>
-												<circle cx="12" cy="12" r="1"></circle>
-												<circle cx="19" cy="12" r="1"></circle>
-												<circle cx="5" cy="12" r="1"></circle>
-											</svg>
+											<div class="flex items-center gap-3">
+												<svg
+													class="w-10 h-10 text-blue-500 flex-shrink-0"
+													viewBox="0 0 24 24"
+													fill="currentColor"
+												>
+													<path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
+												</svg>
+												<div class="flex-1 min-w-0">
+													<h5 class="text-sm font-medium text-text-hover truncate">{folder.name}</h5>
+													<p class="text-xs text-text-base">{stats.fileCount} {stats.fileCount === 1 ? 'item' : 'items'}</p>
+												</div>
+											</div>
+											
+											<!-- Folder actions -->
+											<div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+												<button
+													onclick={(e) => {
+														e.stopPropagation();
+														deleteFolder(e, folder);
+													}}
+													class="p-1 rounded hover:bg-error/20 hover:text-error transition-colors"
+													title="Delete folder"
+													aria-label="Delete folder"
+												>
+													<svg
+														class="w-4 h-4"
+														viewBox="0 0 24 24"
+														fill="none"
+														stroke="currentColor"
+														stroke-width="2"
+													>
+														<polyline points="3 6 5 6 21 6"></polyline>
+														<path
+															d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+														></path>
+													</svg>
+												</button>
+											</div>
 										</div>
-									</div>
-								</button>
-							{/each}
-						</div>
+									{/each}
+								</div>
+							</div>
+						{/if}
+
+						<!-- Files Section -->
+						{#if filteredFiles().length > 0}
+							<div>
+								<h3 class="text-sm font-medium text-text-base mb-3">Files</h3>
+								<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+							
+									{#each filteredFiles() as file}
+										<div
+											class="bg-surface/50 border border-border rounded-lg hover:bg-surface hover:border-purple/50 transition-all duration-200 cursor-pointer group relative p-4"
+											onclick={() => openFilePreview(file)}
+											onkeydown={(e) => {
+												if (e.key === 'Enter' || e.key === ' ') {
+													e.preventDefault();
+													openFilePreview(file);
+												}
+											}}
+											role="button"
+											tabindex="0"
+											aria-label={`Open ${file.name}`}
+										>
+											<div class="flex flex-col items-center">
+												{#if file.type.toLowerCase() === 'pdf'}
+													<svg
+														class="w-12 h-12 text-red-500 mb-2"
+														viewBox="0 0 24 24"
+														fill="currentColor"
+													>
+														<path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M10,17L8,14H10V11H14V14H16L12,17"/>
+													</svg>
+												{:else if file.type.toLowerCase() === 'doc' || file.type.toLowerCase() === 'docx'}
+													<svg
+														class="w-12 h-12 text-blue-600 mb-2"
+														viewBox="0 0 24 24"
+														fill="currentColor"
+													>
+														<path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M13,17V13H17V11H13V7H11V11H7V13H11V17H13Z"/>
+													</svg>
+												{:else}
+													<div class="w-12 h-12 bg-surface border border-border rounded flex items-center justify-center text-xl mb-2">
+														{getFileIcon(file.type)}
+													</div>
+												{/if}
+												<div class="w-full text-center">
+													<div class="text-sm font-medium text-text-hover truncate" title={file.name}>
+														{file.name}
+													</div>
+													<div class="text-xs text-text-base mt-1">
+														{formatFileSize(file.size)}
+													</div>
+												</div>
+											</div>
+											
+											<div
+												class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+											>
+												<button
+													class="p-1 rounded hover:bg-error/20 hover:text-error transition-colors"
+													onclick={(e) => {
+														e.stopPropagation();
+														// Show context menu
+													}}
+													aria-label="File options"
+												>
+													<svg
+														class="w-4 h-4"
+														viewBox="0 0 24 24"
+														fill="none"
+														stroke="currentColor"
+														stroke-width="2"
+													>
+														<circle cx="12" cy="12" r="1"></circle>
+														<circle cx="19" cy="12" r="1"></circle>
+														<circle cx="5" cy="12" r="1"></circle>
+													</svg>
+												</button>
+											</div>
+										</div>
+									{/each}
+								</div>
+							</div>
+						{/if}
 					{:else}
 						<div class="overflow-x-auto">
 							<table class="w-full">
@@ -624,9 +767,22 @@
 													class="flex items-center gap-2 hover:underline"
 													onclick={() => openFilePreview(file)}
 												>
-													<div class="w-5 h-5 text-purple">
-														{getFileIcon(file.type)}
-													</div>
+													{#if file.type.toLowerCase() === 'pdf'}
+														<svg
+															class="w-5 h-5 text-red-500"
+															viewBox="0 0 24 24"
+															fill="none"
+															stroke="currentColor"
+															stroke-width="2"
+														>
+															<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+															<polyline points="14 2 14 8 20 8"></polyline>
+														</svg>
+													{:else}
+														<div class="w-5 h-5 text-purple">
+															{getFileIcon(file.type)}
+														</div>
+													{/if}
 													<span>{file.name}</span>
 												</button>
 											</td>
@@ -711,6 +867,14 @@
 	<div class="fixed inset-0 bg-bg-base/80 backdrop-blur-sm flex items-center justify-center z-50">
 		<div class="bg-card border border-border rounded-lg p-6 w-full max-w-md">
 			<h3 class="text-xl font-bold text-highlight mb-4">Create New Folder</h3>
+
+			{#if $currentFolderId}
+				<div class="mb-4 p-3 bg-purple-bg rounded-lg">
+					<p class="text-sm text-text-base">
+						Creating subfolder in: <span class="font-medium text-highlight">{currentFolderData().name}</span>
+					</p>
+				</div>
+			{/if}
 
 			<div class="mb-4">
 				<label for="folder-name" class="block text-sm font-medium text-text-base mb-2"
