@@ -1,6 +1,6 @@
 {
-    "sonarlint.connectedMode.project": {
-        "connectionId": "sallvainian",
-        "projectKey": "Sallvainian_Teaching-Tools-Dashboard"
-    }
+	"sonarlint.connectedMode.project": {
+		"connectionId": "sallvainian",
+		"projectKey": "Sallvainian_Teaching-Tools-Dashboard"
+	}
 }

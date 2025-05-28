@@ -356,9 +356,10 @@
 
 					<div class="text-center">
 						<p class="text-text-base mb-1">6.5 GB of 10 GB used</p>
-						<button 
+						<button
 							onclick={() => goto('/settings')}
-							class="text-sm text-purple hover:text-purple-hover transition-colors">
+							class="text-sm text-purple hover:text-purple-hover transition-colors"
+						>
 							Upgrade Storage
 						</button>
 					</div>
