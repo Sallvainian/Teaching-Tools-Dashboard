@@ -89,7 +89,8 @@ jobs:
         run: |
           echo "Validating TypeScript config files..."
           npx tsc --noEmit --project tsconfig.json
-          echo "Config validation complete - PostCSS config will be validated during build"
+          echo "Validating PostCSS TypeScript config..."
+          node --loader tsx --eval "import('./postcss.config.ts').then(() => console.log('PostCSS config valid')).catch(e => { console.error('PostCSS config invalid:', e); process.exit(1); })"
         
       - name: Test PostCSS and Tailwind via build process
         run: |
