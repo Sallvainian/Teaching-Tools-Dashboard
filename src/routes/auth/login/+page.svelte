@@ -40,9 +40,7 @@
 				<a href="/auth/signup" class="text-purple hover:underline font-medium"> Sign up </a>
 			</p>
 			<p class="text-muted mt-2">
-				<a href="/auth/reset-password" class="text-purple hover:underline">
-					Forgot password?
-				</a>
+				<a href="/auth/reset-password" class="text-purple hover:underline"> Forgot password? </a>
 			</p>
 		</div>
 

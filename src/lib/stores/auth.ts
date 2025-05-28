@@ -41,12 +41,13 @@ function createAuthStore() {
 		error.set(null);
 		try {
 			const { supabase } = await import('$lib/supabaseClient');
-			
+
 			// First try to get session from local storage quickly
-			const storedSession = typeof window !== 'undefined' 
-				? window.localStorage.getItem('teacher-dashboard-auth')
-				: null;
-			
+			const storedSession =
+				typeof window !== 'undefined'
+					? window.localStorage.getItem('teacher-dashboard-auth')
+					: null;
+
 			if (storedSession) {
 				try {
 					const parsed = JSON.parse(storedSession);
@@ -61,11 +62,11 @@ function createAuthStore() {
 					console.error('Error parsing stored session:', e);
 				}
 			}
-			
+
 			// Now verify/refresh the session with Supabase
 			const { data, error: sessionError } = await supabase.auth.getSession();
 			if (sessionError) throw sessionError;
-			
+
 			if (data?.session) {
 				session.set(data.session);
 				user.set(data.session.user);
