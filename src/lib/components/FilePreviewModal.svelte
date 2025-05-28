@@ -59,12 +59,12 @@
 			error = null;
 
 			try {
-                               const url = await fileService.getFileUrl(file.storage_path);
-                               if (url) {
-                                       pdfUrl = url;
-                               } else {
-                                       error = 'Failed to load PDF';
-                               }
+				const url = await fileService.getFileUrl(file.storage_path);
+				if (url) {
+					pdfUrl = url;
+				} else {
+					error = 'Failed to load PDF';
+				}
 			} catch (err) {
 				console.error('Error loading PDF:', err);
 				error = 'Failed to load PDF';

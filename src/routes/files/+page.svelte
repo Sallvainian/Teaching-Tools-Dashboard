@@ -49,8 +49,8 @@
 
 		while (current) {
 			path.unshift(current);
-			if (current.parent_id) {
-				current = $folders.find((f) => f.id === current.parent_id) ?? null;
+			if (current?.parent_id) {
+				current = $folders.find((f) => f.id === current!.parent_id) ?? null;
 			} else {
 				current = null;
 			}
@@ -106,9 +106,9 @@
 		return result;
 	});
 
-       onMount(async () => {
-               await filesActions.ensureDataLoaded();
-       });
+	onMount(async () => {
+		await filesActions.ensureDataLoaded();
+	});
 
 	function toggleSort(column: string) {
 		if (sortBy === column) {

@@ -5,14 +5,14 @@
 		pdfUrl: string;
 		height?: string;
 	}>();
-	
-       // Reset state when pdfUrl changes
-       $effect(() => {
-               // Reset when URL changes
-               if (pdfUrl && pdfDoc) {
-                       cleanup();
-                       isLoading = true;
-               }
+
+	// Reset state when pdfUrl changes
+	$effect(() => {
+		// Reset when URL changes
+		if (pdfUrl && pdfDoc) {
+			cleanup();
+			isLoading = true;
+		}
 		// Clear loadedPdfUrl if the URL becomes null
 		if (!pdfUrl) {
 			loadedPdfUrl = null;
@@ -56,20 +56,20 @@
 	let pdfDoc: PDFDocumentProxy | null = null;
 
 	onMount(async () => {
-               isMounted = true;
+		isMounted = true;
 
-               // If no PDF URL, stay in non-loading state
-               if (!pdfUrl) {
-                       isLoading = false;
-                       return;
-               }
-		
+		// If no PDF URL, stay in non-loading state
+		if (!pdfUrl) {
+			isLoading = false;
+			return;
+		}
+
 		try {
-                       // Set loading state when we have a URL
-                       isLoading = true;
-                       // Load PDF.js from CDN
-                       await loadPDFJS();
-                       // Initial load will be handled by the $effect when container is ready
+			// Set loading state when we have a URL
+			isLoading = true;
+			// Load PDF.js from CDN
+			await loadPDFJS();
+			// Initial load will be handled by the $effect when container is ready
 		} catch (err) {
 			console.error('Error initializing PDF viewer:', err);
 			error = 'Failed to load PDF viewer';
@@ -126,8 +126,6 @@
 	}
 
 	async function loadPDF() {
-
-		
 		if (!isMounted || !pdfjsLib || !pdfUrl || !pdfContainer || isLoadingPDF) {
 			console.warn('Cannot load PDF - missing requirements');
 			return;
@@ -163,7 +161,7 @@
 			});
 			return;
 		}
-		
+
 		// Store reference to container at start of render
 		const container = pdfContainer;
 		if (!container) {
@@ -176,10 +174,10 @@
 		try {
 			const page = await pdfDoc.getPage(pageNumber);
 			const viewport = page.getViewport({ scale });
-			
+
 			// Ensure container is visible
 			container.style.display = 'block';
-			
+
 			let canvas = container.querySelector('canvas');
 			if (!canvas) {
 				canvas = document.createElement('canvas');
@@ -238,20 +236,30 @@
 		}
 	}
 
-       // Watch for URL changes
-       $effect(() => {
-               if (isMounted && isPDFJSLoaded && pdfUrl && pdfContainer && !isLoadingPDF && pdfUrl !== loadedPdfUrl) {
-                       // Add a small delay to ensure container is fully rendered
-                       setTimeout(() => {
-                               if (pdfContainer && !isLoadingPDF && pdfUrl !== loadedPdfUrl) {
-                                       loadPDF();
-                               }
-                       }, 100);
-               }
-       });
+	// Watch for URL changes
+	$effect(() => {
+		if (
+			isMounted &&
+			isPDFJSLoaded &&
+			pdfUrl &&
+			pdfContainer &&
+			!isLoadingPDF &&
+			pdfUrl !== loadedPdfUrl
+		) {
+			// Add a small delay to ensure container is fully rendered
+			setTimeout(() => {
+				if (pdfContainer && !isLoadingPDF && pdfUrl !== loadedPdfUrl) {
+					loadPDF();
+				}
+			}, 100);
+		}
+	});
 </script>
 
-<div class="pdf-viewer bg-surface rounded-lg h-full flex flex-col" style="height: {height}; min-height: 400px;">
+<div
+	class="pdf-viewer bg-surface rounded-lg h-full flex flex-col"
+	style="height: {height}; min-height: 400px;"
+>
 	{#if error}
 		<div class="flex items-center justify-center h-full">
 			<div class="text-center">
@@ -356,9 +364,13 @@
 		<!-- PDF Content Area - Always rendered -->
 		<div class="flex-1 overflow-auto p-4 bg-gray-100 dark:bg-gray-800 relative">
 			{#if isLoading}
-				<div class="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 z-10">
+				<div
+					class="absolute inset-0 flex items-center justify-center bg-gray-100 dark:bg-gray-800 z-10"
+				>
 					<div class="text-center">
-						<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple mx-auto mb-4"></div>
+						<div
+							class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple mx-auto mb-4"
+						></div>
 						<p class="text-text-base">Loading PDF...</p>
 						<p class="text-xs text-muted mt-2">
 							{#if !isPDFJSLoaded}
@@ -372,11 +384,11 @@
 					</div>
 				</div>
 			{/if}
-			
+
 			<!-- PDF Container - Always present but may be hidden by loading overlay -->
 			<div class="flex justify-center">
-				<div 
-					bind:this={pdfContainer} 
+				<div
+					bind:this={pdfContainer}
 					class="pdf-canvas-container shadow-lg bg-white"
 					style="opacity: {isLoading ? 0 : 1}; transition: opacity 0.3s;"
 				></div>
