@@ -89,10 +89,7 @@ jobs:
         run: |
           echo "Validating TypeScript config files..."
           npx tsc --noEmit --project tsconfig.json
-          echo "Validating PostCSS config..."
-          npx tsx -e "import('./postcss.config.ts').then(() => console.log('PostCSS config valid')).catch(e => { console.error('PostCSS config invalid:', e); process.exit(1); })"
-          echo "Validating Tailwind config..."
-          npx tailwindcss --help > /dev/null && echo "Tailwind CLI available"
+          echo "Config validation complete - PostCSS config will be validated during build"
         
       - name: Test PostCSS and Tailwind via build process
         run: |
