@@ -15,7 +15,7 @@ import Self from './FolderTree.svelte';
 	let expandedFolders = $state<Set<string>>(new Set());
 
 	// Get child folders for a given parent
-       let childFolders = $derived((): FileFolder[] => {
+       let childFolders = $derived(() => {
                return folders.filter((f) => f.parent_id === parentId);
        });
 

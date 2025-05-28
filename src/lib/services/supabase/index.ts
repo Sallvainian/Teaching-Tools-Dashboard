@@ -1,3 +1,2 @@
 // Export all Supabase service modules
-export { logEntriesService } from './logEntries';
-export { studentsService } from './students';
+// TODO: Add service modules as they are created
