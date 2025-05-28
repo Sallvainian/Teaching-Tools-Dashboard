@@ -157,15 +157,73 @@ jobs:
       - name: Install dependencies
         run: npm ci
         
+      - name: Validate config files
+        run: |
+          echo "Validating TypeScript config files..."
+          npx tsc --noEmit --project tsconfig.json
+          echo "Validating PostCSS config..."
+          node -e "import('./postcss.config.ts').then(() => console.log('PostCSS config valid')).catch(e => { console.error('PostCSS config invalid:', e); process.exit(1); })"
+          echo "Validating Tailwind config..."
+          npx tailwindcss --help > /dev/null && echo "Tailwind CLI available"
+        
+      - name: Test PostCSS processing
+        run: |
+          echo "Testing PostCSS compilation..."
+          # Create a test CSS file to verify PostCSS processing
+          mkdir -p test-build
+          echo "@tailwind base; @tailwind components; @tailwind utilities; .test { @apply text-red-500; }" > test-build/test.css
+          npx postcss test-build/test.css -o test-build/output.css
+          if [ ! -f "test-build/output.css" ]; then
+            echo "PostCSS compilation failed"
+            exit 1
+          fi
+          echo "PostCSS compilation successful"
+          
+      - name: Test Tailwind CSS compilation
+        run: |
+          echo "Testing Tailwind CSS compilation..."
+          # Verify Tailwind classes are properly processed
+          if ! grep -q "text-red-500" test-build/output.css; then
+            echo "Tailwind CSS compilation failed - classes not processed"
+            exit 1
+          fi
+          echo "Tailwind CSS compilation successful"
+          
       - name: Build project
         run: npm run build
         
-      - name: Check build output
+      - name: Validate build output
         run: |
+          echo "Validating build output..."
           if [ ! -d ".svelte-kit" ]; then
             echo "Build failed: .svelte-kit directory not found"
             exit 1
           fi
+          
+          # Check for CSS files in build output
+          if [ ! -d ".svelte-kit/output" ] && [ ! -d "build" ]; then
+            echo "Warning: No build output directory found"
+          fi
+          
+          # Validate that CSS was generated
+          if find .svelte-kit -name "*.css" | grep -q .; then
+            echo "CSS files generated successfully"
+          else
+            echo "Warning: No CSS files found in build output"
+          fi
+          
+      - name: Test preview build
+        run: |
+          echo "Testing preview build..."
+          timeout 30s npm run preview &
+          PREVIEW_PID=$!
+          sleep 10
+          if ! kill -0 $PREVIEW_PID 2>/dev/null; then
+            echo "Preview server failed to start"
+            exit 1
+          fi
+          kill $PREVIEW_PID
+          echo "Preview build test successful"
           
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -174,6 +232,7 @@ jobs:
           path: |
             .svelte-kit/
             build/
+            test-build/
           if-no-files-found: error
 
   analyze-bundle:
