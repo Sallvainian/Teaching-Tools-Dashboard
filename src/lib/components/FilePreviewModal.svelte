@@ -193,9 +193,9 @@
 				</div>
 
 				<div class="flex items-center gap-2">
-					<button 
-						class="btn btn-secondary flex items-center gap-2" 
-						onclick={openInNewTab} 
+					<button
+						class="btn btn-secondary flex items-center gap-2"
+						onclick={openInNewTab}
 						title="Open in new tab"
 					>
 						<svg
@@ -212,9 +212,9 @@
 						Open
 					</button>
 					{#if onDelete}
-						<button 
-							class="btn btn-error flex items-center gap-2" 
-							onclick={handleDelete} 
+						<button
+							class="btn btn-error flex items-center gap-2"
+							onclick={handleDelete}
 							title="Delete file"
 						>
 							<svg

@@ -39,14 +39,14 @@
 	const currentFolderData = $derived(() => {
 		const folderId = $currentFolderId;
 		if (!folderId) return { name: 'All Files', path: [] };
-		
+
 		const folder = $folders.find((f) => f.id === folderId);
 		if (!folder) return { name: 'All Files', path: [] };
-		
+
 		// Build breadcrumb path
 		const path: FileFolder[] = [];
 		let current = folder;
-		
+
 		while (current) {
 			path.unshift(current);
 			if (current.parent_id) {
@@ -55,7 +55,7 @@
 				current = null;
 			}
 		}
-		
+
 		return { name: folder.name, path };
 	});
 
@@ -401,7 +401,7 @@
 						{#if $folders.length === 0}
 							<div class="px-3 py-4 text-center">
 								<p class="text-sm text-muted mb-2">No folders yet</p>
-								<button 
+								<button
 									class="text-xs text-purple hover:text-purple-hover transition-colors"
 									onclick={() => (showNewFolderModal = true)}
 								>
@@ -545,7 +545,9 @@
 						{#if currentFolders().length > 0}
 							<div class="mb-8">
 								<h3 class="text-sm font-medium text-text-base mb-3">Folders</h3>
-								<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+								<div
+									class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
+								>
 									{#each currentFolders() as folder}
 										{@const stats = getFolderStats(folder)}
 										<div
@@ -567,16 +569,25 @@
 													viewBox="0 0 24 24"
 													fill="currentColor"
 												>
-													<path d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"/>
+													<path
+														d="M10 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2h-8l-2-2z"
+													/>
 												</svg>
 												<div class="flex-1 min-w-0">
-													<h5 class="text-sm font-medium text-text-hover truncate">{folder.name}</h5>
-													<p class="text-xs text-text-base">{stats.fileCount} {stats.fileCount === 1 ? 'item' : 'items'}</p>
+													<h5 class="text-sm font-medium text-text-hover truncate">
+														{folder.name}
+													</h5>
+													<p class="text-xs text-text-base">
+														{stats.fileCount}
+														{stats.fileCount === 1 ? 'item' : 'items'}
+													</p>
 												</div>
 											</div>
-											
+
 											<!-- Folder actions -->
-											<div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+											<div
+												class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+											>
 												<button
 													onclick={(e) => {
 														e.stopPropagation();
@@ -610,8 +621,9 @@
 						{#if filteredFiles().length > 0}
 							<div>
 								<h3 class="text-sm font-medium text-text-base mb-3">Files</h3>
-								<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-							
+								<div
+									class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
+								>
 									{#each filteredFiles() as file}
 										<div
 											class="bg-surface/50 border border-border rounded-lg hover:bg-surface hover:border-purple/50 transition-all duration-200 cursor-pointer group relative p-4"
@@ -633,7 +645,9 @@
 														viewBox="0 0 24 24"
 														fill="currentColor"
 													>
-														<path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M10,17L8,14H10V11H14V14H16L12,17"/>
+														<path
+															d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M10,17L8,14H10V11H14V14H16L12,17"
+														/>
 													</svg>
 												{:else if file.type.toLowerCase() === 'doc' || file.type.toLowerCase() === 'docx'}
 													<svg
@@ -641,15 +655,22 @@
 														viewBox="0 0 24 24"
 														fill="currentColor"
 													>
-														<path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M13,17V13H17V11H13V7H11V11H7V13H11V17H13Z"/>
+														<path
+															d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20M13,17V13H17V11H13V7H11V11H7V13H11V17H13Z"
+														/>
 													</svg>
 												{:else}
-													<div class="w-12 h-12 bg-surface border border-border rounded flex items-center justify-center text-xl mb-2">
+													<div
+														class="w-12 h-12 bg-surface border border-border rounded flex items-center justify-center text-xl mb-2"
+													>
 														{getFileIcon(file.type)}
 													</div>
 												{/if}
 												<div class="w-full text-center">
-													<div class="text-sm font-medium text-text-hover truncate" title={file.name}>
+													<div
+														class="text-sm font-medium text-text-hover truncate"
+														title={file.name}
+													>
 														{file.name}
 													</div>
 													<div class="text-xs text-text-base mt-1">
@@ -657,7 +678,7 @@
 													</div>
 												</div>
 											</div>
-											
+
 											<div
 												class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
 											>
@@ -775,7 +796,8 @@
 															stroke="currentColor"
 															stroke-width="2"
 														>
-															<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+															<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+															></path>
 															<polyline points="14 2 14 8 20 8"></polyline>
 														</svg>
 													{:else}
@@ -871,7 +893,9 @@
 			{#if $currentFolderId}
 				<div class="mb-4 p-3 bg-purple-bg rounded-lg">
 					<p class="text-sm text-text-base">
-						Creating subfolder in: <span class="font-medium text-highlight">{currentFolderData().name}</span>
+						Creating subfolder in: <span class="font-medium text-highlight"
+							>{currentFolderData().name}</span
+						>
 					</p>
 				</div>
 			{/if}
