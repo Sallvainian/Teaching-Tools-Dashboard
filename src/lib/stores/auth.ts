@@ -165,10 +165,10 @@ function createAuthStore() {
 	async function signOut() {
 		loading.set(true);
 		error.set(null);
-		try {
-			const { supabase } = await import('$lib/supabaseClient');
-			const { error: signOutError } = await supabase.auth.signOut();
-			if (signOutError) throw signOutError;
+               try {
+                       const { supabase, supabaseUrl } = await import('$lib/supabaseClient');
+                       const { error: signOutError } = await supabase.auth.signOut();
+                       if (signOutError) throw signOutError;
 
 			// Clear all auth state
 			session.set(null);
@@ -177,9 +177,9 @@ function createAuthStore() {
 
 			// Clear localStorage as well
 			if (typeof window !== 'undefined') {
-				window.localStorage.removeItem('teacher-dashboard-auth');
-				window.localStorage.removeItem('sb-' + supabase.supabaseUrl.split('//')[1] + '-auth-token');
-			}
+                               window.localStorage.removeItem('teacher-dashboard-auth');
+                               window.localStorage.removeItem('sb-' + supabaseUrl.split('//')[1] + '-auth-token');
+                       }
 
 			return true;
 		} catch (err) {
