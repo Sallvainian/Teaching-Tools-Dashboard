@@ -58,7 +58,7 @@
 			<input
 				bind:value={email}
 				class="input input-bordered w-full bg-surface border border-border py-3 px-4 text-base text-text-hover"
-			style="color: var(--text-hover);"
+				style="color: var(--text-hover);"
 				id="email"
 				type="email"
 				placeholder="Email"
@@ -71,7 +71,7 @@
 			<input
 				bind:value={password}
 				class="input input-bordered w-full bg-surface border border-border py-3 px-4 text-base text-text-hover"
-			style="color: var(--text-hover);"
+				style="color: var(--text-hover);"
 				id="password"
 				type="password"
 				placeholder="Password"
@@ -80,7 +80,11 @@
 		</div>
 
 		<div class="mt-6">
-			<button class="btn btn-primary w-full py-3 text-lg font-semibold" type="submit" disabled={loading}>
+			<button
+				class="btn btn-primary w-full py-3 text-lg font-semibold"
+				type="submit"
+				disabled={loading}
+			>
 				{#if loading}
 					<span class="loading loading-spinner loading-md"></span>
 				{:else}
@@ -92,12 +96,12 @@
 </div>
 
 <style>
-       input::placeholder {
-               color: #cbd5e1 !important;
-               opacity: 1 !important;
-       }
+	input::placeholder {
+		color: #cbd5e1 !important;
+		opacity: 1 !important;
+	}
 
-       :global(.dark) input::placeholder {
-               color: #94a3b8 !important;
-       }
+	:global(.dark) input::placeholder {
+		color: #94a3b8 !important;
+	}
 </style>
