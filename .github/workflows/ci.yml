@@ -85,12 +85,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
         
-      - name: Validate config files
+      - name: Validate TypeScript config files
         run: |
           echo "Validating TypeScript config files..."
           npx tsc --noEmit --project tsconfig.json
-          echo "Validating PostCSS TypeScript config..."
-          node --loader tsx --eval "import('./postcss.config.ts').then(() => console.log('PostCSS config valid')).catch(e => { console.error('PostCSS config invalid:', e); process.exit(1); })"
         
       - name: Test PostCSS and Tailwind via build process
         run: |
