@@ -50,7 +50,7 @@
 		while (current) {
 			path.unshift(current);
 			if (current?.parent_id) {
-				current = $folders.find((f) => f.id === current.parent_id) ?? null;
+				current = $folders.find((f) => f.id === current!.parent_id) ?? null;
 			} else {
 				current = null;
 			}
