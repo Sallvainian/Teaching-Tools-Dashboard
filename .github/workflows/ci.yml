@@ -97,10 +97,12 @@ jobs:
       - name: Test PostCSS processing
         run: |
           echo "Testing PostCSS compilation..."
+          # Create a temporary JS config for testing since PostCSS CLI doesn't support TS configs directly
+          echo "import tailwindcss from 'tailwindcss'; import autoprefixer from 'autoprefixer'; export default { plugins: [tailwindcss, autoprefixer] };" > test-postcss.config.js
           # Create a test CSS file to verify PostCSS processing
           mkdir -p test-build
           echo "@tailwind base; @tailwind components; @tailwind utilities; .test { @apply text-red-500; }" > test-build/test.css
-          npx postcss test-build/test.css -o test-build/output.css
+          npx postcss test-build/test.css -o test-build/output.css --config ./test-postcss.config.js
           if [ ! -f "test-build/output.css" ]; then
             echo "PostCSS compilation failed"
             exit 1
