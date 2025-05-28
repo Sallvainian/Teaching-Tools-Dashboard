@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
 import tailwindcss from 'tailwindcss';
 import autoprefixer from 'autoprefixer';
 
