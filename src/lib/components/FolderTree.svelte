@@ -1,6 +1,7 @@
 <script lang="ts">
-	import type { FileFolder } from '$lib/types/files';
-	import { filesActions, currentFolderId, files } from '$lib/stores/files';
+import type { FileFolder } from '$lib/types/files';
+import { filesActions, currentFolderId, files } from '$lib/stores/files';
+import Self from './FolderTree.svelte';
 
 	interface Props {
 		folders: FileFolder[];
@@ -14,9 +15,9 @@
 	let expandedFolders = $state<Set<string>>(new Set());
 
 	// Get child folders for a given parent
-	const childFolders = $derived(() => {
-		return folders.filter((f) => f.parent_id === parentId);
-	});
+       let childFolders = $derived((): FileFolder[] => {
+               return folders.filter((f) => f.parent_id === parentId);
+       });
 
 	// Check if a folder has children
 	function hasChildren(folderId: string): boolean {
@@ -68,7 +69,7 @@
 </script>
 
 <div class="space-y-1">
-	{#each childFolders as folder}
+       {#each childFolders as folder: FileFolder (folder.id)}
 		{@const stats = getFolderStats(folder)}
 		{@const hasSubfolders = hasChildren(folder.id)}
 		{@const isExpanded = expandedFolders.has(folder.id)}
@@ -157,7 +158,7 @@
 
 			<!-- Recursive children -->
 			{#if hasSubfolders && isExpanded}
-				<svelte:self folders={folders} parentId={folder.id} level={level + 1} />
+                                <Self folders={folders} parentId={folder.id} level={level + 1} />
 			{/if}
 		</div>
 	{/each}

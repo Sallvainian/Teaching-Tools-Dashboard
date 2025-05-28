@@ -92,12 +92,12 @@
 </div>
 
 <style>
-	input::placeholder {
-		color: #cbd5e1 !important;
-		opacity: 1 !important;
-	}
-	
-	.dark input::placeholder {
-		color: #94a3b8 !important;
-	}
+       input::placeholder {
+               color: #cbd5e1 !important;
+               opacity: 1 !important;
+       }
+
+       :global(.dark) input::placeholder {
+               color: #94a3b8 !important;
+       }
 </style>
