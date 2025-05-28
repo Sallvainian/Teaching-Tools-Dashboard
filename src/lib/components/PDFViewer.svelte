@@ -6,14 +6,13 @@
 		height?: string;
 	}>();
 	
-	// Log when pdfUrl prop changes
-	$effect(() => {
-		console.log('PDFViewer received pdfUrl:', pdfUrl);
-		// Reset when URL changes
-		if (pdfUrl && pdfDoc) {
-			cleanup();
-			isLoading = true;
-		}
+       // Reset state when pdfUrl changes
+       $effect(() => {
+               // Reset when URL changes
+               if (pdfUrl && pdfDoc) {
+                       cleanup();
+                       isLoading = true;
+               }
 		// Clear loadedPdfUrl if the URL becomes null
 		if (!pdfUrl) {
 			loadedPdfUrl = null;
@@ -57,23 +56,20 @@
 	let pdfDoc: PDFDocumentProxy | null = null;
 
 	onMount(async () => {
-		console.log('PDFViewer mounted with URL:', pdfUrl);
-		isMounted = true;
-		
-		// If no PDF URL, stay in non-loading state
-		if (!pdfUrl) {
-			console.log('No PDF URL provided');
-			isLoading = false;
-			return;
-		}
+               isMounted = true;
+
+               // If no PDF URL, stay in non-loading state
+               if (!pdfUrl) {
+                       isLoading = false;
+                       return;
+               }
 		
 		try {
-			// Set loading state when we have a URL
-			isLoading = true;
-			// Load PDF.js from CDN
-			await loadPDFJS();
-			console.log('PDF.js loaded successfully');
-			// Initial load will be handled by the $effect when container is ready
+                       // Set loading state when we have a URL
+                       isLoading = true;
+                       // Load PDF.js from CDN
+                       await loadPDFJS();
+                       // Initial load will be handled by the $effect when container is ready
 		} catch (err) {
 			console.error('Error initializing PDF viewer:', err);
 			error = 'Failed to load PDF viewer';
@@ -130,13 +126,7 @@
 	}
 
 	async function loadPDF() {
-		console.log('loadPDF called', {
-			isMounted,
-			pdfjsLib: !!pdfjsLib,
-			pdfUrl,
-			pdfContainer: !!pdfContainer,
-			isLoadingPDF
-		});
+
 		
 		if (!isMounted || !pdfjsLib || !pdfUrl || !pdfContainer || isLoadingPDF) {
 			console.warn('Cannot load PDF - missing requirements');
@@ -149,11 +139,9 @@
 			isLoading = true;
 			error = null;
 
-			console.log('Loading PDF document from:', pdfUrl);
 			const loadingTask = pdfjsLib.getDocument(pdfUrl);
 			pdfDoc = await loadingTask.promise;
 			totalPages = pdfDoc.numPages;
-			console.log('PDF loaded successfully, pages:', totalPages);
 
 			await renderPage(1);
 			// isLoading will be set to false in renderPage
@@ -250,28 +238,17 @@
 		}
 	}
 
-	// Watch for URL changes
-	$effect(() => {
-		console.log('Effect triggered:', {
-			isMounted,
-			isPDFJSLoaded,
-			pdfUrl,
-			pdfContainer: !!pdfContainer,
-			isLoadingPDF,
-			loadedPdfUrl
-		});
-		
-		// Only load if we haven't already loaded this PDF URL
-		if (isMounted && isPDFJSLoaded && pdfUrl && pdfContainer && !isLoadingPDF && pdfUrl !== loadedPdfUrl) {
-			console.log('All conditions met, loading new PDF...', pdfUrl);
-			// Add a small delay to ensure container is fully rendered
-			setTimeout(() => {
-				if (pdfContainer && !isLoadingPDF && pdfUrl !== loadedPdfUrl) {
-					loadPDF();
-				}
-			}, 100);
-		}
-	});
+       // Watch for URL changes
+       $effect(() => {
+               if (isMounted && isPDFJSLoaded && pdfUrl && pdfContainer && !isLoadingPDF && pdfUrl !== loadedPdfUrl) {
+                       // Add a small delay to ensure container is fully rendered
+                       setTimeout(() => {
+                               if (pdfContainer && !isLoadingPDF && pdfUrl !== loadedPdfUrl) {
+                                       loadPDF();
+                               }
+                       }, 100);
+               }
+       });
 </script>
 
 <div class="pdf-viewer bg-surface rounded-lg h-full flex flex-col" style="height: {height}; min-height: 400px;">

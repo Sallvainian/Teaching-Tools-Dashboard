@@ -101,7 +101,7 @@
 		opacity: 1 !important;
 	}
 
-	.dark input::placeholder {
+	:global(.dark) input::placeholder {
 		color: #94a3b8 !important;
 	}
 </style>

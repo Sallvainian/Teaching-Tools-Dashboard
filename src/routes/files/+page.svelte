@@ -45,17 +45,16 @@
 
 		// Build breadcrumb path
 		const path: FileFolder[] = [];
-		let current = folder;
+		let current: FileFolder | null = folder;
 
 		while (current) {
 			path.unshift(current);
 			if (current.parent_id) {
-				current = $folders.find((f) => f.id === current.parent_id) || null;
+				current = $folders.find((f) => f.id === current.parent_id) ?? null;
 			} else {
 				current = null;
 			}
 		}
-
 		return { name: folder.name, path };
 	});
 
@@ -107,11 +106,9 @@
 		return result;
 	});
 
-	onMount(async () => {
-		await filesActions.ensureDataLoaded();
-		console.log('Folders loaded:', $folders);
-		console.log('Files loaded:', $files);
-	});
+       onMount(async () => {
+               await filesActions.ensureDataLoaded();
+       });
 
 	function toggleSort(column: string) {
 		if (sortBy === column) {
@@ -589,9 +586,9 @@
 												class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
 											>
 												<button
-													onclick={(e) => {
+													onclick={async (e) => {
 														e.stopPropagation();
-														deleteFolder(e, folder);
+														await filesActions.deleteFolder(folder.id);
 													}}
 													class="p-1 rounded hover:bg-error/20 hover:text-error transition-colors"
 													title="Delete folder"
