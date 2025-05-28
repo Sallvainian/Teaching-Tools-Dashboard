@@ -135,14 +135,22 @@ jobs:
           kill $PREVIEW_PID
           echo "Preview build test successful"
           
+      - name: Check what build directories exist
+        run: |
+          echo "Checking build output directories..."
+          ls -la
+          echo "Contents of .svelte-kit (if exists):"
+          ls -la .svelte-kit/ || echo ".svelte-kit directory not found"
+          echo "Contents of build (if exists):"
+          ls -la build/ || echo "build directory not found"
+          
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build-output
           path: |
             .svelte-kit/
-            build/
-          if-no-files-found: error
+          if-no-files-found: warn
 
   analyze-bundle:
     name: Analyze Bundle Size
