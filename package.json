@@ -54,6 +54,8 @@
 	},
 	"dependencies": {
 		"@fontsource/inter": "^5.2.5",
+		"@githubnext/github-copilot-cli": "^0.1.22",
+		"@jridgewell/sourcemap-codec": "^1.5.0",
 		"@sentry/browser": "^9.22.0",
 		"@sentry/profiling-node": "^9.22.0",
 		"@sentry/sveltekit": "^9.22.0",

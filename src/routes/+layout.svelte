@@ -9,6 +9,7 @@
 	import { goto } from '$app/navigation';
 	import { navigating, page } from '$app/stores';
 	import LoadingBounce from '$lib/components/LoadingBounce.svelte';
+	import ImportWizard from '$lib/components/ImportWizard.svelte';
 
 	// Use regular imports - we'll fix the store files after
 	import {
@@ -37,16 +38,18 @@
 	let newClassName = $state('');
 	let sidebarCollapsed = $state(false);
 	let userMenuOpen = $state(false);
+	let classesDropdownOpen = $state(false);
+	let showImportWizard = $state(false);
 
 	async function handleAddClass() {
 		if (newClassName.trim()) {
-			await gradebookStore.addCategory(newClassName);
+			await gradebookStore.addClass(newClassName);
 			newClassName = '';
 		}
 	}
 
 	async function handleSelectClass(categoryId: string) {
-		await gradebookStore.selectCategory(categoryId);
+		await gradebookStore.selectClass(categoryId);
 		await goto('/gradebook');
 	}
 
@@ -54,12 +57,17 @@
 		userMenuOpen = !userMenuOpen;
 	}
 
+	function toggleClassesDropdown() {
+		classesDropdownOpen = !classesDropdownOpen;
+	}
+
 	async function handleSignOut() {
+		console.log('Sign out button clicked');
 		try {
 			const success = await authStore.signOut();
-			if (success) {
-				await goto('/auth/login');
-			}
+			console.log('Sign out result:', success);
+			// Force navigation and page reload
+			window.location.href = '/auth/login';
 		} catch (error) {
 			console.error('Sign out error:', error);
 		}
@@ -72,6 +80,9 @@
 			const target = event.target as HTMLElement;
 			if (userMenuOpen && !target.closest('.user-menu')) {
 				userMenuOpen = false;
+			}
+			if (classesDropdownOpen && !target.closest('.classes-dropdown')) {
+				classesDropdownOpen = false;
 			}
 		}
 
@@ -129,9 +140,133 @@
 						<a href="/dashboard" class="nav-button">Dashboard</a>
 						<a href="/files" class="nav-button">Files</a>
 						<a href="/chat" class="nav-button">Chat</a>
+
+						<!-- Classes dropdown -->
+						<div class="relative classes-dropdown">
+							<button onclick={toggleClassesDropdown} class="nav-button flex items-center gap-1">
+								Classes
+								<svg
+									class="w-4 h-4 transition-transform duration-200"
+									class:rotate-180={classesDropdownOpen}
+									xmlns="http://www.w3.org/2000/svg"
+									fill="none"
+									viewBox="0 0 24 24"
+									stroke="currentColor"
+								>
+									<path
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M19 9l-7 7-7-7"
+									/>
+								</svg>
+							</button>
+
+							{#if classesDropdownOpen}
+								<div
+									class="absolute top-full left-0 mt-2 w-64 bg-card border border-border rounded-lg shadow-dropdown z-[100] max-h-80 overflow-y-auto"
+								>
+									<div class="p-2">
+										<!-- Create new class section -->
+										<button
+											onclick={() => {
+												showImportWizard = true;
+												classesDropdownOpen = false;
+											}}
+											class="w-full mb-3 p-3 bg-purple text-highlight rounded-lg hover:bg-purple-hover transition-all duration-300 flex items-center justify-center gap-2"
+										>
+											<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+												<path
+													stroke-linecap="round"
+													stroke-linejoin="round"
+													stroke-width="2"
+													d="M12 4v16m8-8H4"
+												/>
+											</svg>
+											Create New Class
+										</button>
+										<div
+											style="display: none"
+											class="mb-3 p-3 bg-surface/50 rounded-lg border border-border/50"
+										>
+											<div class="flex items-center gap-2">
+												<input
+													type="text"
+													bind:value={newClassName}
+													placeholder="New class name"
+													class="flex-1 bg-bg-base text-text-hover border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-accent-hover focus:border-accent-hover transition-all duration-200 placeholder:text-muted"
+													onkeydown={(e) => e.key === 'Enter' && handleAddClass()}
+												/>
+												<button
+													onclick={handleAddClass}
+													class="bg-purple text-highlight px-3 py-2 rounded-lg text-sm hover:bg-purple-hover transition-all duration-300 flex items-center gap-1"
+													aria-label="Add new class"
+												>
+													<svg
+														class="w-4 h-4"
+														fill="none"
+														stroke="currentColor"
+														viewBox="0 0 24 24"
+													>
+														<path
+															stroke-linecap="round"
+															stroke-linejoin="round"
+															stroke-width="2"
+															d="M12 4v16m8-8H4"
+														/>
+													</svg>
+													Add
+												</button>
+											</div>
+										</div>
+
+										<!-- Classes list -->
+										{#if $gradebookStore.getClasses.length > 0}
+											<div class="space-y-1">
+												{#each $gradebookStore.getClasses as category (category.id)}
+													<button
+														onclick={() => {
+															handleSelectClass(category.id);
+															classesDropdownOpen = false;
+														}}
+														class="w-full text-left p-3 hover:bg-accent/20 rounded-lg transition-all duration-200 flex items-center justify-between group"
+													>
+														<div class="flex items-center gap-3">
+															<svg
+																class="w-4 h-4 text-muted group-hover:text-highlight transition-colors"
+																fill="none"
+																stroke="currentColor"
+																viewBox="0 0 24 24"
+															>
+																<path
+																	stroke-linecap="round"
+																	stroke-linejoin="round"
+																	stroke-width="2"
+																	d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+																/>
+															</svg>
+															<span
+																class="text-text-hover group-hover:text-highlight transition-colors"
+																>{category.name}</span
+															>
+														</div>
+														<span class="bg-purple text-highlight text-xs rounded-full px-2 py-1">
+															{category.studentIds.length}
+														</span>
+													</button>
+												{/each}
+											</div>
+										{:else}
+											<div class="p-3 text-center text-muted text-sm">No classes created yet</div>
+										{/if}
+									</div>
+								</div>
+							{/if}
+						</div>
+
 						<a href="/gradebook" class="nav-button">Gradebook</a>
 						<a href="/jeopardy" class="nav-button">Jeopardy</a>
-						<a href="/log-entries" class="nav-button">Log Entries</a>
+						<a href="/log-entries" class="nav-button whitespace-nowrap">Logs</a>
 					</div>
 
 					<div class="flex items-center gap-3">
@@ -221,27 +356,6 @@
 													></path>
 												</svg>
 												<span>Settings</span>
-											</a>
-											<a
-												href="/test-sentry"
-												class="menu-item text-sm"
-												onclick={() => (userMenuOpen = false)}
-											>
-												<svg
-													class="w-4 h-4"
-													fill="none"
-													stroke="currentColor"
-													viewBox="0 0 24 24"
-													xmlns="http://www.w3.org/2000/svg"
-												>
-													<path
-														stroke-linecap="round"
-														stroke-linejoin="round"
-														stroke-width="2"
-														d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-													></path>
-												</svg>
-												<span>Test Sentry</span>
 											</a>
 											<div class="separator mx-2 my-1"></div>
 											<button
@@ -417,38 +531,6 @@
 							</a>
 
 							<a
-								href="/classes"
-								class="menu-item relative group hover:bg-purple-bg text-text-hover hover:text-highlight"
-								class:px-3={!sidebarCollapsed}
-								class:px-1={sidebarCollapsed}
-								class:justify-center={sidebarCollapsed}
-								title="Classes"
-							>
-								<svg
-									class="w-5 h-5 flex-shrink-0"
-									xmlns="http://www.w3.org/2000/svg"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke="currentColor"
-								>
-									<path
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										stroke-width="2"
-										d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-									/>
-								</svg>
-								{#if !sidebarCollapsed}
-									<span>Classes</span>
-								{:else}
-									<span
-										class="absolute left-full ml-2 px-2 py-1 bg-card border border-border rounded-lg text-sm text-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dropdown"
-										>Classes</span
-									>
-								{/if}
-							</a>
-
-							<a
 								href="/gradebook"
 								class="menu-item relative group hover:bg-purple-bg text-text-hover hover:text-highlight"
 								class:px-3={!sidebarCollapsed}
@@ -609,61 +691,6 @@
 							</a>
 						</div>
 					</div>
-
-					{#if $isAuthenticated}
-						<div>
-							{#if !sidebarCollapsed}
-								<h3 class="text-muted uppercase text-xs font-semibold mb-3 px-3">Classes</h3>
-							{/if}
-							<div class="space-y-1">
-								{#each $gradebookStore.getCategories as category (category.id)}
-									<button
-										onclick={() => handleSelectClass(category.id)}
-										class="w-full menu-item text-left relative group"
-										title={category.name}
-									>
-										{#if !sidebarCollapsed}
-											<span>{category.name}</span>
-											<span class="bg-purple text-highlight text-xs rounded-full px-2 py-1"
-												>{category.studentIds.length}</span
-											>
-										{:else}
-											<span class="text-xs">{category.name.slice(0, 2).toUpperCase()}</span>
-											<span
-												class="absolute left-full ml-2 px-2 py-1 bg-card border border-border rounded-lg text-sm text-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dropdown"
-											>
-												{category.name} ({category.studentIds.length} students)
-											</span>
-										{/if}
-									</button>
-								{:else}
-									{#if !sidebarCollapsed}
-										<p class="text-muted text-sm px-3">No classes added yet</p>
-									{/if}
-								{/each}
-
-								{#if !sidebarCollapsed}
-									<div class="mt-3 pt-3 separator">
-										<div class="flex items-center px-3 gap-2">
-											<input
-												type="text"
-												bind:value={newClassName}
-												placeholder="New class name"
-												class="w-full bg-bg-base text-text-hover border border-border rounded-lg p-2 text-sm focus:ring-2 focus:ring-accent-hover focus:border-accent-hover transition-all duration-200 placeholder:text-muted"
-											/>
-											<button
-												onclick={handleAddClass}
-												class="bg-purple text-highlight p-2 rounded-lg text-sm hover:bg-purple-hover transition-all duration-300"
-												aria-label="Add new class"
-											>
-												+
-											</button>
-										</div>
-									</div>
-								{/if}
-							</div>
-						</div>
-					{/if}
 				</div>
 			</aside>
 
@@ -686,4 +713,14 @@
 			Teacher Dashboard • {new Date().getFullYear()}
 		</footer>
 	</div>
+
+	{#if showImportWizard}
+		<ImportWizard
+			onClose={() => (showImportWizard = false)}
+			onComplete={() => {
+				showImportWizard = false;
+				void gradebookStore.loadAllData();
+			}}
+		/>
+	{/if}
 {/if}

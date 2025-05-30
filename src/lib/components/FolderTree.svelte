@@ -1,7 +1,7 @@
 <script lang="ts">
-import type { FileFolder } from '$lib/types/files';
-import { filesActions, currentFolderId, files } from '$lib/stores/files';
-import Self from './FolderTree.svelte';
+	import type { FileFolder } from '$lib/types/files';
+	import { filesActions, currentFolderId, files } from '$lib/stores/files';
+	import Self from './FolderTree.svelte';
 
 	interface Props {
 		folders: FileFolder[];
@@ -15,7 +15,7 @@ import Self from './FolderTree.svelte';
 	let expandedFolders = $state<Set<string>>(new Set());
 
 	// Get child folders for a given parent
-       let childFolders: FileFolder[] = $derived(folders.filter((f) => f.parent_id === parentId));
+	let childFolders: FileFolder[] = $derived(folders.filter((f) => f.parent_id === parentId));
 
 	// Check if a folder has children
 	function hasChildren(folderId: string): boolean {
@@ -66,8 +66,8 @@ import Self from './FolderTree.svelte';
 	}
 </script>
 
-<div class="space-y-1">
-       {#each childFolders as folder: FileFolder (folder.id)}
+<div class="space-y-0.5">
+	{#each childFolders as folder (folder.id)}
 		{@const stats = getFolderStats(folder)}
 		{@const hasSubfolders = hasChildren(folder.id)}
 		{@const isExpanded = expandedFolders.has(folder.id)}
@@ -75,10 +75,12 @@ import Self from './FolderTree.svelte';
 
 		<div>
 			<div
-				class={`group flex items-center gap-2 px-3 py-2 rounded-lg transition-colors cursor-pointer ${
-					isActive ? 'bg-purple-bg text-highlight' : 'hover:bg-surface text-text-base hover:text-text-hover'
+				class={`group flex items-center gap-1 px-2 py-0.5 rounded-lg transition-colors cursor-pointer text-xs ${
+					isActive
+						? 'bg-purple-bg text-highlight'
+						: 'hover:bg-surface text-text-base hover:text-text-hover'
 				}`}
-				style={`padding-left: ${0.75 + level * 1.5}rem`}
+				style={`padding-left: ${0.5 + level * 0.75}rem`}
 			>
 				<!-- Expand/Collapse button -->
 				{#if hasSubfolders}
@@ -91,7 +93,7 @@ import Self from './FolderTree.svelte';
 						aria-label={isExpanded ? 'Collapse folder' : 'Expand folder'}
 					>
 						<svg
-							class={`w-3 h-3 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+							class={`w-2.5 h-2.5 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
 							viewBox="0 0 24 24"
 							fill="none"
 							stroke="currentColor"
@@ -101,54 +103,51 @@ import Self from './FolderTree.svelte';
 						</svg>
 					</button>
 				{:else}
-					<div class="w-4"></div>
+					<div class="w-3.5"></div>
 				{/if}
 
 				<!-- Folder button -->
 				<button
 					onclick={() => navigateToFolder(folder.id)}
-					class="flex-1 flex items-center gap-2 text-left"
+					class="flex-1 flex items-center gap-1 text-left"
 				>
 					<svg
-						class="w-5 h-5 flex-shrink-0"
+						class="w-3.5 h-3.5 flex-shrink-0"
 						viewBox="0 0 24 24"
 						fill="none"
 						stroke="currentColor"
 						stroke-width="2"
 					>
 						{#if isExpanded}
-							<path
-								d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2v1"
+							<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2v1"
 							></path>
 							<path d="M2 10h20"></path>
 						{:else}
-							<path
-								d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+							<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
 							></path>
 						{/if}
 					</svg>
 
 					<span class="flex-1 truncate">{folder.name}</span>
-					<span class="text-xs text-muted">{stats.fileCount}</span>
+					<span class="text-[10px] text-muted">{stats.fileCount}</span>
 				</button>
 
 				<!-- Delete button (shown on hover) -->
 				<button
 					onclick={(e) => deleteFolder(e, folder)}
-					class="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-error/20 hover:text-error transition-all"
+					class="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-error/20 hover:text-error transition-all"
 					title="Delete folder"
 					aria-label="Delete folder"
 				>
 					<svg
-						class="w-4 h-4"
+						class="w-3 h-3"
 						viewBox="0 0 24 24"
 						fill="none"
 						stroke="currentColor"
 						stroke-width="2"
 					>
 						<polyline points="3 6 5 6 21 6"></polyline>
-						<path
-							d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+						<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
 						></path>
 					</svg>
 				</button>
@@ -156,7 +155,7 @@ import Self from './FolderTree.svelte';
 
 			<!-- Recursive children -->
 			{#if hasSubfolders && isExpanded}
-                                <Self folders={folders} parentId={folder.id} level={level + 1} />
+				<Self {folders} parentId={folder.id} level={level + 1} />
 			{/if}
 		</div>
 	{/each}

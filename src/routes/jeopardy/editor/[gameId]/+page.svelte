@@ -390,7 +390,7 @@
 
 				<!-- Teams List -->
 				<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-					{#each $getActiveGame.teams as team}
+					{#each $getActiveGame.teams as team (team.id)}
 						<div class="card-dark flex items-center justify-between">
 							<div class="flex items-center gap-3">
 								<div class="w-4 h-4 rounded" style="background-color: {team.color}"></div>
@@ -675,7 +675,7 @@
 			>
 				<h2 class="text-xl font-bold text-gray-200 mb-4">Choose a Template</h2>
 				<div class="grid gap-4">
-					{#each getGameTemplates() as template}
+					{#each getGameTemplates() as template (template.name)}
 						<div class="card-dark hover:border-dark-purple transition-all duration-300">
 							<h3 class="text-lg font-semibold text-gray-200 mb-2">{template.name}</h3>
 							<p class="text-gray-400 text-sm mb-3">{template.description}</p>

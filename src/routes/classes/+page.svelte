@@ -16,7 +16,7 @@
 
 	// Reactive values with $derived
 	let selectedClass = $derived(
-		selectedClassId ? $gradebookStore.categories.find((c) => c.id === selectedClassId) : null
+		selectedClassId ? $gradebookStore.classes.find((c: any) => c.id === selectedClassId) : null
 	);
 
 	$effect(() => {
@@ -104,9 +104,9 @@
 
 		<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 			<div class="lg:col-span-1">
-				{#if $gradebookStore.categories.length > 0}
+				{#if $gradebookStore.classes.length > 0}
 					<ClassList
-						classes={$gradebookStore.categories}
+						classes={$gradebookStore.classes}
 						{selectedClassId}
 						onSelectClass={handleClassSelect}
 					/>

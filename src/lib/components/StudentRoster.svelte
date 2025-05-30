@@ -1,10 +1,10 @@
 <script lang="ts">
 	import type { Student } from '$lib/types/gradebook';
-	import type { Category } from '$lib/types/gradebook';
+	import type { Class } from '$lib/types/gradebook';
 	import { gradebookStore } from '$lib/stores/gradebook';
 	import { writable, derived } from 'svelte/store';
 
-	let { selectedClass } = $props<{ selectedClass: Category }>();
+	let { selectedClass } = $props<{ selectedClass: Class }>();
 
 	// Create a writable store for student name
 	const newStudentName = writable('');
@@ -24,7 +24,7 @@
 			const studentId = await gradebookStore.addGlobalStudent($newStudentName.trim());
 
 			if (studentId) {
-				await gradebookStore.assignStudentToCategory(studentId, selectedClass.id);
+				await gradebookStore.assignStudentToClass(studentId, selectedClass.id);
 				newStudentName.set('');
 			}
 		}
@@ -32,7 +32,7 @@
 
 	function removeStudent(studentId: string) {
 		if (confirm('Remove this student from the class?')) {
-			gradebookStore.removeStudentFromCategory(studentId, selectedClass.id);
+			gradebookStore.removeStudentFromClass(studentId, selectedClass.id);
 		}
 	}
 </script>

@@ -187,7 +187,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each recentUploads as file}
+							{#each recentUploads as file (file.name)}
 								<tr class="border-b border-border/50 hover:bg-surface/50 transition-colors">
 									<td class="py-3 text-highlight">
 										<div class="flex items-center gap-2">
@@ -254,7 +254,7 @@
 				<h2 class="text-xl font-bold text-highlight mb-4">Upcoming Lessons</h2>
 
 				<div class="space-y-4">
-					{#each upcomingLessons as lesson}
+					{#each upcomingLessons as lesson (lesson.title)}
 						<div class="p-3 bg-surface/50 rounded-lg">
 							<div class="font-medium text-highlight">{lesson.title}</div>
 							<div class="flex justify-between mt-1">
@@ -289,7 +289,7 @@
 				<h2 class="text-xl font-bold text-highlight mb-4">Recent Messages</h2>
 
 				<div class="space-y-4">
-					{#each recentMessages as message}
+					{#each recentMessages as message (message.message)}
 						<div class="p-4 bg-surface/50 rounded-lg">
 							<div class="flex justify-between mb-2">
 								<span class="font-medium text-highlight">{message.from}</span>

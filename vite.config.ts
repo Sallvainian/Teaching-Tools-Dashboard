@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
 				}
 			}
 		},
-
+		
 		css: {
 			devSourcemap: true
 		},

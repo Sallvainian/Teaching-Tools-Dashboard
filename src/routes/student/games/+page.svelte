@@ -133,7 +133,7 @@
 			<h2 class="text-2xl font-semibold text-dark-text mb-4">Games I Created</h2>
 			{#if ownGames.length > 0}
 				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-					{#each ownGames as game}
+					{#each ownGames as game (game.id)}
 						<div class="card-dark p-6">
 							<h3 class="text-lg font-medium text-dark-highlight mb-2">{game.name}</h3>
 							<p class="text-sm text-gray-400 mb-4">
@@ -181,7 +181,7 @@
 			<h2 class="text-2xl font-semibold text-dark-text mb-4">Games Shared With Me</h2>
 			{#if sharedGames.length > 0}
 				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-					{#each sharedGames as game}
+					{#each sharedGames as game (game.id)}
 						<div class="card-dark p-6">
 							<h3 class="text-lg font-medium text-dark-highlight mb-2">{game.name}</h3>
 							<p class="text-sm text-gray-400 mb-4">

@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 const fs = require('fs');
-const path = require('path');
+const _path = require('path');
 
 const colorMappings = {
 	// Gray colors
@@ -36,37 +36,45 @@ const files = [
 	'src/lib/components/auth/RoleSignupForm.svelte'
 ];
 
+// --- helper ---------------------------------------------------------------
+const applyTransformations = (content, filePath) => {
+	let modified = false;
+
+	// 1. color mappings
+	Object.entries(colorMappings).forEach(([oldColor, newColor]) => {
+		const regex = new RegExp(oldColor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
+		if (regex.test(content)) {
+			content = content.replace(regex, newColor);
+			modified = true;
+			console.log(`${filePath}: ${oldColor} → ${newColor}`);
+		}
+	});
+
+	// 2. opacity modifiers
+	content = content.replace(/bg-(\w+)\/(\d+)/g, (match, color, opacity) => {
+		modified = true;
+		console.log(`${filePath}: ${match} → bg-${color} (with opacity: 0.${opacity})`);
+		return `bg-${color}`;
+	});
+
+	// 3. missing border prefix
+	content = content.replace(/class="([^"]*)\bborder-border\b/g, (match, beforeBorder) => {
+		if (!beforeBorder.includes('border ')) {
+			modified = true;
+			console.log(`${filePath}: Adding missing \`border\` class`);
+			return match.replace('border-border', 'border border-border');
+		}
+		return match;
+	});
+
+	return { content, modified };
+};
+
+// --- main -----------------------------------------------------------------
 files.forEach((filePath) => {
 	try {
-		let content = fs.readFileSync(filePath, 'utf8');
-		let modified = false;
-
-		// Apply color mappings
-		Object.entries(colorMappings).forEach(([oldColor, newColor]) => {
-			const regex = new RegExp(oldColor.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g');
-			if (content.includes(oldColor)) {
-				content = content.replace(regex, newColor);
-				modified = true;
-				console.log(`${filePath}: ${oldColor} → ${newColor}`);
-			}
-		});
-
-		// Fix opacity modifiers
-		content = content.replace(/bg-(\w+)\/(\d+)/g, (match, color, opacity) => {
-			modified = true;
-			console.log(`${filePath}: ${match} → bg-${color} (with opacity: 0.${opacity})`);
-			return `bg-${color}`;
-		});
-
-		// Fix border classes missing the border prefix
-		content = content.replace(/class="([^"]*)\bborder-border\b/g, (match, beforeBorder) => {
-			if (!beforeBorder.includes('border ')) {
-				modified = true;
-				console.log(`${filePath}: Adding missing 'border' class`);
-				return match.replace('border-border', 'border border-border');
-			}
-			return match;
-		});
+		const original = fs.readFileSync(filePath, 'utf8');
+		const { content, modified } = applyTransformations(original, filePath);
 
 		if (modified) {
 			fs.writeFileSync(filePath, content, 'utf8');

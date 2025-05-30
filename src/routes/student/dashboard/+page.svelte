@@ -89,7 +89,7 @@
 			<h2 class="text-2xl font-semibold text-dark-text mb-4">My Classes</h2>
 			{#if enrolledClasses.length > 0}
 				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-					{#each enrolledClasses as cls}
+					{#each enrolledClasses as cls (cls.id)}
 						<div class="card-dark">
 							<h3 class="text-lg font-medium text-dark-highlight">{cls.name}</h3>
 							<p class="text-sm text-gray-400 mt-1">{cls.description || 'No description'}</p>
@@ -118,7 +118,7 @@
 
 			{#if studentGames.length > 0}
 				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-					{#each studentGames as game}
+					{#each studentGames as game (game.id)}
 						<div class="card-dark">
 							<h3 class="text-lg font-medium text-dark-highlight">{game.name}</h3>
 							<p class="text-sm text-gray-400 mt-1">
@@ -150,7 +150,7 @@
 			<h2 class="text-2xl font-semibold text-dark-text mb-4">Games Shared With Me</h2>
 			{#if sharedGames.length > 0}
 				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-					{#each sharedGames as game}
+					{#each sharedGames as game (game.id)}
 						<div class="card-dark">
 							<h3 class="text-lg font-medium text-dark-highlight">{game.name}</h3>
 							<p class="text-sm text-gray-400 mt-1">

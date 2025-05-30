@@ -67,6 +67,13 @@ export class FileService {
 			return data;
 		} catch (error) {
 			console.error('Error creating folder:', error);
+			// Log more details about the error
+			if (error && typeof error === 'object' && 'message' in error) {
+				console.error('Error message:', error.message);
+			}
+			if (error && typeof error === 'object' && 'details' in error) {
+				console.error('Error details:', error.details);
+			}
 			return null;
 		}
 	}

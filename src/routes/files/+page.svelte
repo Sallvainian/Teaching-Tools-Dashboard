@@ -15,6 +15,7 @@
 	import FolderTree from '$lib/components/FolderTree.svelte';
 	import type { FileMetadata, FileFolder } from '$lib/types/files';
 	import { formatFileSize, getFileType, getFileIcon } from '$lib/types/files';
+	import { supabase } from '$lib/supabaseClient';
 
 	// UI state
 	let currentView = $state('grid'); // 'grid' or 'list'
@@ -107,6 +108,12 @@
 	});
 
 	onMount(async () => {
+		// Check auth state
+		const {
+			data: { user }
+		} = await supabase.auth.getUser();
+		console.log('Current user:', user);
+
 		await filesActions.ensureDataLoaded();
 	});
 
@@ -146,9 +153,20 @@
 	async function createNewFolder() {
 		if (!newFolderName.trim()) return;
 
-		await filesActions.createFolder(newFolderName.trim(), $currentFolderId || undefined);
-		newFolderName = '';
-		showNewFolderModal = false;
+		console.log('Creating folder:', newFolderName.trim(), 'in parent:', $currentFolderId);
+		const result = await filesActions.createFolder(
+			newFolderName.trim(),
+			$currentFolderId || undefined
+		);
+
+		if (result) {
+			console.log('Folder created successfully:', result);
+			newFolderName = '';
+			showNewFolderModal = false;
+		} else {
+			console.error('Failed to create folder');
+			// Keep modal open on error
+		}
 	}
 
 	async function deleteFile(file: FileMetadata) {
@@ -304,7 +322,7 @@
 		<!-- Upload Progress -->
 		{#if $uploadProgress.length > 0}
 			<div class="card-dark mb-6 space-y-3">
-				{#each $uploadProgress as progress}
+				{#each $uploadProgress as progress (progress.file.name)}
 					<div>
 						<div class="flex items-center gap-3 mb-2">
 							{#if progress.status === 'uploading'}
@@ -373,15 +391,15 @@
 			<!-- Sidebar -->
 			<div class="lg:w-64 flex-shrink-0">
 				<div class="card-dark">
-					<h3 class="text-lg font-medium text-highlight mb-4">Folders</h3>
+					<h3 class="text-sm font-medium text-highlight mb-3">Folders</h3>
 
-					<div class="space-y-1">
+					<div class="space-y-0.5">
 						<button
-							class={`w-full text-left px-3 py-2 rounded-lg flex items-center gap-2 transition-colors ${$currentFolderId === null ? 'bg-purple-bg text-highlight' : 'hover:bg-surface text-text-base hover:text-text-hover'}`}
+							class={`w-full text-left px-2 py-0.5 rounded-lg flex items-center gap-1 transition-colors text-xs ${$currentFolderId === null ? 'bg-purple-bg text-highlight' : 'hover:bg-surface text-text-base hover:text-text-hover'}`}
 							onclick={() => navigateToFolder(null)}
 						>
 							<svg
-								class="w-5 h-5"
+								class="w-3.5 h-3.5"
 								viewBox="0 0 24 24"
 								fill="none"
 								stroke="currentColor"
@@ -442,7 +460,7 @@
 							>
 								All Files
 							</button>
-							{#each currentFolderData().path as folder, i}
+							{#each currentFolderData().path as folder, i (i)}
 								<svg
 									class="w-4 h-4 text-muted"
 									viewBox="0 0 24 24"
@@ -545,7 +563,7 @@
 								<div
 									class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
 								>
-									{#each currentFolders() as folder}
+									{#each currentFolders() as folder (folder.id)}
 										{@const stats = getFolderStats(folder)}
 										<div
 											class="bg-surface/50 border border-border rounded-lg hover:bg-surface hover:border-purple/50 transition-all duration-200 cursor-pointer group relative p-2"
@@ -621,7 +639,7 @@
 								<div
 									class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
 								>
-									{#each filteredFiles() as file}
+									{#each filteredFiles() as file (file.id)}
 										<div
 											class="bg-surface/50 border border-border rounded-lg hover:bg-surface hover:border-purple/50 transition-all duration-200 cursor-pointer group relative p-4"
 											onclick={() => openFilePreview(file)}
@@ -778,7 +796,7 @@
 									</tr>
 								</thead>
 								<tbody>
-									{#each filteredFiles() as file}
+									{#each filteredFiles() as file (file.id)}
 										<tr class="border-b border-border/50 hover:bg-surface/50 transition-colors">
 											<td class="py-3 text-highlight">
 												<button

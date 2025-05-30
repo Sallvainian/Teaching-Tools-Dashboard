@@ -1,10 +1,10 @@
 // src/lib/stores/gradebook.ts
 import { writable, derived, get } from 'svelte/store';
-import type { Student, Category, Assignment, Grade } from '$lib/types/gradebook';
+import type { Student, Class, Assignment, Grade } from '$lib/types/gradebook';
 import { gradebookService } from '$lib/services/supabaseService';
 import {
 	dbStudentToAppStudent,
-	dbCategoryToAppCategory,
+	dbClassToAppClass,
 	dbAssignmentToAppAssignment,
 	dbGradeToAppGrade
 } from '$lib/utils/modelConverters';
@@ -12,9 +12,9 @@ import {
 function createGradebookStore() {
 	// Initialize stores with empty data or data from localStorage
 	const students = writable<Student[]>([]);
-	const categories = writable<Category[]>([]);
-	const selectedCategoryId = writable<string | null>(
-		gradebookService.loadFromStorage('selectedCategoryId', null)
+	const classes = writable<Class[]>([]);
+	const selectedClassId = writable<string | null>(
+		gradebookService.loadFromStorage('selectedClassId', null)
 	);
 	const assignments = writable<Assignment[]>([]);
 	const grades = writable<Grade[]>([]);
@@ -29,8 +29,8 @@ function createGradebookStore() {
 	const store = derived(
 		[
 			students,
-			categories,
-			selectedCategoryId,
+			classes,
+			selectedClassId,
 			assignments,
 			grades,
 			isLoading,
@@ -40,8 +40,8 @@ function createGradebookStore() {
 		],
 		([
 			$students,
-			$categories,
-			$selectedCategoryId,
+			$classes,
+			$selectedClassId,
 			$assignments,
 			$grades,
 			$isLoading,
@@ -52,8 +52,8 @@ function createGradebookStore() {
 			return {
 				// State values
 				students: $students,
-				categories: $categories,
-				selectedCategoryId: $selectedCategoryId,
+				classes: $classes,
+				selectedClassId: $selectedClassId,
 				assignments: $assignments,
 				grades: $grades,
 				isLoading: $isLoading,
@@ -63,18 +63,18 @@ function createGradebookStore() {
 
 				// Computed values
 				getGlobalStudents: $students,
-				getCategories: $categories,
-				getSelectedCategory: $selectedCategoryId
-					? $categories.find((cat) => cat.id === $selectedCategoryId) || null
+				getClasses: $classes,
+				getSelectedClass: $selectedClassId
+					? $classes.find((cls) => cls.id === $selectedClassId) || null
 					: null,
-				getStudentsInSelectedCategory: $selectedCategoryId
+				getStudentsInSelectedClass: $selectedClassId
 					? $students.filter((st) => {
-							const cat = $categories.find((c) => c.id === $selectedCategoryId);
-							return cat ? cat.studentIds.includes(st.id) : false;
+							const cls = $classes.find((c) => c.id === $selectedClassId);
+							return cls ? cls.studentIds.includes(st.id) : false;
 						})
 					: [],
-				getAssignmentsForSelectedCategory: $selectedCategoryId
-					? $assignments.filter((asgn) => asgn.categoryId === $selectedCategoryId)
+				getAssignmentsForSelectedClass: $selectedClassId
+					? $assignments.filter((asgn) => asgn.classId === $selectedClassId)
 					: []
 			};
 		}
@@ -89,11 +89,11 @@ function createGradebookStore() {
 			// Load students
 			const studentsData = await gradebookService.getItems('students');
 
-			// Load categories
-			const categoriesData = await gradebookService.getItems('categories');
+			// Load classes
+			const classesData = await gradebookService.getItems('classes');
 
-			// Load category_students relations
-			const categoryStudentsData = await gradebookService.getItems('category_students');
+			// Load class_students relations
+			const classStudentsData = await gradebookService.getItems('class_students');
 
 			// Load assignments
 			const assignmentsData = await gradebookService.getItems('assignments');
@@ -104,8 +104,8 @@ function createGradebookStore() {
 			// Transform data to match our store format
 			const transformedStudents = studentsData.map(dbStudentToAppStudent);
 
-			const transformedCategories = categoriesData.map((cat) =>
-				dbCategoryToAppCategory(cat, categoryStudentsData)
+			const transformedClasses = classesData.map((cls) =>
+				dbClassToAppClass(cls, classStudentsData)
 			);
 
 			const transformedAssignments = assignmentsData.map(dbAssignmentToAppAssignment);
@@ -114,14 +114,14 @@ function createGradebookStore() {
 
 			// Update stores
 			students.set(transformedStudents);
-			categories.set(transformedCategories);
+			classes.set(transformedClasses);
 			assignments.set(transformedAssignments);
 			grades.set(transformedGrades);
 
-			// Select first category if none selected
-			if (categoriesData.length > 0 && get(selectedCategoryId) === null) {
-				selectedCategoryId.set(categoriesData[0].id);
-				gradebookService.saveToStorage('selectedCategoryId', categoriesData[0].id);
+			// Select first class if none selected
+			if (classesData.length > 0 && get(selectedClassId) === null) {
+				selectedClassId.set(classesData[0].id);
+				gradebookService.saveToStorage('selectedClassId', classesData[0].id);
 			}
 
 			// Mark data as loaded
@@ -135,14 +135,22 @@ function createGradebookStore() {
 	}
 
 	// Student management
-	async function addGlobalStudent(name: string): Promise<string | null> {
+	async function addGlobalStudent(name: string, userId?: string): Promise<string | null> {
 		const trimmed = name.trim();
 		if (!trimmed) return null;
 
 		try {
+			// Get user_id from auth if not provided
+			if (!userId) {
+				const { authStore } = await import('./auth');
+				const currentUser = get(authStore).user;
+				userId = currentUser?.id;
+			}
+
 			// Insert into database or localStorage
 			const result = await gradebookService.insertItem('students', {
-				name: trimmed
+				name: trimmed,
+				user_id: userId
 			});
 
 			if (!result) throw new Error('Failed to add student');
@@ -159,109 +167,155 @@ function createGradebookStore() {
 		}
 	}
 
-	// Category management
-	async function addCategory(name: string, userId?: string): Promise<void> {
+	// Class management
+	async function addClass(name: string, userId?: string): Promise<void> {
 		const trimmed = name.trim();
 		if (!trimmed) return;
 
 		try {
 			// Insert into database or localStorage
-			const result = await gradebookService.insertItem('categories', {
+			const result = await gradebookService.insertItem('classes', {
 				name: trimmed,
-				user_id: userId, // Include user_id if provided
-				class_id: '0c741791-d46d-4c19-978c-e0fcf4322283' // Use default class ID
+				user_id: userId // Include user_id if provided
 			});
 
-			if (!result) throw new Error('Failed to add category');
+			if (!result) throw new Error('Failed to add class');
 
 			// Update local store
-			const newCategory: Category = {
+			const newClass: Class = {
 				id: result.id,
 				name: result.name,
 				studentIds: []
 			};
 
-			categories.update((arr: Category[]) => [...arr, newCategory]);
-			selectedCategoryId.update((cur: string | null) => cur ?? result.id);
+			classes.update((arr: Class[]) => [...arr, newClass]);
+			selectedClassId.update((cur: string | null) => cur ?? result.id);
 
-			// Save selected category ID
-			gradebookService.saveToStorage('selectedCategoryId', get(selectedCategoryId));
+			// Save selected class ID
+			gradebookService.saveToStorage('selectedClassId', get(selectedClassId));
 		} catch (err: unknown) {
-			// Error adding category: err
-			error.set(err instanceof Error ? err.message : 'Failed to add category');
+			// Error adding class: err
+			error.set(err instanceof Error ? err.message : 'Failed to add class');
 		}
 	}
 
-	function selectCategory(id: string | null): void {
-		selectedCategoryId.set(id);
-		gradebookService.saveToStorage('selectedCategoryId', id);
+	// Delete class
+	async function deleteClass(classId: string): Promise<void> {
+		try {
+			// Delete from database
+			await gradebookService.deleteItem('classes', classId);
+
+			// Update local store
+			classes.update((arr: Class[]) => arr.filter((cls) => cls.id !== classId));
+
+			// If this was the selected class, clear selection
+			if (get(selectedClassId) === classId) {
+				selectedClassId.set(null);
+				gradebookService.saveToStorage('selectedClassId', null);
+			}
+		} catch (err: unknown) {
+			error.set(err instanceof Error ? err.message : 'Failed to delete class');
+		}
 	}
 
-	// Student assignment to category
-	async function assignStudentToCategory(studentId: string, categoryId: string): Promise<void> {
+	// Import classes from JSON
+	async function importClassesFromJSON(
+		jsonData: Array<{ name: string; students?: Array<{ name: string }> }>,
+		userId?: string
+	): Promise<void> {
+		try {
+			for (const classData of jsonData) {
+				if (classData.name) {
+					// Add the class
+					await addClass(classData.name, userId);
+
+					// If students are included, add them
+					if (classData.students && Array.isArray(classData.students)) {
+						const currentClasses = get(classes);
+						const newClass = currentClasses[currentClasses.length - 1]; // Get the just-added class
+
+						for (const studentData of classData.students) {
+							if (studentData.name) {
+								const studentId = await addGlobalStudent(studentData.name, userId);
+								if (studentId && newClass) {
+									await assignStudentToClass(studentId, newClass.id);
+								}
+							}
+						}
+					}
+				}
+			}
+		} catch (err: unknown) {
+			error.set(err instanceof Error ? err.message : 'Failed to import classes');
+		}
+	}
+
+	function selectClass(id: string | null): void {
+		selectedClassId.set(id);
+		gradebookService.saveToStorage('selectedClassId', id);
+	}
+
+	// Student assignment to class
+	async function assignStudentToClass(studentId: string, classId: string): Promise<void> {
 		try {
 			// Insert relationship into database or localStorage
-			await gradebookService.insertItem('category_students', {
-				category_id: categoryId,
+			await gradebookService.insertItem('class_students', {
+				class_id: classId,
 				student_id: studentId
 			});
 
 			// Update local store
-			categories.update((cats: Category[]) =>
-				cats.map((cat: Category) =>
-					cat.id === categoryId && !cat.studentIds.includes(studentId)
-						? { ...cat, studentIds: [...cat.studentIds, studentId] }
-						: cat
+			classes.update((clsArray: Class[]) =>
+				clsArray.map((cls: Class) =>
+					cls.id === classId && !cls.studentIds.includes(studentId)
+						? { ...cls, studentIds: [...cls.studentIds, studentId] }
+						: cls
 				)
 			);
 		} catch (err: unknown) {
-			// Error assigning student to category: err
+			// Error assigning student to class: err
 			error.set(err instanceof Error ? err.message : 'Failed to assign student');
 		}
 	}
 
-	function removeStudentFromCategoryHelper(
-		cat: Category,
-		categoryId: string,
-		studentId: string
-	): Category {
-		if (cat.id !== categoryId) return cat;
-		return { ...cat, studentIds: cat.studentIds.filter((id: string) => id !== studentId) };
+	function removeStudentFromClassHelper(cls: Class, classId: string, studentId: string): Class {
+		if (cls.id !== classId) return cls;
+		return { ...cls, studentIds: cls.studentIds.filter((id: string) => id !== studentId) };
 	}
 
-	async function removeStudentFromCategory(studentId: string, categoryId: string): Promise<void> {
+	async function removeStudentFromClass(studentId: string, classId: string): Promise<void> {
 		try {
-			// Get the specific category_students entry
-			const categoryStudents = await gradebookService.getItems('category_students', {
+			// Get the specific class_students entry
+			const classStudents = await gradebookService.getItems('class_students', {
 				filters: {
-					category_id: categoryId,
+					class_id: classId,
 					student_id: studentId
 				}
 			});
 
-			if (categoryStudents.length > 0) {
+			if (classStudents.length > 0) {
 				// For tables that use composite keys instead of an 'id' field
-				await gradebookService.deleteItem('category_students', {
-					category_id: categoryId,
+				await gradebookService.deleteItem('class_students', {
+					class_id: classId,
 					student_id: studentId
 				});
 			}
 
 			// Update local store
-			categories.update((cats: Category[]) =>
-				cats.map((cat: Category) => removeStudentFromCategoryHelper(cat, categoryId, studentId))
+			classes.update((clsArray: Class[]) =>
+				clsArray.map((cls: Class) => removeStudentFromClassHelper(cls, classId, studentId))
 			);
 		} catch (err: unknown) {
-			// Error removing student from category: err
+			// Error removing student from class: err
 			error.set(err instanceof Error ? err.message : 'Failed to remove student');
 		}
 	}
 
 	// Assignment management
-	async function addAssignmentToCategory(
+	async function addAssignmentToClass(
 		name: string,
 		maxPoints: number,
-		categoryId: string
+		classId: string
 	): Promise<void> {
 		const trimmed = name.trim();
 		if (!trimmed || maxPoints <= 0) return;
@@ -272,7 +326,7 @@ function createGradebookStore() {
 				// Type assertion for Inserts<T>
 				name: trimmed,
 				max_points: maxPoints,
-				category_id: categoryId
+				category_id: classId // DB column is still category_id but it references classes
 			});
 
 			if (!result) throw new Error('Failed to add assignment');
@@ -336,8 +390,8 @@ function createGradebookStore() {
 	}
 
 	// Student average calculation (no change needed - works with local data)
-	function studentAverageInCategory(studentId: string, categoryId: string): number {
-		const assigns = get(assignments).filter((a: Assignment) => a.categoryId === categoryId);
+	function studentAverageInClass(studentId: string, classId: string): number {
+		const assigns = get(assignments).filter((a: Assignment) => a.classId === classId);
 		if (assigns.length === 0) return 0;
 
 		const currentGrades = get(grades);
@@ -359,7 +413,7 @@ function createGradebookStore() {
 	async function clearAllData(): Promise<void> {
 		try {
 			// Clear tables with id field
-			const tablesWithId = ['grades', 'assignments', 'categories', 'students'] as const;
+			const tablesWithId = ['grades', 'assignments', 'classes', 'students'] as const;
 
 			for (const table of tablesWithId) {
 				const items = await gradebookService.getItems(table);
@@ -368,25 +422,25 @@ function createGradebookStore() {
 				}
 			}
 
-			// Handle category_students with composite key
-			const categoryStudents = await gradebookService.getItems('category_students');
-			for (const item of categoryStudents) {
+			// Handle class_students with composite key
+			const classStudents = await gradebookService.getItems('class_students');
+			for (const item of classStudents) {
 				// Pass composite key as an object
-				await gradebookService.deleteItem('category_students', {
-					category_id: item.category_id,
+				await gradebookService.deleteItem('class_students', {
+					class_id: item.class_id,
 					student_id: item.student_id
 				});
 			}
 
 			// Clear local stores
 			students.set([]);
-			categories.set([]);
-			selectedCategoryId.set(null);
+			classes.set([]);
+			selectedClassId.set(null);
 			assignments.set([]);
 			grades.set([]);
 
 			// Clear localStorage
-			gradebookService.removeFromStorage('selectedCategoryId');
+			gradebookService.removeFromStorage('selectedClassId');
 		} catch (err: unknown) {
 			error.set(err instanceof Error ? err.message : 'Failed to clear data');
 		}
@@ -422,7 +476,7 @@ function createGradebookStore() {
 			const { supabase } = await import('$lib/supabaseClient');
 
 			// Check authentication state
-			const { data: authData } = await supabase.auth.getSession();
+			const { data: _authData } = await supabase.auth.getSession();
 			// const isAuthenticated = !!authData?.session?.user; // Removed unused variable
 
 			// Log auth state and proceed with loading
@@ -444,16 +498,18 @@ function createGradebookStore() {
 		subscribe: store.subscribe,
 		loadAllData,
 		addGlobalStudent,
-		addCategory,
-		selectCategory,
-		assignStudentToCategory,
-		removeStudentFromCategory,
-		addAssignmentToCategory,
+		addClass,
+		deleteClass,
+		importClassesFromJSON,
+		selectClass,
+		assignStudentToClass,
+		removeStudentFromClass,
+		addAssignmentToClass,
 		recordGrade,
 		clearAllData,
 		setUseSupabase,
 		ensureDataLoaded,
-		studentAverageInCategory
+		studentAverageInClass
 	};
 }
 

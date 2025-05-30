@@ -1,5 +1,5 @@
 // src/lib/stores/auth.ts
-import { writable, derived, get } from 'svelte/store';
+import { writable, derived } from 'svelte/store';
 import type { AuthSession, User } from '@supabase/supabase-js';
 import type { UserRole } from '$lib/types/database';
 
@@ -80,7 +80,7 @@ function createAuthStore() {
 
 			// Only set up auth listener once
 			if (!authListenerSetup) {
-				const { data: authListener } = supabase.auth.onAuthStateChange(
+				const { data: _authListener } = supabase.auth.onAuthStateChange(
 					async (event, newSession) => {
 						session.set(newSession);
 						user.set(newSession?.user ?? null);
@@ -164,30 +164,72 @@ function createAuthStore() {
 	}
 
 	async function signOut() {
-		loading.set(true);
-		error.set(null);
+		console.log('Auth store signOut called');
 		try {
-			const { supabase, supabaseUrl } = await import('$lib/supabaseClient');
-			const { error: signOutError } = await supabase.auth.signOut();
-			if (signOutError) throw signOutError;
-
-			// Clear all auth state
+			// First clear local state immediately
 			session.set(null);
 			user.set(null);
 			role.set(null);
+			loading.set(false);
 
-			// Clear localStorage as well
+			// Clear all localStorage items related to Supabase
 			if (typeof window !== 'undefined') {
-				window.localStorage.removeItem('teacher-dashboard-auth');
-				window.localStorage.removeItem('sb-' + supabaseUrl.split('//')[1] + '-auth-token');
+				const keysToRemove: string[] = [];
+				for (let i = 0; i < localStorage.length; i++) {
+					const key = localStorage.key(i);
+					if (
+						key &&
+						(key.includes('supabase') || key.includes('sb-') || key === 'teacher-dashboard-auth')
+					) {
+						keysToRemove.push(key);
+					}
+				}
+				keysToRemove.forEach((key) => {
+					console.log('Removing localStorage key:', key);
+					localStorage.removeItem(key);
+				});
+
+				// Also clear sessionStorage
+				for (let i = 0; i < sessionStorage.length; i++) {
+					const key = sessionStorage.key(i);
+					if (key && (key.includes('supabase') || key.includes('sb-'))) {
+						console.log('Removing sessionStorage key:', key);
+						sessionStorage.removeItem(key);
+					}
+				}
+			}
+
+			// Now call Supabase signOut
+			const { supabase } = await import('$lib/supabaseClient');
+			console.log('Calling supabase.auth.signOut()');
+			const { error: signOutError } = await supabase.auth.signOut();
+
+			if (signOutError) {
+				console.error('Supabase signOut error:', signOutError);
+				// Even if there's an error, we've already cleared local state
+				// so the user appears signed out
+			}
+			console.log('Supabase signOut completed');
+
+			// Force a clean navigation to login page
+			if (typeof window !== 'undefined') {
+				// Use replace to prevent back button issues
+				window.location.replace('/auth/login');
 			}
 
 			return true;
 		} catch (err) {
+			console.error('Error during sign out:', err);
 			error.set(err instanceof Error ? err.message : 'Sign out failed');
-			return false;
-		} finally {
+			// Even on error, clear local state and redirect
+			session.set(null);
+			user.set(null);
+			role.set(null);
 			loading.set(false);
+			if (typeof window !== 'undefined') {
+				window.location.replace('/auth/login');
+			}
+			return false;
 		}
 	}
 

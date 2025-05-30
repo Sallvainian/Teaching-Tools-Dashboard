@@ -266,7 +266,7 @@
 
 					<!-- Conversation List -->
 					<div class="flex-1 overflow-y-auto">
-						{#each filteredConversations as conversation}
+						{#each filteredConversations as conversation (conversation.id)}
 							<button
 								class={`w-full text-left p-4 border-b border-border/50 hover:bg-surface/50 transition-colors flex items-center gap-3 ${activeConversation.id === conversation.id ? 'bg-purple-bg' : ''}`}
 								onclick={() => selectConversation(conversation)}
@@ -421,7 +421,7 @@
 
 					<!-- Messages -->
 					<div class="flex-1 overflow-y-auto p-4 space-y-4" bind:this={messagesContainer}>
-						{#each messages as message}
+						{#each messages as message (message.id)}
 							<div class={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
 								<div
 									class={`max-w-[70%] ${message.sender === 'me' ? 'bg-purple text-white' : 'bg-surface text-text-hover'} rounded-lg px-4 py-2 shadow-sm`}
@@ -470,7 +470,7 @@
 											class="absolute bottom-10 right-0 bg-card border border-border rounded-lg p-2 shadow-dropdown z-10"
 										>
 											<div class="grid grid-cols-6 gap-1">
-												{#each emojis as emoji}
+												{#each emojis as emoji (emoji)}
 													<button
 														class="w-8 h-8 text-lg hover:bg-surface rounded"
 														onclick={() => addEmoji(emoji)}

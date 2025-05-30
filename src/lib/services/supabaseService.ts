@@ -103,6 +103,13 @@ export class SupabaseService {
 				return data as unknown as Tables<T>[];
 			} catch (err) {
 				console.error(`Error fetching data from ${String(table)}:`, err);
+				// Log more details about the error
+				if (err && typeof err === 'object') {
+					if ('message' in err) console.error('Error message:', err.message);
+					if ('details' in err) console.error('Error details:', err.details);
+					if ('status' in err) console.error('Error status:', err.status);
+					if ('code' in err) console.error('Error code:', err.code);
+				}
 				// Return localStorage data as fallback
 				return this.loadFromStorage<Tables<T>[]>(`${String(table)}`, []) as unknown as Tables<T>[];
 			}

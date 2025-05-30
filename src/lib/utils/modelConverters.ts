@@ -1,5 +1,5 @@
 import type { Tables } from '$lib/types/database';
-import type { Student, Category, Assignment, Grade } from '$lib/types/gradebook';
+import type { Student, Class, Assignment, Grade } from '$lib/types/gradebook';
 
 // Commented out unused imports
 // import type {
@@ -16,7 +16,8 @@ import type { Student, Category, Assignment, Grade } from '$lib/types/gradebook'
 // Type aliases for better readability and to fix type inference
 type DBStudent = Tables<'students'>;
 type DBCategory = Tables<'categories'>;
-type DBCategoryStudent = Tables<'category_students'>;
+type DBClass = Tables<'classes'>;
+type DBClassStudent = Tables<'class_students'>;
 type DBAssignment = Tables<'assignments'>;
 type DBGrade = Tables<'grades'>;
 type DBObservationLog = Tables<'log_entries'>;
@@ -29,18 +30,28 @@ export function dbStudentToAppStudent(dbStudent: DBStudent): Student {
 	};
 }
 
-export function dbCategoryToAppCategory(
+export function dbCategoryToAppClass(
 	dbCategory: DBCategory,
-	categoryStudents: DBCategoryStudent[]
-): Category {
+	classStudents: DBClassStudent[]
+): Class {
 	// Handle categories from both schema versions
 	return {
 		id: dbCategory.id,
 		name: dbCategory.name,
-		// Filter category_students relationships for this category
-		studentIds: categoryStudents
-			.filter((cs) => cs.category_id === dbCategory.id)
+		// Filter class_students relationships for this category
+		studentIds: classStudents
+			.filter((cs) => cs.class_id === dbCategory.id)
 			.map((cs) => cs.student_id)
+	};
+}
+
+export function dbClassToAppClass(dbClass: DBClass, classStudents: DBClassStudent[]): Class {
+	// Convert classes table data to Class format
+	return {
+		id: dbClass.id,
+		name: dbClass.name,
+		// Filter class_students relationships for this class
+		studentIds: classStudents.filter((cs) => cs.class_id === dbClass.id).map((cs) => cs.student_id)
 	};
 }
 
@@ -49,7 +60,7 @@ export function dbAssignmentToAppAssignment(dbAssignment: DBAssignment): Assignm
 		id: dbAssignment.id,
 		name: dbAssignment.name,
 		maxPoints: dbAssignment.max_points,
-		categoryId: dbAssignment.category_id
+		classId: dbAssignment.category_id // Still maps from DB column category_id to app property classId
 	};
 }
 
