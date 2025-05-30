@@ -2,6 +2,7 @@
 import { writable, derived } from 'svelte/store';
 import type { AuthSession, User } from '@supabase/supabase-js';
 import type { UserRole } from '$lib/types/database';
+import { clearSupabaseAuthStorage } from '$lib/utils/authStorage';
 
 function createAuthStore() {
 	const user = writable<User | null>(null);
@@ -240,32 +241,8 @@ function createAuthStore() {
 			role.set(null);
 			loading.set(false);
 
-			// Clear all localStorage items related to Supabase
-			if (typeof window !== 'undefined') {
-				const keysToRemove: string[] = [];
-				for (let i = 0; i < localStorage.length; i++) {
-					const key = localStorage.key(i);
-					if (
-						key &&
-						(key.includes('supabase') || key.includes('sb-') || key === 'teacher-dashboard-auth')
-					) {
-						keysToRemove.push(key);
-					}
-				}
-				keysToRemove.forEach((key) => {
-					console.log('Removing localStorage key:', key);
-					localStorage.removeItem(key);
-				});
-
-				// Also clear sessionStorage
-				for (let i = 0; i < sessionStorage.length; i++) {
-					const key = sessionStorage.key(i);
-					if (key && (key.includes('supabase') || key.includes('sb-'))) {
-						console.log('Removing sessionStorage key:', key);
-						sessionStorage.removeItem(key);
-					}
-				}
-			}
+                        // Clear any stored authentication keys
+                        clearSupabaseAuthStorage();
 
 			// Now call Supabase signOut
 			const { supabase } = await import('$lib/supabaseClient');
