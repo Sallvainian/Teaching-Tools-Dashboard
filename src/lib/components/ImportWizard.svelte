@@ -218,7 +218,7 @@
 									<button
 										type="button"
 										onclick={() => removeStudentField(index)}
-										class="px-3 py-2 bg-red-600/20 text-red-400 border border-red-600/50 rounded-lg hover:bg-red-600/30 transition-all duration-200"
+										class="px-3 py-2 bg-error/20 text-error border border-error/50 rounded-lg hover:bg-error/30 transition-all duration-200"
 										aria-label="Remove student"
 									>
 										<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -270,7 +270,7 @@
 			{/if}
 
 			{#if error}
-				<div class="p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-300">
+				<div class="p-3 bg-error/20 border border-error/50 rounded-lg text-error">
 					{error}
 				</div>
 			{/if}

@@ -49,19 +49,19 @@
 <div class="container mx-auto px-4 py-8">
 	{#if isLoading}
 		<div class="flex justify-center items-center h-64">
-			<div class="text-gray-400">Loading classes...</div>
+			<div class="text-muted">Loading classes...</div>
 		</div>
 	{:else if !$isAuthenticated}
 		<div class="flex justify-center items-center flex-col h-64">
-			<div class="bg-gray-800 border border-gray-700 rounded-lg p-8 max-w-md text-center">
-				<h2 class="text-xl font-bold text-gray-100 mb-4">Authentication Required</h2>
-				<p class="text-gray-400 mb-6">
+			<div class="bg-card border border-border rounded-lg p-8 max-w-md text-center">
+				<h2 class="text-xl font-bold text-text-base mb-4">Authentication Required</h2>
+				<p class="text-muted mb-6">
 					You need to be logged in to access classes. Row Level Security (RLS) policies require
 					authentication to view and create classes.
 				</p>
 				<button
 					onclick={handleLogin}
-					class="px-4 py-2 bg-dark-purple text-white rounded-lg hover:bg-dark-purple-hover transition-all duration-200"
+					class="px-4 py-2 bg-purple text-highlight rounded-lg hover:bg-purple-hover transition-all duration-200"
 				>
 					Sign In
 				</button>
@@ -69,13 +69,13 @@
 		</div>
 	{:else if error}
 		<div class="flex justify-center items-center h-64 flex-col">
-			<div class="bg-gray-800 border border-red-800 rounded-lg p-8 max-w-lg">
-				<h2 class="text-xl font-bold text-red-400 mb-4">Error Loading Classes</h2>
-				<p class="text-gray-300 mb-6">{error}</p>
+			<div class="bg-card border border-error rounded-lg p-8 max-w-lg">
+				<h2 class="text-xl font-bold text-error mb-4">Error Loading Classes</h2>
+				<p class="text-text-hover mb-6">{error}</p>
 				<div class="flex justify-end">
 					<button
 						onclick={() => location.reload()}
-						class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all duration-200"
+						class="px-4 py-2 bg-error text-highlight rounded-lg hover:bg-error/80 transition-all duration-200"
 					>
 						Retry
 					</button>
@@ -84,18 +84,18 @@
 		</div>
 	{:else}
 		<div class="flex justify-between items-center mb-8">
-			<h1 class="text-3xl font-bold text-gray-100">Classes</h1>
+			<h1 class="text-3xl font-bold text-text-base">Classes</h1>
 			{#if $isAuthenticated}
 				<button
 					onclick={() => (showImportWizard = true)}
-					class="px-4 py-2 bg-dark-purple text-white rounded-lg hover:bg-dark-purple-hover transition-all duration-200"
+					class="px-4 py-2 bg-purple text-highlight rounded-lg hover:bg-purple-hover transition-all duration-200"
 				>
 					Import New Class
 				</button>
 			{:else}
 				<button
 					onclick={handleLogin}
-					class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200"
+					class="px-4 py-2 bg-surface text-text-hover rounded-lg hover:bg-accent/20 transition-all duration-200"
 				>
 					Sign In to Create Classes
 				</button>
@@ -111,14 +111,14 @@
 						onSelectClass={handleClassSelect}
 					/>
 				{:else}
-					<div class="bg-gray-800 border border-gray-700 rounded-lg p-6">
-						<p class="text-gray-400 text-center">No classes found</p>
+					<div class="bg-card border border-border rounded-lg p-6">
+						<p class="text-muted text-center">No classes found</p>
 						{#if $isAuthenticated}
-							<p class="text-gray-500 text-center mt-2 text-sm">
+							<p class="text-muted/80 text-center mt-2 text-sm">
 								Use the "Import New Class" button to create your first class
 							</p>
 						{:else}
-							<p class="text-gray-500 text-center mt-2 text-sm">
+							<p class="text-muted/80 text-center mt-2 text-sm">
 								Sign in to create and manage classes
 							</p>
 						{/if}
@@ -130,8 +130,8 @@
 				{#if selectedClass}
 					<StudentRoster {selectedClass} />
 				{:else}
-					<div class="bg-gray-800 border border-gray-700 rounded-lg p-8 text-center">
-						<p class="text-gray-400">Select a class to view its students</p>
+					<div class="bg-card border border-border rounded-lg p-8 text-center">
+						<p class="text-muted">Select a class to view its students</p>
 					</div>
 				{/if}
 			</div>

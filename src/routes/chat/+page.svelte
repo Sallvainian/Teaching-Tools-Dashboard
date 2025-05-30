@@ -280,7 +280,7 @@
 									</div>
 									{#if conversation.online}
 										<div
-											class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-card"
+											class="absolute bottom-0 right-0 w-3 h-3 bg-purple rounded-full border-2 border-card"
 										></div>
 									{/if}
 								</div>
@@ -299,7 +299,7 @@
 										<div class="text-sm text-text-base truncate">{conversation.lastMessage}</div>
 										{#if conversation.unread > 0}
 											<div
-												class="bg-purple text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
+												class="bg-purple text-highlight text-xs rounded-full w-5 h-5 flex items-center justify-center"
 											>
 												{conversation.unread}
 											</div>
@@ -348,7 +348,7 @@
 								</div>
 								{#if activeConversation.online}
 									<div
-										class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-card"
+										class="absolute bottom-0 right-0 w-3 h-3 bg-purple rounded-full border-2 border-card"
 									></div>
 								{/if}
 							</div>
@@ -363,7 +363,7 @@
 									{/if}
 								</div>
 								{#if activeConversation.online && !activeConversation.isGroup}
-									<div class="text-xs text-green-500">Online</div>
+									<div class="text-xs text-purple">Online</div>
 								{/if}
 							</div>
 						</div>
@@ -424,7 +424,7 @@
 						{#each messages as message (message.id)}
 							<div class={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
 								<div
-									class={`max-w-[70%] ${message.sender === 'me' ? 'bg-purple text-white' : 'bg-surface text-text-hover'} rounded-lg px-4 py-2 shadow-sm`}
+									class={`max-w-[70%] ${message.sender === 'me' ? 'bg-purple text-highlight' : 'bg-surface text-text-hover'} rounded-lg px-4 py-2 shadow-sm`}
 								>
 									<div class="text-sm mb-1">{message.text}</div>
 									<div class="text-xs opacity-70 text-right">{message.time}</div>

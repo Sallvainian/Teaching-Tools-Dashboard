@@ -276,7 +276,7 @@
 
 				<div class="flex border border-border rounded-lg overflow-hidden">
 					<button
-						class={`p-2 ${currentView === 'grid' ? 'bg-purple text-white' : 'bg-surface text-text-base hover:bg-accent hover:text-text-hover'}`}
+						class={`p-2 ${currentView === 'grid' ? 'bg-purple text-highlight' : 'bg-surface text-text-base hover:bg-accent hover:text-text-hover'}`}
 						onclick={() => (currentView = 'grid')}
 						title="Grid view"
 						aria-label="Grid view"
@@ -295,7 +295,7 @@
 						</svg>
 					</button>
 					<button
-						class={`p-2 ${currentView === 'list' ? 'bg-purple text-white' : 'bg-surface text-text-base hover:bg-accent hover:text-text-hover'}`}
+						class={`p-2 ${currentView === 'list' ? 'bg-purple text-highlight' : 'bg-surface text-text-base hover:bg-accent hover:text-text-hover'}`}
 						onclick={() => (currentView = 'list')}
 						title="List view"
 						aria-label="List view"
@@ -580,7 +580,7 @@
 										>
 											<div class="flex items-center gap-3">
 												<svg
-													class="w-10 h-10 text-blue-500 flex-shrink-0"
+													class="w-10 h-10 text-accent-hover flex-shrink-0"
 													viewBox="0 0 24 24"
 													fill="currentColor"
 												>
@@ -656,7 +656,7 @@
 											<div class="flex flex-col items-center">
 												{#if file.type.toLowerCase() === 'pdf'}
 													<svg
-														class="w-12 h-12 text-red-500 mb-2"
+														class="w-12 h-12 text-error mb-2"
 														viewBox="0 0 24 24"
 														fill="currentColor"
 													>
@@ -666,7 +666,7 @@
 													</svg>
 												{:else if file.type.toLowerCase() === 'doc' || file.type.toLowerCase() === 'docx'}
 													<svg
-														class="w-12 h-12 text-blue-600 mb-2"
+														class="w-12 h-12 text-accent-hover mb-2"
 														viewBox="0 0 24 24"
 														fill="currentColor"
 													>
@@ -805,7 +805,7 @@
 												>
 													{#if file.type.toLowerCase() === 'pdf'}
 														<svg
-															class="w-5 h-5 text-red-500"
+															class="w-5 h-5 text-error"
 															viewBox="0 0 24 24"
 															fill="none"
 															stroke="currentColor"

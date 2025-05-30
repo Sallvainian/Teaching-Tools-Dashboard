@@ -161,7 +161,7 @@
 					<div class="w-8 h-8 rounded-lg bg-purple-bg flex items-center justify-center">
 						{#if file.type.toLowerCase() === 'pdf'}
 							<svg
-								class="w-5 h-5 text-red-500"
+								class="w-5 h-5 text-error"
 								viewBox="0 0 24 24"
 								fill="none"
 								stroke="currentColor"

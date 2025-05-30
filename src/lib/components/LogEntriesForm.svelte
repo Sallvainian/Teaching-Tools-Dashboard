@@ -223,7 +223,7 @@
 		</button>
 		<button
 			type="submit"
-			class="px-6 py-2 bg-purple text-white rounded-lg hover:bg-purple-hover transition-colors"
+			class="px-6 py-2 bg-purple text-highlight rounded-lg hover:bg-purple-hover transition-colors"
 		>
 			{editMode ? 'Update' : 'Save'} Log Entry
 		</button>

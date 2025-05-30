@@ -241,8 +241,8 @@ function createAuthStore() {
 			role.set(null);
 			loading.set(false);
 
-                        // Clear any stored authentication keys
-                        clearSupabaseAuthStorage();
+			// Clear any stored authentication keys
+			clearSupabaseAuthStorage();
 
 			// Now call Supabase signOut
 			const { supabase } = await import('$lib/supabaseClient');

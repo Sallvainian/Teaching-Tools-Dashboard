@@ -12,21 +12,21 @@
 	<div class="animate-pulse {className}">
 		{#each Array(lines) as _, i}
 			<div
-				class="h-4 bg-gray-300 dark:bg-gray-700 rounded mb-2"
+				class="h-4 bg-surface rounded mb-2"
 				style="width: {i === lines - 1 ? '60%' : '100%'}"
 			></div>
 		{/each}
 	</div>
 {:else if type === 'card'}
 	<div class="animate-pulse bg-card rounded-xl shadow-card p-6 border border-border {className}">
-		<div class="h-6 bg-gray-300 dark:bg-gray-700 rounded w-3/4 mb-4"></div>
+		<div class="h-6 bg-surface rounded w-3/4 mb-4"></div>
 		<div class="space-y-2">
-			<div class="h-4 bg-gray-300 dark:bg-gray-700 rounded"></div>
-			<div class="h-4 bg-gray-300 dark:bg-gray-700 rounded w-5/6"></div>
+			<div class="h-4 bg-surface rounded"></div>
+			<div class="h-4 bg-surface rounded w-5/6"></div>
 		</div>
 		<div class="flex gap-2 mt-4">
-			<div class="h-9 bg-gray-300 dark:bg-gray-700 rounded-lg w-20"></div>
-			<div class="h-9 bg-gray-300 dark:bg-gray-700 rounded-lg w-20"></div>
+			<div class="h-9 bg-surface rounded-lg w-20"></div>
+			<div class="h-9 bg-surface rounded-lg w-20"></div>
 		</div>
 	</div>
 {:else if type === 'table'}
@@ -37,7 +37,7 @@
 					<tr>
 						{#each Array(4) as _}
 							<th class="table-header-cell">
-								<div class="h-4 bg-gray-300 dark:bg-gray-700 rounded w-20"></div>
+								<div class="h-4 bg-surface rounded w-20"></div>
 							</th>
 						{/each}
 					</tr>
@@ -47,7 +47,7 @@
 						<tr class="table-row">
 							{#each Array(4) as _}
 								<td class="table-cell">
-									<div class="h-4 bg-gray-300 dark:bg-gray-700 rounded"></div>
+									<div class="h-4 bg-surface rounded"></div>
 								</td>
 							{/each}
 						</tr>
@@ -58,10 +58,10 @@
 	</div>
 {:else if type === 'avatar'}
 	<div class="animate-pulse {className}">
-		<div class="h-10 w-10 bg-gray-300 dark:bg-gray-700 rounded-full"></div>
+		<div class="h-10 w-10 bg-surface rounded-full"></div>
 	</div>
 {:else if type === 'button'}
 	<div class="animate-pulse {className}">
-		<div class="h-10 bg-gray-300 dark:bg-gray-700 rounded-lg w-24"></div>
+		<div class="h-10 bg-surface rounded-lg w-24"></div>
 	</div>
 {/if}

@@ -130,7 +130,7 @@
 	</div>
 {:else}
 	<div class="min-h-screen bg-bg-base text-text-base flex flex-col transition-colors">
-		<nav class="bg-surface/80 backdrop-blur-md border-b border-border/50 relative z-50">
+		<nav class="bg-surface backdrop-blur-md border-b border border-border/50 relative z-50">
 			<div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
 				<div class="flex items-center gap-3">
 					<div
@@ -157,10 +157,10 @@
 						<a href="/files" class="nav-button">Files</a>
 						<a href="/chat" class="nav-button">Chat</a>
 
-						<!-- Classes dropdown -->
+						<!-- Gradebook dropdown -->
 						<div class="relative classes-dropdown">
 							<button onclick={toggleClassesDropdown} class="nav-button flex items-center gap-1">
-								Classes
+								Gradebook
 								<svg
 									class="w-4 h-4 transition-transform duration-200"
 									class:rotate-180={classesDropdownOpen}
@@ -183,59 +183,6 @@
 									class="absolute top-full left-0 mt-2 w-64 bg-card border border-border rounded-lg shadow-dropdown z-[100] max-h-80 overflow-y-auto"
 								>
 									<div class="p-2">
-										<!-- Create new class section -->
-										<button
-											onclick={() => {
-												showImportWizard = true;
-												classesDropdownOpen = false;
-											}}
-											class="w-full mb-3 p-3 bg-purple text-highlight rounded-lg hover:bg-purple-hover transition-all duration-300 flex items-center justify-center gap-2"
-										>
-											<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-												<path
-													stroke-linecap="round"
-													stroke-linejoin="round"
-													stroke-width="2"
-													d="M12 4v16m8-8H4"
-												/>
-											</svg>
-											Create New Class
-										</button>
-										<div
-											style="display: none"
-											class="mb-3 p-3 bg-surface/50 rounded-lg border border-border/50"
-										>
-											<div class="flex items-center gap-2">
-												<input
-													type="text"
-													bind:value={newClassName}
-													placeholder="New class name"
-													class="flex-1 bg-bg-base text-text-hover border border-border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-accent-hover focus:border-accent-hover transition-all duration-200 placeholder:text-muted"
-													onkeydown={(e) => e.key === 'Enter' && handleAddClass()}
-												/>
-												<button
-													onclick={handleAddClass}
-													class="bg-purple text-highlight px-3 py-2 rounded-lg text-sm hover:bg-purple-hover transition-all duration-300 flex items-center gap-1"
-													aria-label="Add new class"
-												>
-													<svg
-														class="w-4 h-4"
-														fill="none"
-														stroke="currentColor"
-														viewBox="0 0 24 24"
-													>
-														<path
-															stroke-linecap="round"
-															stroke-linejoin="round"
-															stroke-width="2"
-															d="M12 4v16m8-8H4"
-														/>
-													</svg>
-													Add
-												</button>
-											</div>
-										</div>
-
 										<!-- Classes list -->
 										{#if $gradebookStore.getClasses.length > 0}
 											<div class="space-y-1">
@@ -245,7 +192,7 @@
 															handleSelectClass(category.id);
 															classesDropdownOpen = false;
 														}}
-														class="w-full text-left p-3 hover:bg-accent/20 rounded-lg transition-all duration-200 flex items-center justify-between group"
+														class="w-full text-left p-3 hover:bg-accent rounded-lg transition-all duration-200 flex items-center justify-between group"
 													>
 														<div class="flex items-center gap-3">
 															<svg
@@ -280,7 +227,6 @@
 							{/if}
 						</div>
 
-						<a href="/gradebook" class="nav-button">Gradebook</a>
 						<a href="/jeopardy" class="nav-button">Jeopardy</a>
 						<a href="/log-entries" class="nav-button whitespace-nowrap">Logs</a>
 					</div>
@@ -292,7 +238,7 @@
 							{#if $isAuthenticated}
 								<button
 									onclick={toggleUserMenu}
-									class="flex items-center gap-3 hover:bg-accent/20 p-1 rounded-lg"
+									class="flex items-center gap-3 hover:bg-accent p-1 rounded-lg"
 								>
 									<div
 										class="w-8 h-8 bg-purple rounded-full flex items-center justify-center text-highlight font-medium"
@@ -417,7 +363,7 @@
 		<div class="flex flex-grow relative">
 			<!-- Left sidebar - hidden on smaller screens -->
 			<aside
-				class="hidden md:block bg-surface/80 backdrop-blur-md border-r border-border/50 transition-[width] duration-150 relative"
+				class="hidden md:block bg-surface backdrop-blur-md border-r border border-border/50 transition-[width] duration-150 relative"
 				class:collapsed={sidebarCollapsed}
 				style="width: {sidebarCollapsed ? '3.5rem' : '14rem'}"
 			>
@@ -518,30 +464,33 @@
 							</a>
 
 							<a
-								href="/chat"
+								href="/classes"
 								class="menu-item relative group hover:bg-purple-bg text-text-hover hover:text-highlight"
 								class:px-3={!sidebarCollapsed}
 								class:px-1={sidebarCollapsed}
 								class:justify-center={sidebarCollapsed}
-								title="Chat"
+								title="Classes"
 							>
 								<svg
 									class="w-5 h-5 flex-shrink-0"
-									viewBox="0 0 24 24"
+									xmlns="http://www.w3.org/2000/svg"
 									fill="none"
+									viewBox="0 0 24 24"
 									stroke="currentColor"
-									stroke-width="2"
 								>
 									<path
-										d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"
-									></path>
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										stroke-width="2"
+										d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+									/>
 								</svg>
 								{#if !sidebarCollapsed}
-									<span>Chat</span>
+									<span>Classes</span>
 								{:else}
 									<span
 										class="absolute left-full ml-2 px-2 py-1 bg-card border border-border rounded-lg text-sm text-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dropdown"
-										>Chat</span
+										>Classes</span
 									>
 								{/if}
 							</a>
@@ -714,7 +663,7 @@
 			<main class="flex-grow p-6 overflow-y-auto relative z-0">
 				{#if $navigating}
 					<div
-						class="absolute inset-0 bg-bg-base/80 backdrop-blur-sm flex items-center justify-center z-50"
+						class="absolute inset-0 bg-bg-base backdrop-blur-sm flex items-center justify-center z-50"
 					>
 						<LoadingBounce />
 					</div>
@@ -724,7 +673,7 @@
 		</div>
 
 		<footer
-			class="bg-card/80 backdrop-blur-sm text-center text-muted text-xs py-4 border-t border-border/50 px-6"
+			class="bg-card backdrop-blur-sm text-center text-muted text-xs py-4 border-t border border-border/50 px-6"
 		>
 			Teacher Dashboard • {new Date().getFullYear()}
 		</footer>

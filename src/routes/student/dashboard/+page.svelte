@@ -122,9 +122,9 @@
 					{#each enrolledClasses as cls (cls.id)}
 						<div class="card-dark">
 							<h3 class="text-lg font-medium text-dark-highlight">{cls.name}</h3>
-							<p class="text-sm text-gray-400 mt-1">{cls.description || 'No description'}</p>
+							<p class="text-sm text-muted mt-1">{cls.description || 'No description'}</p>
 							<div class="mt-4">
-								<span class="text-xs text-gray-500">
+								<span class="text-xs text-muted">
 									{cls.grade_level} • {cls.subject}
 								</span>
 							</div>
@@ -133,8 +133,8 @@
 				</div>
 			{:else}
 				<div class="text-center py-8 bg-dark-surface rounded-lg">
-					<p class="text-gray-400">You're not enrolled in any classes yet.</p>
-					<p class="text-sm text-gray-500 mt-2">Ask your teacher for a join code!</p>
+					<p class="text-muted">You're not enrolled in any classes yet.</p>
+					<p class="text-sm text-muted mt-2">Ask your teacher for a join code!</p>
 				</div>
 			{/if}
 		</div>
@@ -151,7 +151,7 @@
 					{#each studentGames as game (game.id)}
 						<div class="card-dark">
 							<h3 class="text-lg font-medium text-dark-highlight">{game.name}</h3>
-							<p class="text-sm text-gray-400 mt-1">
+							<p class="text-sm text-muted mt-1">
 								Created {new Date(game.created_at).toLocaleDateString()}
 							</p>
 							<div class="flex gap-2 mt-4">
@@ -167,7 +167,7 @@
 				</div>
 			{:else}
 				<div class="text-center py-8 bg-dark-surface rounded-lg">
-					<p class="text-gray-400">You haven't created any games yet.</p>
+					<p class="text-muted">You haven't created any games yet.</p>
 					<button onclick={createNewGame} class="btn btn-primary mt-4">
 						Create Your First Game
 					</button>
@@ -183,7 +183,7 @@
 					{#each sharedGames as game (game.id)}
 						<div class="card-dark">
 							<h3 class="text-lg font-medium text-dark-highlight">{game.name}</h3>
-							<p class="text-sm text-gray-400 mt-1">
+							<p class="text-sm text-muted mt-1">
 								Shared {new Date(game.created_at).toLocaleDateString()}
 							</p>
 							<div class="mt-4">
@@ -196,7 +196,7 @@
 				</div>
 			{:else}
 				<div class="text-center py-8 bg-dark-surface rounded-lg">
-					<p class="text-gray-400">No games have been shared with you yet.</p>
+					<p class="text-muted">No games have been shared with you yet.</p>
 				</div>
 			{/if}
 		</div>

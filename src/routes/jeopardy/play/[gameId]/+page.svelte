@@ -94,7 +94,7 @@
 					<div class="flex items-center gap-4">
 						<button
 							onclick={async () => await goto('/jeopardy')}
-							class="text-gray-400 hover:text-gray-200 transition-colors"
+							class="text-muted hover:text-text-hover transition-colors"
 							title="Back to Games"
 							aria-label="Back to Games"
 						>
@@ -113,24 +113,24 @@
 								></path>
 							</svg>
 						</button>
-						<h1 class="text-2xl font-bold text-dark-highlight">{$getActiveGame.name}</h1>
+						<h1 class="text-2xl font-bold text-purple">{$getActiveGame.name}</h1>
 					</div>
 					<div class="flex gap-2">
 						<button
 							onclick={handleResetScores}
-							class="px-3 py-1 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 text-sm"
+							class="px-3 py-1 bg-surface text-highlight rounded-lg hover:bg-surface transition-all duration-200 text-sm"
 						>
 							Reset Scores
 						</button>
 						<button
 							onclick={handleResetBoard}
-							class="px-3 py-1 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 text-sm"
+							class="px-3 py-1 bg-surface text-highlight rounded-lg hover:bg-surface transition-all duration-200 text-sm"
 						>
 							Reset Board
 						</button>
 						<a
 							href="/jeopardy/editor/{gameId}"
-							class="px-3 py-1 bg-dark-purple-bg text-dark-purple-light rounded-lg hover:bg-dark-purple-hover hover:text-white transition-all duration-200 text-sm"
+							class="px-3 py-1 bg-purple-bg text-dark-purple-light rounded-lg hover:bg-purple-hover hover:text-highlight transition-all duration-200 text-sm"
 						>
 							Edit Game
 						</a>
@@ -146,8 +146,8 @@
 								: ''}"
 							style="border-color: {team.color};"
 						>
-							<div class="text-gray-400 text-sm">{team.name}</div>
-							<div class="text-2xl font-bold text-gray-200">${team.score}</div>
+							<div class="text-muted text-sm">{team.name}</div>
+							<div class="text-2xl font-bold text-text-hover">${team.score}</div>
 						</div>
 					{/each}
 				</div>
@@ -160,7 +160,7 @@
 					{#each $getActiveGame.categories as category (category.id)}
 						<div class="space-y-4">
 							<div class="card-dark text-center py-3">
-								<h3 class="text-lg font-bold text-gray-200">{category.name}</h3>
+								<h3 class="text-lg font-bold text-text-hover">{category.name}</h3>
 							</div>
 							{#each category.questions.sort((a, b) => a.pointValue - b.pointValue) as question (question.id)}
 								<button
@@ -172,7 +172,7 @@
 										: 'hover:border-dark-purple hover:shadow-dark-glow cursor-pointer'}"
 								>
 									{#if question.isAnswered}
-										<span class="text-gray-600">-</span>
+										<span class="text-text-base">-</span>
 									{:else}
 										<span class="text-2xl font-bold text-dark-purple-light">
 											${question.pointValue}
@@ -229,26 +229,26 @@
 
 							{#if $getActiveQuestion.isDoubleJeopardy}
 								<div
-									class="absolute top-4 left-4 bg-dark-purple text-white px-3 py-1 rounded-lg font-bold"
+									class="absolute top-4 left-4 bg-purple text-highlight px-3 py-1 rounded-lg font-bold"
 								>
 									Daily Double
 								</div>
 							{/if}
 
 							<div class="mb-8">
-								<div class="text-lg text-gray-400 mb-2">{$getActiveQuestion.categoryName}</div>
+								<div class="text-lg text-muted mb-2">{$getActiveQuestion.categoryName}</div>
 								<div class="text-4xl font-bold text-dark-purple-light">
 									${$getActiveQuestion.pointValue}
 								</div>
 							</div>
 
-							<div class="text-2xl md:text-3xl text-gray-200 font-medium mb-8">
+							<div class="text-2xl md:text-3xl text-text-hover font-medium mb-8">
 								{$getActiveQuestion.text}
 							</div>
 
 							{#if showAnswer}
 								<div
-									class="text-xl md:text-2xl text-dark-highlight font-medium mb-8 border-t border-dark-border pt-6"
+									class="text-xl md:text-2xl text-purple font-medium mb-8 border-t border-dark-border pt-6"
 								>
 									{$getActiveQuestion.answer}
 								</div>
@@ -257,13 +257,13 @@
 							<div class="flex justify-center gap-4">
 								<button
 									onclick={() => (showAnswer = !showAnswer)}
-									class="px-6 py-3 bg-dark-purple-bg text-dark-purple-light rounded-lg hover:bg-dark-purple-hover hover:text-white transition-all duration-200"
+									class="px-6 py-3 bg-purple-bg text-dark-purple-light rounded-lg hover:bg-purple-hover hover:text-highlight transition-all duration-200"
 								>
 									{showAnswer ? 'Hide Answer' : 'Show Answer'}
 								</button>
 								<button
 									onclick={handleBackToBoard}
-									class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200"
+									class="px-6 py-3 bg-surface text-highlight rounded-lg hover:bg-surface transition-all duration-200"
 								>
 									Back to Board
 								</button>
@@ -272,7 +272,7 @@
 
 						{#if $getActiveQuestion.isDoubleJeopardy}
 							<div class="card-dark mt-6 p-6">
-								<h3 class="text-lg font-semibold text-gray-200 mb-4 text-center">
+								<h3 class="text-lg font-semibold text-text-hover mb-4 text-center">
 									Daily Double Wager
 								</h3>
 								<div class="flex items-center justify-center gap-3">
@@ -281,24 +281,24 @@
 										bind:value={wagerInputValue}
 										min="0"
 										max={Math.max($getActiveQuestion.pointValue * 2, 1000)}
-										class="w-32 px-3 py-2 bg-dark-bg text-gray-200 border border-dark-border rounded-lg focus:outline-none focus:border-dark-purple text-center"
+										class="w-32 px-3 py-2 bg-bg-base text-text-hover border border-dark-border rounded-lg focus:outline-none focus:border-dark-purple text-center"
 									/>
 									<button
 										onclick={handleWagerSubmit}
-										class="px-4 py-2 bg-dark-purple text-white rounded-lg hover:bg-dark-purple-hover transition-all duration-200"
+										class="px-4 py-2 bg-purple text-highlight rounded-lg hover:bg-purple-hover transition-all duration-200"
 									>
 										Set Wager
 									</button>
 								</div>
-								<p class="text-center text-gray-400 text-sm mt-2">
-									Current wager: <span class="text-gray-200 font-medium">${$wagerAmount}</span>
+								<p class="text-center text-muted text-sm mt-2">
+									Current wager: <span class="text-text-hover font-medium">${$wagerAmount}</span>
 								</p>
 							</div>
 						{/if}
 
 						<!-- Team Scoring -->
 						<div class="card-dark mt-6 p-6">
-							<h3 class="text-lg font-semibold text-gray-200 mb-4 text-center">Award Points</h3>
+							<h3 class="text-lg font-semibold text-text-hover mb-4 text-center">Award Points</h3>
 							<div
 								class="grid grid-cols-2 gap-3"
 								style="grid-template-columns: repeat(min({$getActiveGame.teams
@@ -329,13 +329,13 @@
 														? $wagerAmount
 														: $getActiveQuestion.pointValue)
 												)}
-											class="w-full mt-2 px-4 py-2 bg-dark-error text-white rounded-lg hover:bg-dark-error-hover transition-all duration-200"
+											class="w-full mt-2 px-4 py-2 bg-dark-error text-highlight rounded-lg hover:bg-dark-error-hover transition-all duration-200"
 										>
 											-${$getActiveQuestion.isDoubleJeopardy
 												? $wagerAmount
 												: $getActiveQuestion.pointValue}
 										</button>
-										<div class="mt-2 text-gray-400 text-sm">{team.name}</div>
+										<div class="mt-2 text-muted text-sm">{team.name}</div>
 									</div>
 								{/each}
 							</div>
@@ -347,7 +347,7 @@
 	{:else}
 		<div class="flex justify-center items-center h-screen">
 			<div class="text-center">
-				<p class="text-gray-400 mb-4">Game not found</p>
+				<p class="text-muted mb-4">Game not found</p>
 				<button onclick={async () => await goto('/jeopardy')} class="btn-primary">
 					Back to Games
 				</button>

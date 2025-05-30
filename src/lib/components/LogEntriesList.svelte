@@ -145,7 +145,7 @@
 					type="checkbox"
 					checked={selectAll}
 					onchange={handleSelectAll}
-					class="h-4 w-4 rounded border-border text-purple"
+					class="h-4 w-4 rounded border border-border text-purple"
 				/>
 				<span class="text-highlight">Select All</span>
 			</div>
@@ -169,7 +169,7 @@
 	{:else}
 		<div class="flex justify-end mb-4">
 			<button
-				class="px-3 py-1 text-gray-300 hover:text-white transition-colors"
+				class="px-3 py-1 text-muted hover:text-highlight transition-colors"
 				onclick={toggleBulkMode}
 				aria-label="Enable bulk selection mode"
 			>
@@ -201,7 +201,7 @@
 							checked={selectedItems[log.id] || false}
 							onchange={() => toggleSelection(log.id)}
 							onclick={(e) => e.stopPropagation()}
-							class="h-5 w-5 rounded border-border text-purple"
+							class="h-5 w-5 rounded border border-border text-purple"
 						/>
 					</div>
 				{/if}
@@ -263,7 +263,7 @@
 
 				<!-- Follow-up indicator -->
 				{#if log.follow_up}
-					<div class="mt-2 pt-2 border-t border-border">
+					<div class="mt-2 pt-2 border-t border border-border">
 						<p class="text-sm text-purple-light">Follow-up required</p>
 					</div>
 				{/if}
@@ -279,7 +279,7 @@
 	>
 		<span class="text-highlight">Entry deleted</span>
 		<button
-			class="px-3 py-1 bg-purple text-white rounded-lg hover:bg-purple-hover transition-colors"
+			class="px-3 py-1 bg-purple text-highlight rounded-lg hover:bg-purple-hover transition-colors"
 			onclick={handleUndo}
 			aria-label="Undo deletion"
 		>

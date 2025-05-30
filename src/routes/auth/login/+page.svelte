@@ -46,8 +46,8 @@
 
 		<!-- Development mode warning -->
 		{#if import.meta.env.DEV}
-			<div class="mt-8 p-4 bg-yellow-900/20 border border-yellow-900/50 rounded-lg">
-				<p class="text-yellow-400 text-sm">
+			<div class="mt-8 p-4 bg-surface border border-border/50 rounded-lg">
+				<p class="text-error text-sm">
 					<strong>Development Mode:</strong> If Supabase is not configured, you can use the app in
 					offline mode. Go to <a href="/settings" class="underline">Settings</a> to toggle data storage
 					mode.

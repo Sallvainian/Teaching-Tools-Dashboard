@@ -75,12 +75,10 @@
 </script>
 
 {#if isOpen && file}
-	<div
-		class="fixed inset-0 bg-bg-base/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-	>
+	<div class="fixed inset-0 bg-bg-base backdrop-blur-sm flex items-center justify-center z-50 p-4">
 		<div class="bg-card border border-border rounded-lg max-w-2xl w-full">
 			<!-- Header -->
-			<div class="flex items-center justify-between p-4 border-b border-border">
+			<div class="flex items-center justify-between p-4 border-b border border-border">
 				<div>
 					<h3 class="text-lg font-bold text-highlight">Share File</h3>
 					<p class="text-sm text-text-base mt-1">{file.name}</p>
@@ -106,13 +104,13 @@
 			<!-- Content -->
 			<div class="p-4 space-y-4">
 				{#if error}
-					<div class="p-3 bg-error/20 border border-error/50 rounded-lg text-error">
+					<div class="p-3 bg-error border border-error/50 rounded-lg text-error">
 						{error}
 					</div>
 				{/if}
 
 				{#if successMessage}
-					<div class="p-3 bg-success/20 border border-success/50 rounded-lg text-success">
+					<div class="p-3 bg-success border border-success/50 rounded-lg text-success">
 						{successMessage}
 					</div>
 				{/if}
@@ -148,7 +146,7 @@
 								type="button"
 								class={`flex-1 py-2 px-3 rounded-lg border transition-colors ${
 									permission === 'view'
-										? 'bg-purple text-white border-purple'
+										? 'bg-purple text-highlight border-purple'
 										: 'bg-surface text-text-base border-border hover:border-purple'
 								}`}
 								onclick={() => (permission = 'view')}
@@ -169,7 +167,7 @@
 								type="button"
 								class={`flex-1 py-2 px-3 rounded-lg border transition-colors ${
 									permission === 'edit'
-										? 'bg-purple text-white border-purple'
+										? 'bg-purple text-highlight border-purple'
 										: 'bg-surface text-text-base border-border hover:border-purple'
 								}`}
 								onclick={() => (permission = 'edit')}
@@ -190,7 +188,7 @@
 								type="button"
 								class={`flex-1 py-2 px-3 rounded-lg border transition-colors ${
 									permission === 'delete'
-										? 'bg-purple text-white border-purple'
+										? 'bg-purple text-highlight border-purple'
 										: 'bg-surface text-text-base border-border hover:border-purple'
 								}`}
 								onclick={() => (permission = 'delete')}
@@ -255,7 +253,7 @@
 
 				<!-- Existing shares -->
 				{#if existingShares.length > 0}
-					<div class="pt-4 border-t border-border">
+					<div class="pt-4 border-t border border-border">
 						<h4 class="text-sm font-medium text-text-base mb-3">Shared with</h4>
 						<div class="space-y-2">
 							{#each existingShares as share (share.id)}
@@ -279,7 +277,7 @@
 									</div>
 									<button
 										onclick={() => handleRevokeShare(share.id)}
-										class="p-2 text-error hover:bg-error/10 rounded-lg transition-colors"
+										class="p-2 text-error hover:bg-error rounded-lg transition-colors"
 										title="Revoke access"
 										aria-label="Revoke access"
 									>

@@ -112,6 +112,21 @@ function createGradebookStore() {
 
 			const transformedGrades = gradesData.map(dbGradeToAppGrade);
 
+			// Debug logging for data transformation
+			console.log('🔧 Gradebook Data Loading Debug:', {
+				studentsLoaded: transformedStudents.length,
+				classesLoaded: transformedClasses.length,
+				classStudentsRelations: classStudentsData.length,
+				studentsData: transformedStudents.map((s) => ({ id: s.id, name: s.name })),
+				classesWithStudentCounts: transformedClasses.map((c) => ({
+					id: c.id,
+					name: c.name,
+					studentIds: c.studentIds,
+					studentCount: c.studentIds.length
+				})),
+				classStudentsRaw: classStudentsData
+			});
+
 			// Update stores
 			students.set(transformedStudents);
 			classes.set(transformedClasses);

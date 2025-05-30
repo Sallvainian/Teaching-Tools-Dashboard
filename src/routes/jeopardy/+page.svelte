@@ -48,7 +48,7 @@
 	{:else}
 		<!-- Page Header -->
 		<div class="mb-8">
-			<h1 class="text-3xl font-bold text-dark-highlight mb-1">Jeopardy Games</h1>
+			<h1 class="text-3xl font-bold text-purple mb-1">Jeopardy Games</h1>
 			<p class="text-dark-text">Create and manage your educational Jeopardy games</p>
 		</div>
 
@@ -56,8 +56,8 @@
 		<div class="card-dark mb-8">
 			<div class="flex items-center justify-between">
 				<div>
-					<h2 class="text-xl font-semibold text-gray-200">Create a New Game</h2>
-					<p class="text-gray-400 text-sm mt-1">Start fresh with a blank Jeopardy game</p>
+					<h2 class="text-xl font-semibold text-text-hover">Create a New Game</h2>
+					<p class="text-muted text-sm mt-1">Start fresh with a blank Jeopardy game</p>
 				</div>
 				<button onclick={() => (showCreateModal = true)} class="btn-primary"> Create Game </button>
 			</div>
@@ -69,21 +69,19 @@
 				{#each $getGames as game (game.id)}
 					<div class="card-dark hover:border-dark-purple transition-all duration-300">
 						<div class="mb-4">
-							<h3 class="text-xl font-semibold text-gray-200">{game.name}</h3>
-							<div class="text-gray-400 text-sm mt-2">
+							<h3 class="text-xl font-semibold text-text-hover">{game.name}</h3>
+							<div class="text-muted text-sm mt-2">
 								<div class="flex justify-between">
 									<span>Categories:</span>
-									<span class="text-gray-300">{game.categories.length}</span>
+									<span class="text-muted">{game.categories.length}</span>
 								</div>
 								<div class="flex justify-between">
 									<span>Teams:</span>
-									<span class="text-gray-300">{game.teams.length}</span>
+									<span class="text-muted">{game.teams.length}</span>
 								</div>
 								<div class="flex justify-between">
 									<span>Last Modified:</span>
-									<span class="text-gray-300"
-										>{new Date(game.lastModified).toLocaleDateString()}</span
-									>
+									<span class="text-muted">{new Date(game.lastModified).toLocaleDateString()}</span>
 								</div>
 							</div>
 						</div>
@@ -91,19 +89,19 @@
 						<div class="flex gap-2">
 							<button
 								onclick={() => handlePlayGame(game.id)}
-								class="flex-1 py-2 px-3 bg-dark-purple text-white rounded-lg hover:bg-dark-purple-hover transition-all duration-200"
+								class="flex-1 py-2 px-3 bg-purple text-highlight rounded-lg hover:bg-purple-hover transition-all duration-200"
 							>
 								Play
 							</button>
 							<button
 								onclick={() => handleEditGame(game.id)}
-								class="flex-1 py-2 px-3 bg-dark-purple-bg text-dark-purple-light rounded-lg hover:bg-dark-purple-hover hover:text-white transition-all duration-200"
+								class="flex-1 py-2 px-3 bg-purple-bg text-dark-purple-light rounded-lg hover:bg-purple-hover hover:text-highlight transition-all duration-200"
 							>
 								Edit
 							</button>
 							<button
 								onclick={() => handleDeleteGame(game.id)}
-								class="py-2 px-3 bg-dark-error text-white rounded-lg hover:bg-dark-error-hover transition-all duration-200"
+								class="py-2 px-3 bg-dark-error text-highlight rounded-lg hover:bg-dark-error-hover transition-all duration-200"
 								aria-label="Delete game"
 							>
 								<svg
@@ -127,7 +125,7 @@
 			</div>
 		{:else}
 			<div class="text-center py-12">
-				<div class="text-gray-400">
+				<div class="text-muted">
 					<svg
 						class="w-24 h-24 mx-auto mb-4"
 						fill="none"
@@ -151,14 +149,14 @@
 
 	<!-- Create Game Modal -->
 	{#if showCreateModal}
-		<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+		<div class="fixed inset-0 bg-black flex items-center justify-center z-50">
 			<div
 				class="bg-gradient-card border border-dark-border rounded-lg p-6 w-full max-w-md mx-4 shadow-dark-dropdown"
 			>
-				<h2 class="text-xl font-bold text-gray-200 mb-4">Create New Game</h2>
+				<h2 class="text-xl font-bold text-text-hover mb-4">Create New Game</h2>
 				<form onsubmit={handleCreateGame}>
 					<div class="mb-4">
-						<label for="gameName" class="block text-sm font-medium text-gray-300 mb-2">
+						<label for="gameName" class="block text-sm font-medium text-muted mb-2">
 							Game Name
 						</label>
 						<input
@@ -177,13 +175,13 @@
 								showCreateModal = false;
 								newGameName = '';
 							}}
-							class="flex-1 py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200"
+							class="flex-1 py-2 px-4 bg-surface text-highlight rounded-lg hover:bg-surface transition-all duration-200"
 						>
 							Cancel
 						</button>
 						<button
 							type="submit"
-							class="flex-1 py-2 px-4 bg-dark-purple text-white rounded-lg hover:bg-dark-purple-hover transition-all duration-200"
+							class="flex-1 py-2 px-4 bg-purple text-highlight rounded-lg hover:bg-purple-hover transition-all duration-200"
 						>
 							Create
 						</button>

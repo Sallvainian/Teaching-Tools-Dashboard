@@ -240,32 +240,32 @@
 			<button
 				onclick={() => (activeTab = 'categories')}
 				class="px-4 py-2 {activeTab === 'categories'
-					? 'bg-dark-purple text-white'
-					: 'bg-dark-purple-bg text-dark-purple-light'} rounded-lg mr-2 hover:bg-dark-purple-hover hover:text-white transition-all duration-200"
+					? 'bg-purple text-highlight'
+					: 'bg-purple-bg text-purple'} rounded-lg mr-2 hover:bg-purple-hover hover:text-highlight transition-all duration-200"
 			>
 				Categories & Questions
 			</button>
 			<button
 				onclick={() => (activeTab = 'teams')}
 				class="px-4 py-2 {activeTab === 'teams'
-					? 'bg-dark-purple text-white'
-					: 'bg-dark-purple-bg text-dark-purple-light'} rounded-lg mr-2 hover:bg-dark-purple-hover hover:text-white transition-all duration-200"
+					? 'bg-purple text-highlight'
+					: 'bg-purple-bg text-purple'} rounded-lg mr-2 hover:bg-purple-hover hover:text-highlight transition-all duration-200"
 			>
 				Teams
 			</button>
 			<button
 				onclick={() => (activeTab = 'settings')}
 				class="px-4 py-2 {activeTab === 'settings'
-					? 'bg-dark-purple text-white'
-					: 'bg-dark-purple-bg text-dark-purple-light'} rounded-lg mr-2 hover:bg-dark-purple-hover hover:text-white transition-all duration-200"
+					? 'bg-purple text-highlight'
+					: 'bg-purple-bg text-purple'} rounded-lg mr-2 hover:bg-purple-hover hover:text-highlight transition-all duration-200"
 			>
 				Settings
 			</button>
 			<button
 				onclick={() => (activeTab = 'import-export')}
 				class="px-4 py-2 {activeTab === 'import-export'
-					? 'bg-dark-purple text-white'
-					: 'bg-dark-purple-bg text-dark-purple-light'} rounded-lg hover:bg-dark-purple-hover hover:text-white transition-all duration-200"
+					? 'bg-purple text-highlight'
+					: 'bg-purple-bg text-purple'} rounded-lg hover:bg-purple-hover hover:text-highlight transition-all duration-200"
 			>
 				Import/Export
 			</button>
@@ -354,7 +354,7 @@
 									<!-- Add Question Button -->
 									<button
 										onclick={() => startEditingQuestion(category.id)}
-										class="w-full py-4 border-2 border-dashed border-gray-600 text-gray-400 hover:border-purple hover:text-purple transition-all duration-200 rounded-lg"
+										class="w-full py-4 border-2 border-dashed border-border text-muted hover:border-purple hover:text-purple transition-all duration-200 rounded-lg"
 									>
 										+ Add Question
 									</button>
@@ -436,7 +436,7 @@
 										...$getActiveGame.settings,
 										useTimer: e.currentTarget.checked
 									})}
-								class="w-4 h-4 text-dark-purple bg-dark-bg border-gray-600 rounded focus:ring-dark-purple"
+								class="w-4 h-4 text-purple bg-bg-base border-border rounded focus:ring-purple"
 							/>
 							<span class="text-gray-200">Use Timer</span>
 						</label>
@@ -511,7 +511,7 @@
 											...$getActiveGame.settings,
 											autoShowAnswer: e.currentTarget.checked
 										})}
-									class="w-4 h-4 text-dark-purple bg-dark-bg border-gray-600 rounded focus:ring-dark-purple"
+									class="w-4 h-4 text-purple bg-bg-base border-border rounded focus:ring-purple"
 								/>
 								<span class="text-gray-200">Auto Show Answer When Timer Expires</span>
 							</label>
@@ -538,7 +538,7 @@
 						type="file"
 						accept=".json"
 						onchange={handleImportGame}
-						class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-dark-purple file:text-white hover:file:bg-dark-purple-hover"
+						class="block w-full text-sm text-muted file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-purple file:text-highlight hover:file:bg-purple-hover"
 					/>
 				</div>
 
@@ -641,7 +641,7 @@
 							<input
 								type="checkbox"
 								bind:checked={editingQuestion.isDoubleJeopardy}
-								class="w-4 h-4 text-dark-purple bg-dark-bg border-gray-600 rounded focus:ring-dark-purple"
+								class="w-4 h-4 text-purple bg-bg-base border-border rounded focus:ring-purple"
 							/>
 							<span class="text-gray-200">Daily Double</span>
 						</label>
@@ -651,13 +651,13 @@
 						<button
 							type="button"
 							onclick={cancelEditingQuestion}
-							class="flex-1 py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200"
+							class="flex-1 py-2 px-4 bg-surface text-text-hover rounded-lg hover:bg-surface/80 transition-all duration-200"
 						>
 							Cancel
 						</button>
 						<button
 							type="submit"
-							class="flex-1 py-2 px-4 bg-dark-purple text-white rounded-lg hover:bg-dark-purple-hover transition-all duration-200"
+							class="flex-1 py-2 px-4 bg-purple text-highlight rounded-lg hover:bg-purple-hover transition-all duration-200"
 						>
 							Save Question
 						</button>
@@ -698,7 +698,7 @@
 				<div class="mt-4">
 					<button
 						onclick={() => (showTemplateModal = false)}
-						class="w-full py-2 px-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200"
+						class="w-full py-2 px-4 bg-surface text-text-hover rounded-lg hover:bg-surface/80 transition-all duration-200"
 					>
 						Cancel
 					</button>

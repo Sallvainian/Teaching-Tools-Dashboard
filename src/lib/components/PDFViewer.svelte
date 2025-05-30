@@ -389,7 +389,7 @@
 			<div class="flex justify-center">
 				<div
 					bind:this={pdfContainer}
-					class="pdf-canvas-container shadow-lg bg-white"
+					class="pdf-canvas-container shadow-lg bg-card"
 					style="opacity: {isLoading ? 0 : 1}; transition: opacity 0.3s;"
 				></div>
 			</div>

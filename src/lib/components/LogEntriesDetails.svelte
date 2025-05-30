@@ -51,7 +51,7 @@
 		>
 			<!-- Header -->
 			<div
-				class="sticky top-0 bg-surface p-6 border-b border-border flex justify-between items-start"
+				class="sticky top-0 bg-surface p-6 border-b border border-border flex justify-between items-start"
 			>
 				<div>
 					<h2 class="text-2xl font-bold text-highlight">{log.student}</h2>
@@ -130,7 +130,9 @@
 			</div>
 
 			<!-- Actions -->
-			<div class="sticky bottom-0 bg-surface p-6 border-t border-border flex justify-end gap-3">
+			<div
+				class="sticky bottom-0 bg-surface p-6 border-t border border-border flex justify-end gap-3"
+			>
 				<button
 					onclick={handleEdit}
 					class="px-4 py-2 bg-accent text-highlight rounded-lg hover:bg-accent-hover transition-colors"
@@ -139,7 +141,7 @@
 				</button>
 				<button
 					onclick={handleDelete}
-					class="px-4 py-2 bg-error text-white rounded-lg hover:bg-error-hover transition-colors"
+					class="px-4 py-2 bg-error text-highlight rounded-lg hover:bg-error-hover transition-colors"
 				>
 					Delete
 				</button>

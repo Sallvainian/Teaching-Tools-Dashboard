@@ -41,7 +41,7 @@
 					e.stopPropagation();
 					ondownload?.();
 				}}
-				class="flex-1 p-1 bg-purple hover:bg-purple-hover rounded text-white text-sm"
+				class="flex-1 p-1 bg-purple hover:bg-purple-hover rounded text-highlight text-sm"
 				title="Download"
 				aria-label="Download file"
 			>
@@ -62,7 +62,7 @@
 					e.stopPropagation();
 					ondelete?.();
 				}}
-				class="flex-1 p-1 bg-error hover:bg-error-hover rounded text-white text-sm"
+				class="flex-1 p-1 bg-error hover:bg-error-hover rounded text-highlight text-sm"
 				title="Delete"
 				aria-label="Delete file"
 			>
@@ -104,7 +104,7 @@
 						e.stopPropagation();
 						ondownload?.();
 					}}
-					class="p-2 bg-purple hover:bg-purple-hover rounded text-white"
+					class="p-2 bg-purple hover:bg-purple-hover rounded text-highlight"
 					title="Download"
 					aria-label="Download file"
 				>
@@ -125,7 +125,7 @@
 						e.stopPropagation();
 						ondelete?.();
 					}}
-					class="p-2 bg-error hover:bg-error-hover rounded text-white"
+					class="p-2 bg-error hover:bg-error-hover rounded text-highlight"
 					title="Delete"
 					aria-label="Delete file"
 				>

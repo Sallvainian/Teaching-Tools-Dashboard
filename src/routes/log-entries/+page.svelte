@@ -115,7 +115,7 @@
 			<p class="text-muted">Track and manage student interactions</p>
 		</div>
 		<button
-			class="px-4 py-2 bg-purple text-white rounded-lg hover:bg-purple-hover transition-colors"
+			class="px-4 py-2 bg-purple text-highlight rounded-lg hover:bg-purple-hover transition-colors"
 			onclick={() => {
 				editMode = false;
 				selectedLogId = null;
@@ -159,7 +159,7 @@
 			<div
 				class="bg-surface rounded-xl shadow-dropdown max-w-3xl w-full max-h-[90vh] overflow-y-auto"
 			>
-				<div class="p-6 border-b border-border">
+				<div class="p-6 border-b border border-border">
 					<h2 class="text-xl font-semibold text-highlight">
 						{editMode ? 'Edit' : 'New'} Log Entry
 					</h2>
