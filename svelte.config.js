@@ -9,6 +9,9 @@ const config = {
 			runtime: 'nodejs20.x',
 			split: false
 		}),
+		serviceWorker: {
+			register: false
+		},
 		prerender: {
 			handleHttpError: ({ status, path, referrer, message }) => {
 				// Ignore 404 errors during prerendering

@@ -1,31 +1,48 @@
+/* ===== ENHANCED CASCADE LAYERS ===== */
+/* Define layer order for predictable specificity */
+@layer reset, base, tokens, components, patterns, utilities, overrides;
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Cache bust - v2 */
+/* Cache bust - v3 - Modern CSS Features */
 
 @layer base {
 	/* Define CSS variables for themes */
 	:root {
-		/* Light mode colors */
+		/* ===== MODERN CSS COLORS WITH COLOR-MIX ===== */
+		/* Base colors */
 		--bg-base: #ffffff;
 		--bg-gradient: #f9fafb;
 		--card: #ffffff;
 		--surface: #f3f4f6;
-		--accent: rgba(99, 102, 241, 0.1);
-		--accent-hover: #6366f1;
+
+		/* Primary purple color */
 		--purple: #8b5cf6;
-		--purple-light: #a78bfa;
-		--purple-bg: rgba(139, 92, 246, 0.08);
-		--purple-hover: #7c3aed;
+
+		/* Dynamic color variations using color-mix() */
+		--purple-light: color-mix(in srgb, var(--purple) 70%, white);
+		--purple-hover: color-mix(in srgb, var(--purple) 90%, black);
+		--purple-bg: color-mix(in srgb, var(--purple) 8%, transparent);
+
+		/* Accent colors */
+		--accent: color-mix(in srgb, #6366f1 10%, transparent);
+		--accent-hover: #6366f1;
+
+		/* Error colors */
 		--error: #ef4444;
-		--error-hover: #dc2626;
+		--error-hover: color-mix(in srgb, var(--error) 90%, black);
+
+		/* Text colors */
 		--text-base: #374151;
 		--text-hover: #111827;
 		--highlight: #111827;
-		--muted: #9ca3af;
-		--border: #d1d5db;
-		--separator: #e5e7eb;
+		--muted: color-mix(in srgb, var(--text-base) 60%, white);
+
+		/* Border colors */
+		--border: color-mix(in srgb, var(--text-base) 20%, transparent);
+		--separator: color-mix(in srgb, var(--text-base) 15%, transparent);
 
 		/* Light mode shadows */
 		--shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
@@ -36,25 +53,36 @@
 	}
 
 	.dark {
-		/* Dark mode colors - Black theme */
+		/* ===== DARK MODE COLORS WITH COLOR-MIX ===== */
+		/* Dark base colors */
 		--bg-base: #000000;
-		--bg-gradient: #0a0a0a;
-		--card: #0f0f0f;
-		--surface: #1a1a1a;
-		--accent: rgba(99, 102, 241, 0.15);
-		--accent-hover: #6366f1;
+		--bg-gradient: color-mix(in srgb, var(--bg-base) 95%, white);
+		--card: color-mix(in srgb, var(--bg-base) 94%, white);
+		--surface: color-mix(in srgb, var(--bg-base) 90%, white);
+
+		/* Purple variations for dark theme */
 		--purple: #8b5cf6;
-		--purple-light: #a78bfa;
-		--purple-bg: rgba(139, 92, 246, 0.12);
-		--purple-hover: #9333ea;
+		--purple-light: color-mix(in srgb, var(--purple) 80%, white);
+		--purple-bg: color-mix(in srgb, var(--purple) 12%, transparent);
+		--purple-hover: color-mix(in srgb, var(--purple) 85%, white);
+
+		/* Accent colors for dark theme */
+		--accent: color-mix(in srgb, #6366f1 15%, transparent);
+		--accent-hover: #6366f1;
+
+		/* Error colors for dark theme */
 		--error: #ef4444;
-		--error-hover: #dc2626;
+		--error-hover: color-mix(in srgb, var(--error) 85%, black);
+
+		/* Dark theme text colors */
 		--text-base: #e5e5e5;
 		--text-hover: #ffffff;
 		--highlight: #ffffff;
-		--muted: #a3a3a3;
-		--border: #262626;
-		--separator: #262626;
+		--muted: color-mix(in srgb, var(--text-base) 70%, black);
+
+		/* Dark theme borders */
+		--border: color-mix(in srgb, white 15%, transparent);
+		--separator: color-mix(in srgb, white 15%, transparent);
 
 		/* Dark mode shadows */
 		--shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.4);
@@ -83,77 +111,297 @@
 }
 
 @layer components {
+	/* ===== CONTAINER QUERIES ===== */
+	/* Container definitions for responsive components */
+	.container-queries {
+		container-type: inline-size;
+	}
+
+	.sidebar-container {
+		container-type: inline-size;
+		container-name: sidebar;
+	}
+
+	.card-grid-container {
+		container-type: inline-size;
+		container-name: card-grid;
+	}
+
+	.chat-container {
+		container-type: inline-size;
+		container-name: chat;
+	}
+
+	.file-grid-container {
+		container-type: inline-size;
+		container-name: file-grid;
+	}
+
+	/* ===== BUTTON COMPONENTS WITH CSS NESTING ===== */
 	.btn-primary {
-		@apply bg-purple hover:bg-purple-hover text-white px-4 py-2 rounded-lg transition-all duration-300 shadow-button;
+		@apply bg-purple text-white px-4 py-2 rounded-lg transition-all duration-300 shadow-button;
+
+		&:hover {
+			background-color: var(--purple-hover);
+		}
+
+		&:focus {
+			@apply ring-2 ring-purple ring-offset-2 ring-offset-bg-base;
+		}
+
+		&:disabled {
+			@apply opacity-50 cursor-not-allowed;
+		}
 	}
 
 	.btn-secondary {
-		@apply bg-surface hover:bg-accent text-text-hover px-4 py-2 rounded-lg transition-all duration-300 shadow-button;
+		@apply bg-surface text-text-hover px-4 py-2 rounded-lg transition-all duration-300 shadow-button;
+
+		&:hover {
+			@apply bg-accent;
+		}
+
+		&:focus {
+			@apply ring-2 ring-surface ring-offset-2 ring-offset-bg-base;
+		}
+
+		&:disabled {
+			@apply opacity-50 cursor-not-allowed;
+		}
 	}
 
+	/* ===== CARD COMPONENTS WITH CONTAINER QUERIES ===== */
 	.card {
 		@apply bg-card rounded-xl shadow-card p-6 border border-border backdrop-blur-sm;
+
+		&:hover {
+			@apply shadow-themed-card;
+		}
 	}
 
 	.card-dark {
 		@apply bg-card backdrop-blur-sm border border-border rounded-xl p-6 shadow-themed-card;
 		opacity: 0.8;
+
+		&:hover {
+			opacity: 1;
+			@apply shadow-glow;
+		}
 	}
 
+	/* Responsive card layouts based on container size */
+	@container card-grid (min-width: 300px) {
+		.card-adaptive {
+			@apply grid grid-cols-1;
+			gap: 1rem;
+		}
+	}
+
+	@container card-grid (min-width: 500px) {
+		.card-adaptive {
+			@apply grid-cols-2;
+		}
+	}
+
+	@container card-grid (min-width: 800px) {
+		.card-adaptive {
+			@apply grid-cols-3;
+		}
+	}
+
+	@container card-grid (min-width: 1200px) {
+		.card-adaptive {
+			@apply grid-cols-4;
+		}
+	}
+
+	/* File grid responsive behavior */
+	@container file-grid (max-width: 400px) {
+		.file-grid {
+			@apply grid-cols-2;
+		}
+
+		.file-item {
+			@apply text-xs p-2;
+		}
+	}
+
+	@container file-grid (min-width: 600px) {
+		.file-grid {
+			@apply grid-cols-4;
+		}
+	}
+
+	@container file-grid (min-width: 900px) {
+		.file-grid {
+			@apply grid-cols-6;
+		}
+	}
+
+	/* Sidebar responsive behavior with container queries */
+	@container sidebar (max-width: 250px) {
+		.sidebar-item {
+			@apply text-xs px-2 py-1;
+
+			.sidebar-text {
+				@apply hidden;
+			}
+
+			.sidebar-icon {
+				@apply mx-auto;
+			}
+		}
+	}
+
+	@container sidebar (min-width: 300px) {
+		.sidebar-item {
+			@apply text-sm px-3 py-2;
+
+			.sidebar-text {
+				@apply block;
+			}
+		}
+	}
+
+	/* Chat container responsive behavior */
+	@container chat (max-width: 600px) {
+		.chat-header {
+			@apply flex-col gap-2;
+
+			.chat-actions {
+				@apply justify-center;
+			}
+		}
+
+		.chat-sidebar {
+			@apply w-full;
+		}
+
+		.message-input {
+			@apply text-sm;
+		}
+	}
+
+	@container chat (min-width: 700px) {
+		.chat-header {
+			@apply flex-row justify-between;
+		}
+
+		.chat-sidebar {
+			@apply w-80;
+		}
+	}
+
+	/* ===== FORM COMPONENTS WITH CSS NESTING ===== */
 	.input {
-		@apply bg-surface border border-border rounded-lg px-4 py-2 focus:ring-2 focus:ring-purple focus:border-transparent outline-none transition text-text-hover;
+		@apply bg-surface border border-border rounded-lg px-4 py-2 outline-none transition text-text-hover;
+
+		&:focus {
+			@apply ring-2 ring-purple border-transparent;
+		}
+
+		&::placeholder {
+			color: var(--text-hover);
+			opacity: 0.7;
+		}
+
+		&:disabled {
+			@apply opacity-50 cursor-not-allowed bg-surface;
+		}
 	}
 
-	.input::placeholder {
-		color: var(--text-hover);
-		opacity: 0.7;
-	}
-
-	/* Navigation */
-	.nav-link {
-		@apply px-3 py-2 rounded-lg hover:bg-surface text-text-base hover:text-text-hover transition-colors;
-	}
-
-	.nav-link.active {
-		@apply bg-purple-bg text-purple font-medium;
-	}
-
-	/* Form elements */
 	.label {
 		@apply block text-sm font-medium text-text-base mb-1;
+
+		&.required::after {
+			content: ' *';
+			color: var(--error);
+		}
 	}
 
 	.select {
 		@apply bg-surface border border-border rounded-lg px-4 py-2 pr-8 appearance-none text-text-hover;
+
+		&:focus {
+			@apply ring-2 ring-purple border-transparent;
+		}
+
+		&:disabled {
+			@apply opacity-50 cursor-not-allowed;
+		}
 	}
 
-	/* Tables */
+	/* ===== NAVIGATION WITH CSS NESTING ===== */
+	.nav-link {
+		@apply px-3 py-2 rounded-lg text-text-base transition-colors;
+
+		&:hover {
+			@apply bg-surface text-text-hover;
+		}
+
+		&.active {
+			@apply bg-purple-bg text-purple font-medium;
+		}
+
+		&:focus {
+			@apply ring-2 ring-purple ring-offset-2 ring-offset-bg-base;
+		}
+	}
+
+	/* ===== TABLE COMPONENTS WITH CSS NESTING ===== */
 	.table-container {
 		@apply overflow-x-auto rounded-lg border border-border;
-	}
 
-	.table {
-		@apply min-w-full divide-y divide-separator;
+		.table {
+			@apply min-w-full divide-y divide-separator;
+		}
 	}
 
 	.table-header {
 		@apply bg-surface;
-	}
 
-	.table-header-cell {
-		@apply px-6 py-3 text-left text-xs font-medium text-text-hover uppercase tracking-wider;
+		.table-header-cell {
+			@apply px-6 py-3 text-left text-xs font-medium text-text-hover uppercase tracking-wider;
+
+			&:hover {
+				@apply bg-accent;
+			}
+		}
 	}
 
 	.table-body {
 		@apply bg-card divide-y divide-separator;
+
+		.table-row {
+			@apply transition-colors;
+
+			&:hover {
+				@apply bg-surface;
+			}
+
+			&.selected {
+				@apply bg-purple-bg;
+			}
+		}
+
+		.table-cell {
+			@apply px-6 py-4 whitespace-nowrap text-sm text-text-hover;
+
+			&.numeric {
+				@apply text-right tabular-nums;
+			}
+
+			&.actions {
+				@apply text-center;
+			}
+		}
 	}
 
-	.table-row {
-		@apply hover:bg-surface transition-colors;
-	}
-
-	.table-cell {
-		@apply px-6 py-4 whitespace-nowrap text-sm text-text-hover;
+	/* ===== KEYBOARD INDICATOR ===== */
+	.kbd {
+		@apply px-2 py-1 text-xs font-semibold text-text-hover bg-surface border border-border rounded;
+		box-shadow: 0 2px 0 0 var(--border);
+		font-family: ui-monospace, monospace;
 	}
 }
 
@@ -367,4 +615,202 @@
 /* Prevent transition on initial load */
 .no-transition * {
 	transition: none !important;
+}
+
+/* ===== VIEW TRANSITIONS API ===== */
+/* Enable view transitions for smooth page navigation */
+@view-transition {
+	navigation: auto;
+}
+
+/* Customize the default view transition */
+::view-transition-old(root) {
+	animation: slide-out 0.3s ease-out;
+}
+
+::view-transition-new(root) {
+	animation: slide-in 0.3s ease-in;
+}
+
+/* Custom view transition for specific elements */
+.page-transition {
+	view-transition-name: page-content;
+}
+
+::view-transition-old(page-content) {
+	animation: fade-out-scale 0.25s ease-out;
+}
+
+::view-transition-new(page-content) {
+	animation: fade-in-scale 0.25s ease-in;
+}
+
+/* Modal transitions */
+.modal-transition {
+	view-transition-name: modal;
+}
+
+::view-transition-old(modal) {
+	animation: modal-out 0.2s ease-out;
+}
+
+::view-transition-new(modal) {
+	animation: modal-in 0.2s ease-in;
+}
+
+/* Define the animations */
+@keyframes slide-out {
+	from {
+		transform: translateX(0);
+		opacity: 1;
+	}
+	to {
+		transform: translateX(-20px);
+		opacity: 0;
+	}
+}
+
+@keyframes slide-in {
+	from {
+		transform: translateX(20px);
+		opacity: 0;
+	}
+	to {
+		transform: translateX(0);
+		opacity: 1;
+	}
+}
+
+@keyframes fade-out-scale {
+	from {
+		transform: scale(1);
+		opacity: 1;
+	}
+	to {
+		transform: scale(0.95);
+		opacity: 0;
+	}
+}
+
+@keyframes fade-in-scale {
+	from {
+		transform: scale(1.05);
+		opacity: 0;
+	}
+	to {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+@keyframes modal-out {
+	from {
+		transform: scale(1);
+		opacity: 1;
+	}
+	to {
+		transform: scale(0.9);
+		opacity: 0;
+	}
+}
+
+@keyframes modal-in {
+	from {
+		transform: scale(1.1);
+		opacity: 0;
+	}
+	to {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+/* ===== BROWSER COMPATIBILITY & FALLBACKS ===== */
+@layer overrides {
+	/* Fallback for browsers without View Transitions support */
+	@supports not (view-transition-name: none) {
+		.page-transition {
+			transition:
+				transform 0.3s ease,
+				opacity 0.3s ease;
+		}
+
+		.modal-transition {
+			transition:
+				transform 0.2s ease,
+				opacity 0.2s ease;
+		}
+	}
+
+	/* Fallback for browsers without Container Queries support */
+	@supports not (container-type: inline-size) {
+		.card-adaptive {
+			@apply grid;
+			grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+			gap: 1rem;
+		}
+
+		.file-grid {
+			@apply grid;
+			grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+		}
+
+		@media (max-width: 640px) {
+			.sidebar-item .sidebar-text {
+				@apply hidden;
+			}
+
+			.sidebar-item .sidebar-icon {
+				@apply mx-auto;
+			}
+		}
+	}
+
+	/* Fallback for browsers without color-mix() support */
+	@supports not (color: color-mix(in srgb, red, blue)) {
+		:root {
+			--purple-light: #a78bfa;
+			--purple-hover: #7c3aed;
+			--purple-bg: rgba(139, 92, 246, 0.08);
+			--accent: rgba(99, 102, 241, 0.1);
+			--error-hover: #dc2626;
+			--muted: #9ca3af;
+			--border: #d1d5db;
+			--separator: #e5e7eb;
+		}
+
+		.dark {
+			--purple-light: #a78bfa;
+			--purple-hover: #9333ea;
+			--purple-bg: rgba(139, 92, 246, 0.12);
+			--accent: rgba(99, 102, 241, 0.15);
+			--error-hover: #dc2626;
+			--muted: #a3a3a3;
+			--border: #262626;
+			--separator: #262626;
+		}
+	}
+
+	/* Fallback for browsers without CSS Nesting support */
+	@supports not (selector(&)) {
+		.btn-primary:hover {
+			background-color: var(--purple-hover);
+		}
+
+		.btn-primary:focus {
+			@apply ring-2 ring-purple ring-offset-2 ring-offset-bg-base;
+		}
+
+		.input:focus {
+			@apply ring-2 ring-purple border-transparent;
+		}
+
+		.nav-link:hover {
+			@apply bg-surface text-text-hover;
+		}
+
+		.nav-link.active {
+			@apply bg-purple-bg text-purple font-medium;
+		}
+	}
 }

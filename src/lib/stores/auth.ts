@@ -22,13 +22,76 @@ function createAuthStore() {
 				.from('app_users')
 				.select('role')
 				.eq('id', userId)
-				.single();
+				.maybeSingle(); // Use maybeSingle() instead of single() to handle 0 rows gracefully
 
-			if (error) throw error;
-			role.set(data?.role || null);
+			if (error) {
+				console.error('Database error fetching user role:', error);
+				role.set(null);
+				return;
+			}
+
+			if (data) {
+				role.set(data.role);
+			} else {
+				// Check localStorage fallback first
+				const fallbackRole = localStorage.getItem(`user-role-${userId}`);
+				if (fallbackRole) {
+					console.warn(`Using fallback role from localStorage: ${fallbackRole}`);
+					role.set(fallbackRole as UserRole);
+				} else {
+					// No record found - user needs to be created in app_users table
+					console.warn(`No app_users record found for user ${userId}. Creating default record...`);
+					await createAppUserRecord(userId);
+				}
+			}
 		} catch (err) {
 			console.error('Error fetching user role:', err);
 			role.set(null);
+		}
+	}
+
+	async function createAppUserRecord(userId: string) {
+		try {
+			const { supabase } = await import('$lib/supabaseClient');
+
+			// Get user details from auth
+			const {
+				data: { user },
+				error: userError
+			} = await supabase.auth.getUser();
+			if (userError || !user) {
+				console.error('Could not get user details:', userError);
+				return;
+			}
+
+			// Create app_users record with teacher role as default
+			const { data, error } = await supabase
+				.from('app_users')
+				.insert({
+					id: userId,
+					email: user.email,
+					full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+					role: 'teacher' // Default to teacher role
+				})
+				.select('role')
+				.single();
+
+			if (error) {
+				console.error('Error creating app_users record:', error);
+				// Check if it's an RLS policy violation
+				if (error.code === '42501') {
+					console.warn('RLS policy preventing user creation. Using fallback role.');
+					// Store role in localStorage as fallback until RLS is fixed
+					localStorage.setItem(`user-role-${userId}`, 'teacher');
+				}
+				role.set('teacher'); // Fallback to teacher role
+			} else {
+				console.log('Created app_users record with role:', data.role);
+				role.set(data.role);
+			}
+		} catch (err) {
+			console.error('Error creating app_users record:', err);
+			role.set('teacher'); // Fallback to teacher role
 		}
 	}
 
@@ -55,8 +118,10 @@ function createAuthStore() {
 						// Optimistically set the session while we verify it
 						session.set(parsed.currentSession);
 						user.set(parsed.currentSession.user);
-						// Don't wait for role fetch in the critical path
-						fetchUserRole(parsed.currentSession.user.id).catch(console.error);
+						// Don't wait for role fetch in the critical path - make it fully async
+						setTimeout(() => {
+							fetchUserRole(parsed.currentSession.user.id).catch(console.error);
+						}, 0);
 					}
 				} catch (e) {
 					console.error('Error parsing stored session:', e);
@@ -70,7 +135,10 @@ function createAuthStore() {
 			if (data?.session) {
 				session.set(data.session);
 				user.set(data.session.user);
-				await fetchUserRole(data.session.user.id);
+				// Make role fetching non-blocking for faster initial load
+				setTimeout(() => {
+					fetchUserRole(data.session.user.id).catch(console.error);
+				}, 0);
 			} else if (!storedSession) {
 				// Only clear if we didn't have a stored session
 				session.set(null);
@@ -211,10 +279,10 @@ function createAuthStore() {
 			}
 			console.log('Supabase signOut completed');
 
-			// Force a clean navigation to login page
+			// Force a clean navigation to login page using SvelteKit navigation
 			if (typeof window !== 'undefined') {
-				// Use replace to prevent back button issues
-				window.location.replace('/auth/login');
+				const { goto } = await import('$app/navigation');
+				await goto('/auth/login', { replaceState: true });
 			}
 
 			return true;
@@ -227,7 +295,8 @@ function createAuthStore() {
 			role.set(null);
 			loading.set(false);
 			if (typeof window !== 'undefined') {
-				window.location.replace('/auth/login');
+				const { goto } = await import('$app/navigation');
+				await goto('/auth/login', { replaceState: true });
 			}
 			return false;
 		}

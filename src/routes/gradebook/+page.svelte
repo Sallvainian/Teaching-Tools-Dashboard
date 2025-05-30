@@ -2,9 +2,22 @@
 	import { gradebookStore } from '$lib/stores/gradebook';
 	import { authStore } from '$lib/stores/auth';
 	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
 	import LoadingBounce from '$lib/components/LoadingBounce.svelte';
-	import Handsontable from '$lib/components/Handsontable.svelte';
 	import ImportWizard from '$lib/components/ImportWizard.svelte';
+	import SkeletonLoader from '$lib/components/SkeletonLoader.svelte';
+
+	// Lazy load Handsontable component
+	let Handsontable = $state<any>(null);
+	let handsontableLoading = $state(true);
+
+	onMount(async () => {
+		if (browser) {
+			const module = await import('$lib/components/Handsontable.svelte');
+			Handsontable = module.default;
+			handsontableLoading = false;
+		}
+	});
 
 	// State variables using $state
 	let classId = $state('');
@@ -377,48 +390,53 @@
 
 					{#if classStudents.length > 0 && classAssignments.length > 0}
 						<div class="overflow-x-auto">
-							<Handsontable
-								data={hotData}
-								colHeaders={columnHeaders}
-								rowHeaders={false}
-								width="100%"
-								height={400}
-								settings={{
-									stretchH: 'all',
-									manualRowResize: true,
-									manualColumnResize: true,
-									contextMenu: false,
-									readOnly: false,
-									cells: (row: number, col: number) => {
-										// Make first two columns and last column read-only
-										if (col === 0 || col === 1 || col === columnHeaders.length - 1) {
-											return { readOnly: true };
+							{#if handsontableLoading || !Handsontable}
+								<SkeletonLoader type="table" />
+							{:else}
+								{@const Component = Handsontable}
+								<Component
+									data={hotData}
+									colHeaders={columnHeaders}
+									rowHeaders={false}
+									width="100%"
+									height={400}
+									settings={{
+										stretchH: 'all',
+										manualRowResize: true,
+										manualColumnResize: true,
+										contextMenu: false,
+										readOnly: false,
+										cells: (row: number, col: number) => {
+											// Make first two columns and last column read-only
+											if (col === 0 || col === 1 || col === columnHeaders.length - 1) {
+												return { readOnly: true };
+											}
+											return {};
+										},
+										afterChange: handleAfterChange,
+										afterInit: handleTableInit,
+										beforeRenderer: (
+											instance: any,
+											td: HTMLTableCellElement,
+											row: number,
+											col: number,
+											prop: string,
+											value: any,
+											_cellProperties: any
+										) => {
+											// Apply grade color coding to grade cells
+											if (col > 1 && col < columnHeaders.length - 1 && typeof value === 'number') {
+												td.style.backgroundColor = getCellBackgroundColor(value);
+											}
+											// Apply average color coding to last column
+											if (col === columnHeaders.length - 1 && typeof value === 'number') {
+												td.style.backgroundColor = getCellBackgroundColor(value);
+												td.style.fontWeight = 'bold';
+											}
 										}
-										return {};
-									},
-									afterChange: handleAfterChange,
-									afterInit: handleTableInit,
-									beforeRenderer: (
-										instance: any,
-										td: HTMLTableCellElement,
-										row: number,
-										col: number,
-										prop: string,
-										value: any,
-										_cellProperties: any
-									) => {
-										// Apply grade color coding to grade cells
-										if (col > 1 && col < columnHeaders.length - 1 && typeof value === 'number') {
-											td.style.backgroundColor = getCellBackgroundColor(value);
-										}
-										// Apply average color coding to last column
-										if (col === columnHeaders.length - 1 && typeof value === 'number') {
-											td.style.backgroundColor = getCellBackgroundColor(value);
-											td.style.fontWeight = 'bold';
-										}
-									}
-								}}
-							/>
+									}}
+								/>
+							{/if}
 						</div>
 					{:else if classStudents.length === 0}
 						<div class="text-center py-12">

@@ -3,6 +3,7 @@
 	import { jeopardyStore } from '$lib/stores/jeopardy';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import SkeletonLoader from '$lib/components/SkeletonLoader.svelte';
 
 	let studentGames = $state<any[]>([]);
 	let sharedGames = $state<any[]>([]);
@@ -42,7 +43,7 @@
 			const { data: studentRecord } = await supabase
 				.from('students')
 				.select('id')
-				.eq('auth_user_id', user.id)
+				.eq('user_id', user.id)
 				.single();
 
 			if (studentRecord) {
@@ -80,8 +81,37 @@
 	</div>
 
 	{#if isLoading}
-		<div class="flex justify-center py-12">
-			<span class="loading loading-spinner loading-lg"></span>
+		<!-- Classes Section Skeleton -->
+		<div class="mb-12">
+			<h2 class="text-2xl font-semibold text-dark-text mb-4">My Classes</h2>
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+				{#each Array(3) as _}
+					<SkeletonLoader type="card" />
+				{/each}
+			</div>
+		</div>
+
+		<!-- My Games Section Skeleton -->
+		<div class="mb-12">
+			<div class="flex justify-between items-center mb-4">
+				<h2 class="text-2xl font-semibold text-dark-text">My Jeopardy Games</h2>
+				<SkeletonLoader type="button" />
+			</div>
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+				{#each Array(3) as _}
+					<SkeletonLoader type="card" />
+				{/each}
+			</div>
+		</div>
+
+		<!-- Shared Games Section Skeleton -->
+		<div class="mb-12">
+			<h2 class="text-2xl font-semibold text-dark-text mb-4">Games Shared With Me</h2>
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+				{#each Array(2) as _}
+					<SkeletonLoader type="card" />
+				{/each}
+			</div>
 		</div>
 	{:else}
 		<!-- Classes Section -->

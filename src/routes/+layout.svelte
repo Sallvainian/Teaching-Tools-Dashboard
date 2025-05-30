@@ -22,14 +22,16 @@
 
 	// Vercel Speed Insights
 	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
-
 	injectSpeedInsights();
 
 	// Vercel Analytics
 	import { dev } from '$app/environment';
 	import { injectAnalytics } from '@vercel/analytics/sveltekit';
-
 	injectAnalytics({ mode: dev ? 'development' : 'production' });
+
+	// Performance monitoring
+	import { initWebVitals, measurePerformance } from '$lib/utils/performance';
+	import { browser } from '$app/environment';
 
 	// Get children prop for Svelte 5
 	let { children } = $props();
@@ -66,8 +68,7 @@
 		try {
 			const success = await authStore.signOut();
 			console.log('Sign out result:', success);
-			// Force navigation and page reload
-			window.location.href = '/auth/login';
+			// Navigation is handled by the auth store
 		} catch (error) {
 			console.error('Sign out error:', error);
 		}
@@ -93,10 +94,25 @@
 		};
 	});
 
-	// Ensure data is loaded
+	// Ensure data is loaded - make it non-blocking
 	$effect(() => {
-		void gradebookStore.ensureDataLoaded();
+		setTimeout(() => {
+			gradebookStore.ensureDataLoaded().catch(console.error);
+		}, 100); // Small delay to not block initial render
 	});
+
+	// Initialize performance monitoring - temporarily disabled for debugging
+	// $effect(() => {
+	// 	if (browser) {
+	// 		initWebVitals();
+	// 		// Mark navigation performance
+	// 		if ($navigating) {
+	// 			performance.mark('navigation-start');
+	// 		} else if (performance.getEntriesByName('navigation-start').length > 0) {
+	// 			measurePerformance('navigation-end', 'navigation-start');
+	// 		}
+	// 	}
+	// });
 
 	// Helper function to check if current path matches menu item
 	function isActivePath(path: string): boolean {

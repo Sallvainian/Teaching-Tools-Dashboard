@@ -20,9 +20,15 @@ export default defineConfig(({ mode }) => {
 				}
 			}
 		},
-		
+
 		css: {
 			devSourcemap: true
+		},
+
+		server: {
+			fs: {
+				strict: false
+			}
 		},
 
 		optimizeDeps: {

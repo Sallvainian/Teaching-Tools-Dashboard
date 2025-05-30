@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Class } from '$lib/types/gradebook';
 
-	export let isOpen: boolean = false;
+	export const isOpen: boolean = false;
 	export let onClose: () => void;
 	export let onComplete: () => void;
 
