@@ -20,7 +20,9 @@
 	}
 
 	function toggleClassesDropdown() {
+		console.log('🔍 Toggle classes dropdown - before:', classesDropdownOpen);
 		classesDropdownOpen = !classesDropdownOpen;
+		console.log('🔍 Toggle classes dropdown - after:', classesDropdownOpen);
 	}
 
 	async function handleSelectClass(categoryId: string) {
@@ -69,9 +71,12 @@
 				<a href="/chat" class="nav-button">Chat</a>
 
 				<!-- Classes dropdown - shown only if authenticated -->
-				<div class="relative">
+				<div class="relative classes-dropdown">
 					<button
-						onclick={toggleClassesDropdown}
+						onclick={(e) => {
+							e.preventDefault();
+							toggleClassesDropdown();
+						}}
 						class="nav-button flex items-center gap-2"
 						aria-expanded={classesDropdownOpen}
 						aria-haspopup="true"
@@ -96,12 +101,12 @@
 
 					{#if classesDropdownOpen}
 						<div
-							class="absolute top-full left-0 mt-2 w-64 bg-card border border-border rounded-lg shadow-dropdown z-[100] max-h-80 overflow-y-auto"
+							class="absolute top-full left-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-dropdown z-[100] max-h-80 overflow-y-auto"
 						>
 							<div class="p-2">
-								{#if $gradebookStore.getClasses.length > 0}
+								{#if $gradebookStore.classes.length > 0}
 									<div class="space-y-1">
-										{#each $gradebookStore.getClasses as category (category.id)}
+										{#each $gradebookStore.classes as category (category.id)}
 											<button
 												onclick={() => handleSelectClass(category.id)}
 												class="w-full text-left p-3 hover:bg-accent rounded-lg transition-all duration-200 flex items-center justify-between group"

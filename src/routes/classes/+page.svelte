@@ -128,7 +128,9 @@
 
 			<div class="lg:col-span-2">
 				{#if selectedClass}
-					<StudentRoster {selectedClass} />
+					{#key selectedClass.id}
+						<StudentRoster {selectedClass} />
+					{/key}
 				{:else}
 					<div class="bg-card border border-border rounded-lg p-8 text-center">
 						<p class="text-muted">Select a class to view its students</p>

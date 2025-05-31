@@ -20,7 +20,7 @@
 	});
 
 	// State variables using $state
-	let classId = $state('');
+	let selectedClassId = $state($gradebookStore.selectedClassId || null);
 	let assignmentName = $state('');
 	let maxPoints = $state(100);
 	let newStudentName = $state('');
@@ -64,7 +64,7 @@
 
 			// Add average at the end
 			try {
-				const average = gradebookStore.studentAverageInClass(student.id, classId || '');
+				const average = gradebookStore.studentAverageInClass(student.id, selectedClassId || '');
 				row.push(average);
 			} catch (err) {
 				console.error('Error calculating average:', err);
@@ -133,17 +133,38 @@
 		await gradebookStore.ensureDataLoaded();
 	});
 
-	// Handle initial class selection with $effect
+	// Handle class selection
 	$effect(() => {
-		if ($gradebookStore.classes?.length > 0 && !classId) {
-			void gradebookStore.selectClass($gradebookStore.classes[0].id);
-			classId = $gradebookStore.classes[0].id;
+		// If store has a selectedClassId but local doesn't, sync from store
+		if ($gradebookStore.selectedClassId && !selectedClassId) {
+			selectedClassId = $gradebookStore.selectedClassId;
+		}
+		// If classes are loaded but no class is selected, select the first one
+		else if (
+			$gradebookStore.classes?.length > 0 &&
+			!selectedClassId &&
+			!$gradebookStore.selectedClassId
+		) {
+			const firstClassId = $gradebookStore.classes[0].id;
+			gradebookStore.selectClass(firstClassId);
+			selectedClassId = firstClassId;
+		}
+	});
+
+	// Watch for dropdown selection changes and update store
+	$effect(() => {
+		if (selectedClassId && selectedClassId !== $gradebookStore.selectedClassId) {
+			gradebookStore.selectClass(selectedClassId);
 		}
 	});
 
 	async function handleAddAssignment() {
-		if (classId && assignmentName.trim()) {
-			await gradebookStore.addAssignmentToClass(assignmentName.trim(), maxPoints || 0, classId);
+		if (selectedClassId && assignmentName.trim()) {
+			await gradebookStore.addAssignmentToClass(
+				assignmentName.trim(),
+				maxPoints || 0,
+				selectedClassId
+			);
 			assignmentName = '';
 			maxPoints = 100;
 			showNewAssignmentModal = false;
@@ -151,7 +172,7 @@
 	}
 
 	async function handleAddStudent() {
-		if (newStudentName.trim() && classId) {
+		if (newStudentName.trim() && selectedClassId) {
 			// Get current user id
 			const currentUser = $authStore.user;
 			if (currentUser) {
@@ -160,7 +181,7 @@
 					currentUser.id
 				);
 				if (studentId) {
-					await gradebookStore.assignStudentToClass(studentId, classId);
+					await gradebookStore.assignStudentToClass(studentId, selectedClassId);
 					newStudentName = '';
 					showStudentModal = false;
 				}
@@ -192,8 +213,8 @@
 		) {
 			await gradebookStore.deleteClass(classIdToDelete);
 			// If we deleted the selected class, clear the selection
-			if (classId === classIdToDelete) {
-				classId = '';
+			if (selectedClassId === classIdToDelete) {
+				selectedClassId = '';
 			}
 		}
 	}
@@ -215,13 +236,6 @@
 			newClassName = '';
 		}
 	}
-
-	// Watch for class selection changes
-	$effect(() => {
-		if (classId) {
-			gradebookStore.selectClass(classId);
-		}
-	});
 </script>
 
 <div class="min-h-screen bg-bg-base">
@@ -262,8 +276,8 @@
 							>Select Class</label
 						>
 						<div class="flex gap-2">
-							<select id="class-selector" class="select w-full" bind:value={classId}>
-								<option value="" disabled>Select a class</option>
+							<select id="class-selector" class="select w-full" bind:value={selectedClassId}>
+								<option value={null} disabled>Select a class</option>
 								{#each $gradebookStore.classes as cls (cls.id)}
 									<option value={cls.id}>{cls.name}</option>
 								{/each}

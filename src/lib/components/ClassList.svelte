@@ -12,7 +12,7 @@
 	} = $props<{
 		classes: ClassItem[];
 		selectedClassId: string | null;
-		onSelectClass: (classId: string) => void;
+		onSelectClass: (classId: string | null) => void;
 	}>();
 
 	// Debug logging for class data
