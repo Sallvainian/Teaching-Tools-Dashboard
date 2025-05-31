@@ -8,6 +8,7 @@ import {
 	dbAssignmentToAppAssignment,
 	dbGradeToAppGrade
 } from '$lib/utils/modelConverters';
+import { authStore } from './auth';
 
 function createGradebookStore() {
 	// Initialize stores with empty data or data from localStorage
@@ -157,7 +158,6 @@ function createGradebookStore() {
 		try {
 			// Get user_id from auth if not provided
 			if (!userId) {
-				const { authStore } = await import('./auth');
 				const currentUser = get(authStore).user;
 				userId = currentUser?.id;
 			}

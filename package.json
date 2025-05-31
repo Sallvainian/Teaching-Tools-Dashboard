@@ -9,6 +9,7 @@
 	"scripts": {
 		"dev": "npx vite dev",
 		"build": "vite build",
+		"build:analyze": "vite build --mode analyze",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
@@ -21,8 +22,10 @@
 		"format:check": "prettier --check \"src/**/*.{js,ts,svelte,css,html,json}\"",
 		"build:release": "node scripts/create-release.js",
 		"release": "npm run validate && npm run build:release",
-		"test": "vitest run",
-		"test:unit": "vitest watch"
+		"test": "node node_modules/vitest/vitest.mjs run",
+		"test:unit": "node node_modules/vitest/vitest.mjs watch",
+		"test:coverage": "node node_modules/vitest/vitest.mjs run --coverage",
+		"optimize": "npm run check && npm run lint && npm run test && npm run build"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.2.9",
@@ -49,10 +52,12 @@
 		"postcss": "^8.5.3",
 		"prettier": "^3.5.3",
 		"prettier-plugin-svelte": "^3.4.0",
+		"rollup-plugin-visualizer": "^6.0.1",
 		"svelte": "^5.30.1",
 		"svelte-check": "^4.2.1",
 		"svelte-eslint-parser": "^1.2.0",
 		"tailwindcss": "^3.4.17",
+		"terser": "^5.40.0",
 		"tsx": "^4.7.1",
 		"typescript": "^5.8.3",
 		"typescript-eslint": "^8.32.1",

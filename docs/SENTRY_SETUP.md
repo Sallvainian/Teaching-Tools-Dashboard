@@ -84,20 +84,22 @@ The setup includes:
 ### Using Custom Performance Tracking
 
 ```typescript
-import { trackAsyncOperation, trackDatabaseOperation, trackUserInteraction } from '$lib/utils/performance';
+import { perfMonitor, debounce, throttle, measureComponentPerformance } from '$lib/utils/performanceOptimized';
 
-// Track API calls
-await trackAsyncOperation('api-call', async () => {
-  return await fetch('/api/data');
-}, { 'api.endpoint': '/api/data' });
+// Track performance marks
+perfMonitor.mark('api-call-start');
+// ... do work ...
+perfMonitor.measure('api-call', 'api-call-start');
 
-// Track database operations
-await trackDatabaseOperation('users', 'select', async () => {
-  return await supabase.from('users').select('*');
-});
+// Use debounce for search inputs
+const debouncedSearch = debounce((query: string) => {
+  // search logic
+}, 300);
 
-// Track user interactions
-trackUserInteraction('click', 'submit-button');
+// Use throttle for scroll handlers
+const throttledScroll = throttle(() => {
+  // scroll logic
+}, 100);
 ```
 
 ## Release Naming

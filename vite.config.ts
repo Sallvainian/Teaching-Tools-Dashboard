@@ -5,6 +5,7 @@ import { defineConfig, loadEnv } from 'vite';
 export default defineConfig(({ mode }) => {
 	// Load environment variables based on mode
 	const env = loadEnv(mode, process.cwd(), '');
+	const isProduction = mode === 'production';
 
 	return {
 		plugins: [
@@ -13,16 +14,44 @@ export default defineConfig(({ mode }) => {
 		],
 
 		build: {
-			sourcemap: true,
+			sourcemap: !isProduction,
+			minify: 'terser',
+			terserOptions: {
+				compress: {
+					drop_console: isProduction,
+					drop_debugger: isProduction,
+					pure_funcs: isProduction ? ['console.log', 'console.info'] : [],
+					passes: 2
+				}
+			},
+			chunkSizeWarningLimit: 1000,
 			rollupOptions: {
 				output: {
-					sourcemapExcludeSources: false
+					sourcemapExcludeSources: isProduction,
+					manualChunks: (id) => {
+						// Vendor chunking for better caching
+						if (id.includes('node_modules')) {
+							if (id.includes('svelte')) return 'svelte-vendor';
+							if (id.includes('@supabase')) return 'supabase-vendor';
+							if (id.includes('handsontable')) return 'handsontable-vendor';
+							if (id.includes('lucide-svelte')) return 'icons-vendor';
+							if (id.includes('@sentry')) return 'sentry-vendor';
+							return 'vendor';
+						}
+						// Feature-based chunking
+						if (id.includes('src/routes/auth')) return 'auth';
+						if (id.includes('src/routes/dashboard')) return 'dashboard';
+						if (id.includes('src/routes/jeopardy')) return 'jeopardy';
+						if (id.includes('src/routes/gradebook')) return 'gradebook';
+						if (id.includes('src/lib/components')) return 'components';
+						if (id.includes('src/lib/stores')) return 'stores';
+					}
 				}
 			}
 		},
 
 		css: {
-			devSourcemap: true
+			devSourcemap: !isProduction
 		},
 
 		server: {
@@ -32,7 +61,8 @@ export default defineConfig(({ mode }) => {
 		},
 
 		optimizeDeps: {
-			include: ['esm-env']
+			include: ['esm-env', 'svelte', 'svelte/store', '@supabase/supabase-js'],
+			exclude: ['@sveltejs/kit']
 		},
 
 		define: {

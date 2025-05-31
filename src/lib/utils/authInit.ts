@@ -1,4 +1,3 @@
-import { supabase } from '$lib/supabaseClient';
 import { authStore } from '$lib/stores/auth';
 
 let initPromise: Promise<void> | null = null;

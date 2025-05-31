@@ -19,7 +19,7 @@
 	$effect(() => {
 		console.log('🏫 ClassList Debug:', {
 			totalClasses: classes.length,
-			classesData: classes.map((c) => ({
+			classesData: classes.map((c: ClassItem) => ({
 				id: c.id,
 				name: c.name,
 				studentCount: c.studentIds.length,

@@ -1,5 +1,6 @@
 <script lang="ts" generics="T">
 	import { onMount, onDestroy } from 'svelte';
+	import type { Snippet } from 'svelte';
 
 	interface Props {
 		items: T[];
@@ -7,6 +8,7 @@
 		windowHeight?: number;
 		overscan?: number;
 		getKey?: (item: T, index: number) => string | number;
+		children: Snippet<[{ item: T; index: number }]>;
 	}
 
 	let {
@@ -14,7 +16,8 @@
 		itemHeight,
 		windowHeight = 600,
 		overscan = 3,
-		getKey = (_, index) => index
+		getKey = (_, index) => index,
+		children
 	}: Props = $props();
 
 	let container: HTMLDivElement;
@@ -56,7 +59,7 @@
 		<div class="virtual-list-items" style="transform: translateY({offsetY}px);">
 			{#each visibleItems as item, i (getKey(item, visibleStart + i))}
 				<div class="virtual-list-item" style="height: {itemHeight}px;">
-					<slot {item} index={visibleStart + i} />
+					{@render children({ item, index: visibleStart + i })}
 				</div>
 			{/each}
 		</div>

@@ -1,5 +1,8 @@
 <script lang="ts">
 	import type { Class } from '$lib/types/gradebook';
+	import { gradebookStore } from '$lib/stores/gradebook';
+	import { authStore } from '$lib/stores/auth';
+	import { get } from 'svelte/store';
 
 	export const isOpen: boolean = false;
 	export let onClose: () => void;
@@ -59,10 +62,6 @@
 
 	async function importToGradebook(categoryName: string, studentNames: string[]) {
 		try {
-			const { gradebookStore } = await import('$lib/stores/gradebook');
-			const { authStore } = await import('$lib/stores/auth');
-			const { get } = await import('svelte/store');
-
 			// Ensure data is loaded
 			await gradebookStore.ensureDataLoaded();
 
