@@ -578,6 +578,8 @@ function setupRealtimeSubscriptions(): void {
 	const user = get(authStore).user;
 	if (!user) return;
 
+	console.log('🔄 Setting up real-time subscriptions for user:', user.id);
+
 	// Subscribe to conversations changes
 	conversationsChannel = supabase
 		.channel('conversations-changes')
@@ -606,6 +608,17 @@ function setupRealtimeSubscriptions(): void {
 			},
 			async (payload) => {
 				const newMessage = payload.new as Message;
+				console.log('📨 Received new message:', newMessage.id, 'in conversation:', newMessage.conversation_id);
+
+				// Check if user is part of this conversation
+				const { data: participation } = await supabase
+					.from('conversation_participants')
+					.select('conversation_id')
+					.eq('conversation_id', newMessage.conversation_id)
+					.eq('user_id', user.id)
+					.single();
+
+				if (!participation) return; // User not in this conversation
 
 				// Load full message with sender info
 				const { data: fullMessage } = await supabase
@@ -620,9 +633,11 @@ function setupRealtimeSubscriptions(): void {
 					.single();
 
 				if (fullMessage) {
+					console.log('✅ Adding message to UI:', fullMessage.content);
 					// Add to messages if we have this conversation loaded
 					messages.update((current) => {
 						if (current[fullMessage.conversation_id]) {
+							console.log('📁 Conversation loaded, adding message to chat');
 							return {
 								...current,
 								[fullMessage.conversation_id]: [
@@ -631,14 +646,20 @@ function setupRealtimeSubscriptions(): void {
 								]
 							};
 						}
+						console.log('⚠️ Conversation not loaded, message not displayed');
 						return current;
 					});
 
-					// Update conversation last message
+					// Update conversation last message and unread count
 					conversations.update((current) =>
 						current.map((conv) =>
 							conv.id === fullMessage.conversation_id
-								? { ...conv, last_message: fullMessage, updated_at: fullMessage.created_at }
+								? { 
+									...conv, 
+									last_message: fullMessage, 
+									updated_at: fullMessage.created_at,
+									unread_count: fullMessage.sender_id !== user.id ? (conv.unread_count || 0) + 1 : conv.unread_count
+								}
 								: conv
 						)
 					);
