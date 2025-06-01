@@ -4,6 +4,9 @@
 	import '@fontsource/inter/400.css';
 	import '@fontsource/inter/500.css';
 	import '@fontsource/inter/600.css';
+	import { injectSpeedInsights } from '@vercel/speed-insights/sveltekit';
+
+	injectSpeedInsights();
 
 	// Main layout component
 	import AppLayout from '$lib/components/AppLayout/AppLayout.svelte';
