@@ -169,13 +169,6 @@
 		}
 	}
 
-	.animate-fade-in {
-		animation: fade-in 0.3s ease;
-	}
-
-	.animate-bounce-in {
-		animation: bounce-in 0.5s ease;
-	}
 
 	@keyframes fade-in {
 		from {
