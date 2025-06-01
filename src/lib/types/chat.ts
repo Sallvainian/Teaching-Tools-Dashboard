@@ -64,7 +64,7 @@ export function conversationToUI(
 	conversation: ConversationWithDetails,
 	currentUserId: string
 ): ChatUIConversation {
-	const isGroup = conversation.type === 'group';
+	const isGroup = (conversation as any).type === 'group';
 
 	let name = conversation.name || '';
 	let avatar = '';
@@ -98,7 +98,7 @@ export function conversationToUI(
 		name,
 		unread: conversation.unread_count || 0,
 		lastMessage,
-		time: formatTime(conversation.last_message_at),
+		time: formatTime(conversation.last_message?.created_at || conversation.updated_at || ''),
 		avatar,
 		online: conversation.is_online || false,
 		isGroup,
@@ -110,8 +110,9 @@ export function messageToUI(message: MessageWithSender, currentUserId: string): 
 	return {
 		id: message.id,
 		sender: message.sender_id === currentUserId ? 'me' : 'other',
+		senderName: message.sender_id === currentUserId ? 'You' : (message.sender?.full_name || 'Unknown User'),
 		text: message.content,
-		time: formatMessageTime(message.created_at),
+		time: formatMessageTime(message.created_at || ''),
 		attachments: message.attachments?.map((att) => ({
 			id: att.id,
 			type: getAttachmentType(att.file_type),
@@ -130,8 +131,10 @@ function getInitials(name: string): string {
 		.slice(0, 2);
 }
 
-function formatTime(date: string): string {
+function formatTime(date: string | null | undefined): string {
+	if (!date) return 'Just now';
 	const messageDate = new Date(date);
+	if (isNaN(messageDate.getTime())) return 'Just now';
 	const now = new Date();
 	const diffInHours = (now.getTime() - messageDate.getTime()) / (1000 * 60 * 60);
 
@@ -154,8 +157,10 @@ function formatTime(date: string): string {
 	}
 }
 
-function formatMessageTime(date: string): string {
+function formatMessageTime(date: string | null | undefined): string {
+	if (!date) return 'Just now';
 	const messageDate = new Date(date);
+	if (isNaN(messageDate.getTime())) return 'Just now';
 	return messageDate.toLocaleTimeString('en-US', {
 		hour: 'numeric',
 		minute: '2-digit',

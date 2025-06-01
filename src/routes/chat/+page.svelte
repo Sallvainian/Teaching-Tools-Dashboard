@@ -26,8 +26,8 @@
 				time: chatStore.formatTime(conv.last_message?.created_at || conv.updated_at),
 				avatar: getConversationAvatar(conv, user.id),
 				online: isConversationOnline(conv, user.id),
-				isGroup: conv.type === 'group',
-				members: conv.type === 'group' ? conv.participants?.length : undefined
+				isGroup: (conv as any).type === 'group',
+				members: (conv as any).type === 'group' ? conv.participants?.length : undefined
 			}));
 
 			// Set active conversation to first one if none selected
@@ -45,7 +45,7 @@
 				sender: msg.sender_id === user.id ? 'me' : 'other',
 				senderName: msg.sender_id === user.id ? 'You' : (msg.sender?.full_name || 'Unknown User'),
 				text: msg.content,
-				time: new Date(msg.created_at).toLocaleTimeString('en-US', {
+				time: new Date(msg.created_at || '').toLocaleTimeString('en-US', {
 					hour: 'numeric',
 					minute: '2-digit',
 					hour12: true
@@ -83,7 +83,12 @@
 	function getLastMessageText(conv: any, currentUserId: string): string {
 		if (!conv.last_message) return 'No messages yet';
 
-		const prefix = conv.last_message.sender_id === currentUserId ? 'You: ' : '';
+		let prefix = '';
+		if (conv.last_message.sender_id === currentUserId) {
+			prefix = 'You: ';
+		} else if (conv.last_message.sender?.full_name) {
+			prefix = `${conv.last_message.sender.full_name}: `;
+		}
 		return prefix + conv.last_message.content;
 	}
 
@@ -98,6 +103,7 @@
 	let showAttachMenu = $state(false);
 	let showUserSelectModal = $state(false);
 	let messagesContainer: HTMLDivElement;
+	let typingTimeout: number | null = null;
 
 	// Filtered conversations
 	let filteredConversations = $derived(
@@ -119,6 +125,11 @@
 		unsubscribeLoading();
 		unsubscribeError();
 		unsubscribeTyping();
+		
+		// Clean up typing timeout
+		if (typingTimeout) {
+			clearTimeout(typingTimeout);
+		}
 	});
 
 	$effect(() => {
@@ -182,11 +193,48 @@
 	function handleKeydown(event: KeyboardEvent) {
 		if (event.key === 'Enter') {
 			sendMessage();
+			stopTyping();
+		} else {
+			handleTyping();
 		}
 	}
 
-	function handleConversationCreated(event: CustomEvent<{ conversationId: string }>) {
-		const { conversationId } = event.detail;
+	// Handle typing indicator for real users
+	function handleTyping() {
+		if (!activeConversation) return;
+		
+		const user = $authStore.user;
+		if (!user) return;
+
+		// Show typing indicator
+		chatStore.setUserTyping(activeConversation.id, user.full_name);
+
+		// Clear existing timeout
+		if (typingTimeout) {
+			clearTimeout(typingTimeout);
+		}
+
+		// Set timeout to stop typing after 2 seconds of inactivity
+		typingTimeout = window.setTimeout(() => {
+			stopTyping();
+		}, 2000);
+	}
+
+	function stopTyping() {
+		if (!activeConversation) return;
+		
+		const user = $authStore.user;
+		if (!user) return;
+
+		chatStore.setUserNotTyping(activeConversation.id, user.full_name);
+		
+		if (typingTimeout) {
+			clearTimeout(typingTimeout);
+			typingTimeout = null;
+		}
+	}
+
+	function handleConversationCreated(conversationId: string) {
 		// Find the new conversation and select it
 		const newConversation = conversations.find((c) => c.id === conversationId);
 		if (newConversation) {
@@ -442,6 +490,7 @@
 								placeholder="Type a message..."
 								class="input w-full pr-24"
 								onkeydown={handleKeydown}
+								oninput={handleTyping}
 							/>
 
 							<div class="absolute right-2 top-1/2 transform -translate-y-1/2 flex gap-1">
@@ -591,6 +640,6 @@
 	<!-- User Selection Modal -->
 	<UserSelectModal
 		bind:isOpen={showUserSelectModal}
-		onconversationCreated={handleConversationCreated}
+		onConversationCreated={handleConversationCreated}
 	/>
 </div>

@@ -1,16 +1,13 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
+	// import { createEventDispatcher } from 'svelte'; // No longer needed in Svelte 5
 	import { chatStore } from '$lib/stores/chat';
 	import { authStore } from '$lib/stores/auth';
 
 	// Props
-	let { isOpen = $bindable(false), onClose = () => {} } = $props<{
+	let { isOpen = $bindable(false), onClose = () => {}, onConversationCreated } = $props<{
 		isOpen?: boolean;
 		onClose?: () => void;
-	}>();
-
-	const dispatch = createEventDispatcher<{
-		conversationCreated: { conversationId: string };
+		onConversationCreated?: (conversationId: string) => void;
 	}>();
 
 	// State
@@ -123,7 +120,7 @@
 			}
 
 			if (conversationId) {
-				dispatch('conversationCreated', { conversationId });
+				onConversationCreated?.(conversationId);
 				closeModal();
 			} else {
 				error = 'Failed to create conversation';
