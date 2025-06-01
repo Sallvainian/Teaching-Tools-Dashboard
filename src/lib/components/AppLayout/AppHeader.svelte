@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import ThemeToggle from '$components/ThemeToggle.svelte';
-	import { authStore, isAuthenticated } from '$stores/auth';
+	import { authStore, isAuthenticated, profile } from '$stores/auth';
 	import { gradebookStore } from '$stores/gradebook';
 	import { debounce } from '$utils/performanceOptimized';
 
@@ -38,7 +38,20 @@
 			console.error('Sign out error:', error);
 		}
 	}
+
+	// Close dropdowns when clicking outside
+	function handleClickOutside(event: MouseEvent) {
+		const target = event.target as Element;
+		if (!target.closest('.classes-dropdown')) {
+			classesDropdownOpen = false;
+		}
+		if (!target.closest('.user-menu')) {
+			userMenuOpen = false;
+		}
+	}
 </script>
+
+<svelte:window onclick={handleClickOutside} />
 
 <nav class="bg-surface backdrop-blur-md border-b border border-border/50 relative z-50">
 	<div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
@@ -155,18 +168,21 @@
 
 				<!-- User menu - only show if authenticated -->
 				{#if $isAuthenticated && $authStore.user}
-					<div class="relative">
+					<div class="relative user-menu">
 						<button
 							onclick={toggleUserMenu}
-							class="flex items-center gap-2 text-sm text-text-hover hover:text-highlight transition-colors duration-200"
+							class="flex items-center gap-3 text-sm text-text-hover hover:text-highlight transition-colors duration-200"
 							aria-expanded={userMenuOpen}
 							aria-haspopup="true"
 						>
 							<div
 								class="w-8 h-8 bg-gradient-to-br from-purple to-purple-light rounded-full flex items-center justify-center text-highlight font-medium shadow-sm"
 							>
-								{$authStore.user.email?.[0]?.toUpperCase() || 'U'}
+								{($profile?.full_name?.[0] || $authStore.user.email?.[0] || 'U').toUpperCase()}
 							</div>
+							<span class="font-medium">
+								{$profile?.full_name || $authStore.user.email?.split('@')[0] || 'User'}
+							</span>
 							<svg
 								class="w-4 h-4 text-muted transition-transform duration-200"
 								class:rotate-180={userMenuOpen}

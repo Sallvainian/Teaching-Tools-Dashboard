@@ -4,7 +4,7 @@
 	// Props
 	let { sidebarCollapsed = $bindable(false) } = $props();
 
-	// Navigation items configuration
+	// All navigation items
 	const navItems = [
 		{
 			href: '/dashboard',
@@ -37,6 +37,11 @@
 			icon: 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'
 		},
 		{
+			href: '/chat',
+			title: 'Chat',
+			icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z'
+		},
+		{
 			href: '/class-dojo-remake',
 			title: 'Class Dojo',
 			icon: 'M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
@@ -45,6 +50,11 @@
 			href: '/lesson-planner',
 			title: 'Lesson Planner',
 			icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'
+		},
+		{
+			href: '/scattergories',
+			title: 'Scattergories',
+			icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z'
 		}
 	];
 
@@ -54,76 +64,64 @@
 </script>
 
 <aside
-	class="hidden md:block bg-surface backdrop-blur-md border-r border border-border/50 transition-[width] duration-150 relative"
-	class:collapsed={sidebarCollapsed}
-	style="width: {sidebarCollapsed ? '3.5rem' : '14rem'}"
+	class="hidden md:block border-r min-h-screen transition-[width] duration-150 relative"
+	style="width: {sidebarCollapsed
+		? '3.5rem'
+		: '14rem'}; background-color: var(--surface); border-color: var(--border);"
 >
 	<!-- Toggle button -->
 	<button
 		onclick={() => (sidebarCollapsed = !sidebarCollapsed)}
-		class="absolute -right-3 top-6 z-10 w-6 h-6 bg-surface border border-border rounded-md text-muted hover:text-highlight hover:border-highlight transition-all duration-200"
-		aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+		class="absolute -right-3 top-6 z-10 w-6 h-6 rounded-md transition-colors"
+		style="background-color: var(--surface); border: 1px solid var(--border); color: var(--muted);"
 	>
-		<svg
-			class="w-full h-full p-1"
-			xmlns="http://www.w3.org/2000/svg"
-			fill="none"
-			viewBox="0 0 24 24"
-			stroke="currentColor"
-			stroke-width="2.5"
-		>
-			<path
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				d={sidebarCollapsed ? 'M13 5l7 7-7 7' : 'M11 19l-7-7 7-7'}
-			/>
-		</svg>
+		{sidebarCollapsed ? '→' : '←'}
 	</button>
 
-	<div
-		class="space-y-6 transition-[padding] duration-150"
-		class:p-4={!sidebarCollapsed}
-		class:px-0={sidebarCollapsed}
-		class:py-4={sidebarCollapsed}
-	>
-		<div>
-			{#if !sidebarCollapsed}
-				<h3 class="text-muted uppercase text-xs font-semibold mb-3 px-3">Menu</h3>
-			{/if}
-			<div class="space-y-1">
-				{#each navItems as item (item.href)}
-					<a
-						href={item.href}
-						class="menu-item relative group hover:bg-purple-bg text-text-hover hover:text-highlight"
-						class:px-3={!sidebarCollapsed}
-						class:px-1={sidebarCollapsed}
-						class:justify-center={sidebarCollapsed}
-						class:bg-purple-bg={isActivePath(item.href)}
-						class:text-highlight={isActivePath(item.href)}
-						title={item.title}
+	<div class="p-4">
+		{#if !sidebarCollapsed}
+			<h3 class="uppercase text-xs font-semibold mb-4" style="color: var(--muted);">Menu</h3>
+		{/if}
+
+		<div class="space-y-2">
+			{#each navItems as item}
+				<a
+					href={item.href}
+					class="flex items-center py-2 text-sm font-medium rounded-md transition-colors"
+					class:px-3={!sidebarCollapsed}
+					class:justify-center={sidebarCollapsed}
+					class:px-1={sidebarCollapsed}
+					style="color: {isActivePath(item.href) ? 'var(--highlight)' : 'var(--text-hover)'}; 
+							background-color: {isActivePath(item.href) ? 'var(--purple-bg)' : 'transparent'};"
+					onmouseenter={(e) => {
+						if (!isActivePath(item.href)) {
+							e.target.style.backgroundColor = 'var(--purple-bg)';
+							e.target.style.color = 'var(--highlight)';
+						}
+					}}
+					onmouseleave={(e) => {
+						if (!isActivePath(item.href)) {
+							e.target.style.backgroundColor = 'transparent';
+							e.target.style.color = 'var(--text-hover)';
+						}
+					}}
+				>
+					<svg
+						class="w-5 h-5"
+						class:mr-3={!sidebarCollapsed}
+						xmlns="http://www.w3.org/2000/svg"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke="currentColor"
+						stroke-width="2"
 					>
-						<svg
-							class="w-5 h-5 flex-shrink-0"
-							xmlns="http://www.w3.org/2000/svg"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-							stroke-width="2"
-						>
-							<path stroke-linecap="round" stroke-linejoin="round" d={item.icon} />
-						</svg>
-						{#if !sidebarCollapsed}
-							<span>{item.title}</span>
-						{:else}
-							<span
-								class="absolute left-full ml-2 px-2 py-1 bg-card border border-border rounded-lg text-sm text-text-hover opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-dropdown"
-							>
-								{item.title}
-							</span>
-						{/if}
-					</a>
-				{/each}
-			</div>
+						<path stroke-linecap="round" stroke-linejoin="round" d={item.icon} />
+					</svg>
+					{#if !sidebarCollapsed}
+						<span>{item.title}</span>
+					{/if}
+				</a>
+			{/each}
 		</div>
 	</div>
 </aside>

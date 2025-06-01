@@ -7,6 +7,7 @@ import { authStore } from './auth';
 // Re-export all the derived stores as static exports
 export { authStore };
 export const user = derived(authStore, ($store) => $store.user);
+export const profile = derived(authStore, ($store) => $store.profile);
 export const session = derived(authStore, ($store) => $store.session);
 export const loading = derived(authStore, ($store) => $store.loading);
 export const error = derived(authStore, ($store) => $store.error);

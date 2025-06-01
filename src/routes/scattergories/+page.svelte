@@ -27,12 +27,12 @@
 	<title>Scattergories - Teacher Dashboard</title>
 </svelte:head>
 
-<div class="min-h-screen bg-base-100 p-4">
+<div class="min-h-screen p-4" style="background-color: var(--bg-base);">
 	<div class="max-w-6xl mx-auto">
 		<!-- Header -->
 		<div class="text-center mb-8">
-			<h1 class="text-4xl font-bold text-primary mb-2">Scattergories</h1>
-			<p class="text-lg text-base-content/70">Generate categories and race against time!</p>
+			<h1 class="text-4xl font-bold mb-2" style="color: var(--purple);">Scattergories</h1>
+			<p class="text-lg" style="color: var(--muted);">Generate categories and race against time!</p>
 		</div>
 
 		<!-- Main Game Layout -->
@@ -50,20 +50,23 @@
 			</div>
 
 			<!-- Right Panel - Categories -->
-			<div class="lg:col-span-2">
+			<div class="lg:col-span-2 relative">
 				<!-- Category Controls -->
-				<div class="card bg-base-200 shadow-lg mb-6">
-					<div class="card-body p-4">
+				<div class="rounded-lg shadow-lg mb-6 p-4" style="background-color: var(--surface);">
+					<div>
 						<div class="space-y-4">
 							<!-- Top Row - Category Count & Mode -->
 							<div class="flex flex-wrap items-center justify-between gap-4">
 								<div class="flex items-center gap-4">
 									<div class="flex items-center gap-2">
-										<span class="text-sm font-medium">Categories:</span>
+										<span class="text-sm font-medium" style="color: var(--text-base);"
+											>Categories:</span
+										>
 										<div class="join">
 											<button
 												class="btn btn-sm join-item"
-												onclick={() => scattergories.setNumberOfWords($scattergories.numberOfWords - 1)}
+												onclick={() =>
+													scattergories.setNumberOfWords($scattergories.numberOfWords - 1)}
 												disabled={$scattergories.numberOfWords <= 1}
 											>
 												-
@@ -73,14 +76,15 @@
 											</span>
 											<button
 												class="btn btn-sm join-item"
-												onclick={() => scattergories.setNumberOfWords($scattergories.numberOfWords + 1)}
+												onclick={() =>
+													scattergories.setNumberOfWords($scattergories.numberOfWords + 1)}
 												disabled={$scattergories.numberOfWords >= 30}
 											>
 												+
 											</button>
 										</div>
 									</div>
-									
+
 									<button
 										class="btn btn-sm btn-outline"
 										onclick={() => scattergories.toggleKidFriendly()}
@@ -91,12 +95,12 @@
 
 								<button
 									class="btn btn-sm btn-outline"
-									onclick={() => showCategoryManager = !showCategoryManager}
+									onclick={() => (showCategoryManager = !showCategoryManager)}
 								>
 									Manage Categories
 								</button>
 							</div>
-							
+
 							<!-- Quick Add Row -->
 							<div class="flex gap-2">
 								<input
@@ -125,30 +129,20 @@
 
 		<!-- Category Manager Modal -->
 		{#if showCategoryManager}
-			<CategoryManager onclose={() => showCategoryManager = false} />
+			<CategoryManager onclose={() => (showCategoryManager = false)} />
 		{/if}
 	</div>
-
-	<!-- Pause Overlay -->
-	{#if $scattergories.gameState === 'paused'}
-		<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
-			<div class="bg-base-100 p-8 rounded-2xl shadow-2xl text-center animate-bounce-in">
-				<div class="text-6xl mb-4">⏸️</div>
-				<h3 class="text-3xl font-bold mb-4">Game Paused</h3>
-				<p class="text-lg text-base-content/70 mb-6">Click Resume to continue playing</p>
-				<button class="btn btn-primary btn-lg" onclick={() => scattergories.startGame()}>
-					▶️ Resume Game
-				</button>
-			</div>
-		</div>
-	{/if}
 
 	<!-- Game Over Modal -->
 	{#if $scattergories.gameState === 'game-over'}
 		<div class="modal modal-open">
 			<div class="modal-box">
 				<h3 class="text-2xl font-bold text-center mb-4">Time's Up! 🎉</h3>
-				<p class="text-center mb-6">How did you do with letter <strong class="text-3xl text-primary">{$scattergories.currentLetter}</strong>?</p>
+				<p class="text-center mb-6">
+					How did you do with letter <strong class="text-3xl text-primary"
+						>{$scattergories.currentLetter}</strong
+					>?
+				</p>
 				<div class="modal-action justify-center">
 					<button class="btn btn-primary" onclick={() => scattergories.resetGame()}>
 						Play Again

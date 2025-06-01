@@ -16,6 +16,7 @@
 
 	// Main layout component
 	import AppLayout from '$lib/components/AppLayout/AppLayout.svelte';
+	import GlobalLoader from '$lib/components/GlobalLoader.svelte';
 
 	// Get children prop for Svelte 5
 	let { children } = $props();
@@ -24,3 +25,6 @@
 <AppLayout>
 	{@render children?.()}
 </AppLayout>
+
+<!-- Global loading overlay -->
+<GlobalLoader />

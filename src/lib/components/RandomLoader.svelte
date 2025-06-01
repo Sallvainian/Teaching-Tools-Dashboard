@@ -6,7 +6,7 @@
 	}>();
 
 	// Get random animation on component initialization
-	const animations = ['conic', 'pacman', 'bounce', 'pulse', 'dots'] as const;
+	const animations = ['conic', 'pacman', 'bounce'] as const;
 	const selectedAnimation = animations[Math.floor(Math.random() * animations.length)];
 </script>
 
@@ -31,20 +31,6 @@
 			<div class="bounce-dot"></div>
 			<div class="bounce-dot"></div>
 			<div class="bounce-dot"></div>
-		</div>
-	{:else if selectedAnimation === 'pulse'}
-		<!-- Pulsing circle -->
-		<div class="pulse-container" style="--loader-color: {color};">
-			<div class="pulse-circle"></div>
-			<div class="pulse-circle"></div>
-			<div class="pulse-circle"></div>
-		</div>
-	{:else if selectedAnimation === 'dots'}
-		<!-- Moving dots -->
-		<div class="dots-container" style="--loader-color: {color};">
-			<div class="moving-dot"></div>
-			<div class="moving-dot"></div>
-			<div class="moving-dot"></div>
 		</div>
 	{/if}
 </div>
@@ -197,75 +183,6 @@
 		}
 		40% {
 			transform: scale(1);
-		}
-	}
-
-	/* Pulsing Circles */
-	.pulse-container {
-		position: relative;
-		width: 60px;
-		height: 60px;
-	}
-	.pulse-circle {
-		position: absolute;
-		width: 100%;
-		height: 100%;
-		border: 2px solid var(--loader-color);
-		border-radius: 50%;
-		animation: pulse-animation 2s infinite;
-	}
-	.pulse-circle:nth-child(1) {
-		animation-delay: 0s;
-	}
-	.pulse-circle:nth-child(2) {
-		animation-delay: 0.6s;
-	}
-	.pulse-circle:nth-child(3) {
-		animation-delay: 1.2s;
-	}
-
-	@keyframes pulse-animation {
-		0% {
-			transform: scale(0);
-			opacity: 1;
-		}
-		100% {
-			transform: scale(1);
-			opacity: 0;
-		}
-	}
-
-	/* Moving Dots */
-	.dots-container {
-		display: flex;
-		gap: 4px;
-		align-items: center;
-	}
-	.moving-dot {
-		width: 8px;
-		height: 8px;
-		background: var(--loader-color);
-		border-radius: 50%;
-		animation: moving-dots 1.5s infinite ease-in-out;
-	}
-	.moving-dot:nth-child(1) {
-		animation-delay: 0s;
-	}
-	.moving-dot:nth-child(2) {
-		animation-delay: 0.2s;
-	}
-	.moving-dot:nth-child(3) {
-		animation-delay: 0.4s;
-	}
-
-	@keyframes moving-dots {
-		0%,
-		80%,
-		100% {
-			transform: scale(0) translateY(0);
-		}
-		40% {
-			transform: scale(1) translateY(-20px);
 		}
 	}
 </style>

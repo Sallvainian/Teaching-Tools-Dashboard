@@ -4,8 +4,17 @@ import type { AuthSession, User } from '@supabase/supabase-js';
 import type { UserRole } from '$lib/types/database';
 import { clearSupabaseAuthStorage } from '$lib/utils/authStorage';
 
+interface UserProfile {
+	id: string;
+	email: string;
+	full_name: string;
+	avatar_url?: string | null;
+	role: UserRole | null;
+}
+
 function createAuthStore() {
 	const user = writable<User | null>(null);
+	const profile = writable<UserProfile | null>(null);
 	const session = writable<AuthSession | null>(null);
 	const loading = writable(true);
 	const error = writable<string | null>(null);
@@ -16,23 +25,32 @@ function createAuthStore() {
 	// Track if we've already set up auth listener
 	let authListenerSetup = false;
 
-	async function fetchUserRole(userId: string) {
+	async function fetchUserProfile(userId: string) {
 		try {
 			const { supabase } = await import('$lib/supabaseClient');
 			const { data, error } = await supabase
 				.from('app_users')
-				.select('role')
+				.select('id, email, full_name, avatar_url, role')
 				.eq('id', userId)
 				.maybeSingle(); // Use maybeSingle() instead of single() to handle 0 rows gracefully
 
 			if (error) {
-				console.error('Database error fetching user role:', error);
+				console.error('Database error fetching user profile:', error);
 				role.set(null);
+				profile.set(null);
 				return;
 			}
 
 			if (data) {
-				role.set(data.role);
+				const userProfile: UserProfile = {
+					id: data.id,
+					email: data.email,
+					full_name: data.full_name,
+					avatar_url: data.avatar_url,
+					role: data.role as UserRole
+				};
+				profile.set(userProfile);
+				role.set(data.role as UserRole);
 			} else {
 				// Check localStorage fallback first
 				const fallbackRole = localStorage.getItem(`user-role-${userId}`);
@@ -46,9 +64,15 @@ function createAuthStore() {
 				}
 			}
 		} catch (err) {
-			console.error('Error fetching user role:', err);
+			console.error('Error fetching user profile:', err);
 			role.set(null);
+			profile.set(null);
 		}
+	}
+
+	// Keep the old function for backwards compatibility
+	async function fetchUserRole(userId: string) {
+		return fetchUserProfile(userId);
 	}
 
 	async function createAppUserRecord(userId: string) {
@@ -89,6 +113,15 @@ function createAuthStore() {
 			} else {
 				console.log('Created app_users record with role:', data.role);
 				role.set(data.role);
+				// Also set the profile data
+				const userProfile: UserProfile = {
+					id: userId,
+					email: user.email || '',
+					full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+					avatar_url: user.user_metadata?.avatar_url || null,
+					role: data.role as UserRole
+				};
+				profile.set(userProfile);
 			}
 		} catch (err) {
 			console.error('Error creating app_users record:', err);
@@ -411,15 +444,16 @@ function createAuthStore() {
 
 	return {
 		subscribe: derived(
-			[user, session, loading, error, isAuthenticated, role, isInitialized],
-			([$user, $session, $loading, $error, $isAuthenticated, $role, $isInitialized]) => ({
+			[user, session, loading, error, isAuthenticated, role, isInitialized, profile],
+			([$user, $session, $loading, $error, $isAuthenticated, $role, $isInitialized, $profile]) => ({
 				user: $user,
 				session: $session,
 				loading: $loading,
 				error: $error,
 				isAuthenticated: $isAuthenticated,
 				role: $role,
-				isInitialized: $isInitialized
+				isInitialized: $isInitialized,
+				profile: $profile
 			})
 		).subscribe,
 		signIn,
@@ -435,6 +469,7 @@ function createAuthStore() {
 
 export const authStore = createAuthStore();
 export const user = derived(authStore, ($store) => $store.user);
+export const profile = derived(authStore, ($store) => $store.profile);
 export const session = derived(authStore, ($store) => $store.session);
 export const loading = derived(authStore, ($store) => $store.loading);
 export const error = derived(authStore, ($store) => $store.error);

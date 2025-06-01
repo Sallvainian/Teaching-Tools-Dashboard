@@ -1,4 +1,5 @@
 import { goto as svelteGoto, pushState, replaceState } from '$app/navigation';
+import { loadingStore } from '$lib/stores/loading';
 
 /**
  * Navigation utility functions that use SvelteKit's navigation imports
@@ -6,15 +7,34 @@ import { goto as svelteGoto, pushState, replaceState } from '$app/navigation';
  */
 
 /**
- * Navigate to a new URL using SvelteKit's goto function
+ * Navigate to a new URL using SvelteKit's goto function with random loading animation
  * @param url The URL to navigate to
  * @param options Navigation options
  */
 export function goto(
 	url: string,
-	options?: { replaceState?: boolean; noScroll?: boolean; keepFocus?: boolean }
+	options?: {
+		replaceState?: boolean;
+		noScroll?: boolean;
+		keepFocus?: boolean;
+		showLoader?: boolean;
+	}
 ) {
-	return svelteGoto(url, options);
+	const { showLoader = true, ...navOptions } = options || {};
+
+	if (showLoader) {
+		loadingStore.start();
+
+		// Stop loading after navigation completes (small delay to show animation)
+		const navigationPromise = svelteGoto(url, navOptions);
+		navigationPromise.finally(() => {
+			setTimeout(() => loadingStore.stop(), 100);
+		});
+
+		return navigationPromise;
+	}
+
+	return svelteGoto(url, navOptions);
 }
 
 /**

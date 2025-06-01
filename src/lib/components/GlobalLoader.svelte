@@ -1,60 +1,89 @@
 <script lang="ts">
-	// Random loader component with multiple animation options
+	import { loadingStore } from '$lib/stores/loading';
+
 	let { size = 50, color = 'var(--purple)' } = $props<{
 		size?: number;
 		color?: string;
 	}>();
-
-	// Get random animation on component initialization
-	const animations = ['conic', 'pacman', 'bounce', 'pulse', 'dots'] as const;
-	const selectedAnimation = animations[Math.floor(Math.random() * animations.length)];
 </script>
 
-<div class="loader-container">
-	{#if selectedAnimation === 'conic'}
-		<!-- Conic spinning loader -->
-		<div class="conic-loader" style="width: {size}px; --loader-color: {color};"></div>
-	{:else if selectedAnimation === 'pacman'}
-		<!-- Pacman loader -->
-		<div class="pacman-container" style="--loader-color: {color};">
-			<div class="pacman">
-				<div></div>
-				<div></div>
-				<div></div>
-				<div></div>
-				<div></div>
-			</div>
+{#if $loadingStore.isLoading}
+	<div class="global-loader-overlay">
+		<div class="loader-container">
+			{#if $loadingStore.animation === 'conic'}
+				<!-- Conic spinning loader -->
+				<div class="conic-loader" style="width: {size}px; --loader-color: {color};"></div>
+			{:else if $loadingStore.animation === 'pacman'}
+				<!-- Pacman loader -->
+				<div class="pacman-container" style="--loader-color: {color};">
+					<div class="pacman">
+						<div></div>
+						<div></div>
+						<div></div>
+						<div></div>
+						<div></div>
+					</div>
+				</div>
+			{:else if $loadingStore.animation === 'bounce'}
+				<!-- Bouncing dots -->
+				<div class="bounce-container" style="--loader-color: {color};">
+					<div class="bounce-dot"></div>
+					<div class="bounce-dot"></div>
+					<div class="bounce-dot"></div>
+				</div>
+			{:else if $loadingStore.animation === 'pulse'}
+				<!-- Pulsing circle -->
+				<div class="pulse-container" style="--loader-color: {color};">
+					<div class="pulse-circle"></div>
+					<div class="pulse-circle"></div>
+					<div class="pulse-circle"></div>
+				</div>
+			{:else if $loadingStore.animation === 'dots'}
+				<!-- Moving dots -->
+				<div class="dots-container" style="--loader-color: {color};">
+					<div class="moving-dot"></div>
+					<div class="moving-dot"></div>
+					<div class="moving-dot"></div>
+				</div>
+			{/if}
 		</div>
-	{:else if selectedAnimation === 'bounce'}
-		<!-- Bouncing dots -->
-		<div class="bounce-container" style="--loader-color: {color};">
-			<div class="bounce-dot"></div>
-			<div class="bounce-dot"></div>
-			<div class="bounce-dot"></div>
-		</div>
-	{:else if selectedAnimation === 'pulse'}
-		<!-- Pulsing circle -->
-		<div class="pulse-container" style="--loader-color: {color};">
-			<div class="pulse-circle"></div>
-			<div class="pulse-circle"></div>
-			<div class="pulse-circle"></div>
-		</div>
-	{:else if selectedAnimation === 'dots'}
-		<!-- Moving dots -->
-		<div class="dots-container" style="--loader-color: {color};">
-			<div class="moving-dot"></div>
-			<div class="moving-dot"></div>
-			<div class="moving-dot"></div>
-		</div>
-	{/if}
-</div>
+	</div>
+{/if}
 
 <style>
+	.global-loader-overlay {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background-color: rgba(0, 0, 0, 0.5);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 9999;
+		backdrop-filter: blur(2px);
+		animation: fade-in 0.2s ease-out;
+	}
+
+	@keyframes fade-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
 	.loader-container {
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		min-height: 60px;
+		background-color: var(--surface);
+		padding: 2rem;
+		border-radius: 1rem;
+		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
 	}
 
 	/* Conic Spinner */
@@ -99,7 +128,7 @@
 		width: 0;
 		height: 0;
 		border: 15px solid transparent;
-		border-right: 15px solid var(--bg-base, #fff);
+		border-right: 15px solid var(--surface);
 		border-radius: 50%;
 		animation: pacman-mouth 0.6s infinite ease-in-out;
 	}
