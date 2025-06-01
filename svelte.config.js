@@ -7,7 +7,7 @@ const config = {
 	kit: {
 		adapter: netlify({
 			edge: false, // Use Node.js runtime instead of Edge for better compatibility
-			split: true // Enable function splitting for better performance
+			split: false // Disable function splitting to avoid ESM issues
 		}),
 		alias: {
 			$components: 'src/lib/components',
