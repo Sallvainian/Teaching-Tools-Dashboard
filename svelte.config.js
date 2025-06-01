@@ -5,10 +5,7 @@ import netlify from '@sveltejs/adapter-netlify';
 const config = {
 	preprocess: vitePreprocess(),
 	kit: {
-		adapter: netlify({
-			edge: false, // Use Node.js runtime instead of Edge for better compatibility
-			split: false // Disable function splitting to avoid ESM issues
-		}),
+		adapter: netlify(),
 		alias: {
 			$components: 'src/lib/components',
 			$stores: 'src/lib/stores',

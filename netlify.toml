@@ -3,11 +3,3 @@
 
 [build.environment]
   NODE_VERSION = "22"
-  NPM_FLAGS = "--production=false"
-
-[functions]
-  node_bundler = "nft"
-  
-# Force cache clear to fix corrupted builds
-[build.processing]
-  skip_processing = false

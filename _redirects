@@ -1,5 +1,0 @@
-# Favicon redirect
-/favicon.ico    /favicon.png   200
-
-# SPA fallback - let SvelteKit handle routing
-/*              /           200
