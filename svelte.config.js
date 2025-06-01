@@ -1,14 +1,13 @@
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
-import vercel from '@sveltejs/adapter-vercel';
+import netlify from '@sveltejs/adapter-netlify';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	preprocess: vitePreprocess(),
 	kit: {
-		adapter: vercel({
-			runtime: 'nodejs20.x',
-			split: true, // Enable function splitting for better performance
-			maxDuration: 10
+		adapter: netlify({
+			edge: false, // Use Node.js runtime instead of Edge for better compatibility
+			split: true // Enable function splitting for better performance
 		}),
 		alias: {
 			$components: 'src/lib/components',
