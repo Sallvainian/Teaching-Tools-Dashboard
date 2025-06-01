@@ -45,6 +45,10 @@ let conversationsChannel: RealtimeChannel | null = null;
 let messagesChannel: RealtimeChannel | null = null;
 let subscriptionsActive = false;
 
+// Polling fallback
+let pollingInterval: number | null = null;
+let lastMessageCheck: Date = new Date();
+
 // Derived stores
 const activeConversation = derived(
 	[conversations, activeConversationId],
@@ -582,6 +586,9 @@ function setupRealtimeSubscriptions(): void {
 	console.log('🔄 Setting up real-time subscriptions for user:', user.id);
 	subscriptionsActive = true;
 
+	// Start polling as reliable fallback
+	startMessagePolling();
+
 	// Subscribe to conversations changes
 	conversationsChannel = supabase
 		.channel('conversations-changes')
@@ -687,8 +694,14 @@ function setupRealtimeSubscriptions(): void {
 }
 
 function cleanupRealtimeSubscriptions(): void {
-	console.log('🧹 Cleaning up real-time subscriptions');
+	console.log('🧹 Cleaning up real-time subscriptions and polling');
 	subscriptionsActive = false;
+	
+	// Stop polling
+	if (pollingInterval) {
+		clearInterval(pollingInterval);
+		pollingInterval = null;
+	}
 	
 	if (conversationsChannel) {
 		supabase.removeChannel(conversationsChannel);
@@ -747,3 +760,66 @@ export const chatStore = {
 	getInitials,
 	formatTime
 };
+
+// Polling function for reliable message updates
+async function pollForNewMessages(): Promise<void> {
+	try {
+		const user = get(authStore).user;
+		const currentActiveConversationId = get(activeConversationId);
+		
+		if (!user || !currentActiveConversationId) return;
+
+		// Check for new messages since last check
+		const { data: newMessages } = await supabase
+			.from('messages')
+			.select(`
+				*,
+				sender:app_users (id, full_name, email, avatar_url)
+			`)
+			.eq('conversation_id', currentActiveConversationId)
+			.gt('created_at', lastMessageCheck.toISOString())
+			.order('created_at', { ascending: true });
+
+		if (newMessages && newMessages.length > 0) {
+			console.log('📨 Polling found', newMessages.length, 'new messages');
+			
+			// Add new messages to the store
+			messages.update((current) => ({
+				...current,
+				[currentActiveConversationId]: [
+					...(current[currentActiveConversationId] || []),
+					...newMessages
+				]
+			}));
+
+			// Update conversations with latest message
+			const latestMessage = newMessages[newMessages.length - 1];
+			conversations.update((current) =>
+				current.map((conv) =>
+					conv.id === currentActiveConversationId
+						? { 
+							...conv, 
+							last_message: latestMessage, 
+							updated_at: latestMessage.created_at,
+							unread_count: latestMessage.sender_id !== user.id ? (conv.unread_count || 0) + newMessages.filter(m => m.sender_id !== user.id).length : conv.unread_count
+						}
+						: conv
+				)
+			);
+
+			// Update last check time
+			lastMessageCheck = new Date(latestMessage.created_at);
+		}
+	} catch (error) {
+		console.error('❌ Polling error:', error);
+	}
+}
+
+// Start polling for messages
+function startMessagePolling(): void {
+	console.log('🔄 Starting message polling (3s interval)');
+	lastMessageCheck = new Date();
+	
+	// Poll every 3 seconds
+	pollingInterval = window.setInterval(pollForNewMessages, 3000);
+}
