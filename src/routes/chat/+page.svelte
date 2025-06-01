@@ -463,12 +463,12 @@
 
 									{#if showEmojiPicker}
 										<div
-											class="absolute bottom-10 right-0 bg-card border border-border rounded-lg p-2 shadow-dropdown z-10"
+											class="absolute bottom-10 right-0 bg-card border border-border rounded-lg p-3 shadow-dropdown z-10 w-64"
 										>
-											<div class="grid grid-cols-6 gap-1">
+											<div class="grid grid-cols-6 gap-2">
 												{#each emojis as emoji (emoji)}
 													<button
-														class="w-8 h-8 text-lg hover:bg-surface rounded"
+														class="w-10 h-10 text-xl hover:bg-surface rounded-lg flex items-center justify-center transition-colors"
 														onclick={() => addEmoji(emoji)}
 														aria-label={`Add emoji ${emoji}`}
 													>
