@@ -43,6 +43,7 @@ const typingUsers = writable<Record<string, string[]>>({});
 // Realtime subscriptions
 let conversationsChannel: RealtimeChannel | null = null;
 let messagesChannel: RealtimeChannel | null = null;
+let subscriptionsActive = false;
 
 // Derived stores
 const activeConversation = derived(
@@ -576,9 +577,10 @@ function setActiveConversation(conversationId: string | null): void {
 // Real-time subscriptions
 function setupRealtimeSubscriptions(): void {
 	const user = get(authStore).user;
-	if (!user) return;
+	if (!user || subscriptionsActive) return;
 
 	console.log('🔄 Setting up real-time subscriptions for user:', user.id);
+	subscriptionsActive = true;
 
 	// Subscribe to conversations changes
 	conversationsChannel = supabase
@@ -591,9 +593,17 @@ function setupRealtimeSubscriptions(): void {
 				table: 'conversations'
 			},
 			() => {
+				console.log('🔄 Conversation change detected, reloading...');
 				loadConversations();
 			}
 		)
+		.on('subscribe', (status, err) => {
+			if (status === 'SUBSCRIBED') {
+				console.log('✅ Conversations subscription active');
+			} else {
+				console.error('❌ Conversations subscription failed:', err);
+			}
+		})
 		.subscribe();
 
 	// Subscribe to messages in conversations user is part of
@@ -666,10 +676,20 @@ function setupRealtimeSubscriptions(): void {
 				}
 			}
 		)
+		.on('subscribe', (status, err) => {
+			if (status === 'SUBSCRIBED') {
+				console.log('✅ Messages subscription active');
+			} else {
+				console.error('❌ Messages subscription failed:', err);
+			}
+		})
 		.subscribe();
 }
 
 function cleanupRealtimeSubscriptions(): void {
+	console.log('🧹 Cleaning up real-time subscriptions');
+	subscriptionsActive = false;
+	
 	if (conversationsChannel) {
 		supabase.removeChannel(conversationsChannel);
 		conversationsChannel = null;
@@ -683,8 +703,10 @@ function cleanupRealtimeSubscriptions(): void {
 // Initialize store when auth state changes
 authStore.subscribe(async (auth) => {
 	if (auth.user) {
-		await loadConversations();
-		setupRealtimeSubscriptions();
+		if (!subscriptionsActive) {
+			await loadConversations();
+			setupRealtimeSubscriptions();
+		}
 	} else {
 		// Clear state when user logs out
 		conversations.set([]);
