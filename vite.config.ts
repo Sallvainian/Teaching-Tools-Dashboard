@@ -21,22 +21,10 @@ export default defineConfig(({ mode }) => {
 				output: {
 					sourcemapExcludeSources: isProduction,
 					manualChunks: (id) => {
-						// Vendor chunking for better caching
+						// Simple vendor chunking to avoid build issues
 						if (id.includes('node_modules')) {
-							if (id.includes('svelte')) return 'svelte-vendor';
-							if (id.includes('@supabase')) return 'supabase-vendor';
-							if (id.includes('handsontable')) return 'handsontable-vendor';
-							if (id.includes('lucide-svelte')) return 'icons-vendor';
-							if (id.includes('@sentry')) return 'sentry-vendor';
 							return 'vendor';
 						}
-						// Feature-based chunking
-						if (id.includes('src/routes/auth')) return 'auth';
-						if (id.includes('src/routes/dashboard')) return 'dashboard';
-						if (id.includes('src/routes/jeopardy')) return 'jeopardy';
-						if (id.includes('src/routes/gradebook')) return 'gradebook';
-						if (id.includes('src/lib/components')) return 'components';
-						if (id.includes('src/lib/stores')) return 'stores';
 					}
 				}
 			}
