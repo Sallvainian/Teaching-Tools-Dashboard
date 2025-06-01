@@ -43,6 +43,7 @@
 			messages = msgs.map((msg) => ({
 				id: msg.id,
 				sender: msg.sender_id === user.id ? 'me' : 'other',
+				senderName: msg.sender_id === user.id ? 'You' : (msg.sender?.full_name || 'Unknown User'),
 				text: msg.content,
 				time: new Date(msg.created_at).toLocaleTimeString('en-US', {
 					hour: 'numeric',
@@ -419,7 +420,10 @@
 								<div
 									class={`max-w-[70%] ${message.sender === 'me' ? 'bg-purple text-highlight' : 'bg-surface text-text-hover'} rounded-lg px-4 py-2 shadow-sm`}
 								>
-									<div class="text-sm mb-1">{message.text}</div>
+									{#if message.sender !== 'me'}
+											<div class="text-xs font-medium text-purple mb-1">{message.senderName}</div>
+										{/if}
+										<div class="text-sm mb-1">{message.text}</div>
 									<div class="text-xs opacity-70 text-right">{message.time}</div>
 								</div>
 							</div>

@@ -48,6 +48,7 @@ export type ChatUIConversation = {
 export type ChatUIMessage = {
 	id: string;
 	sender: 'me' | 'other';
+	senderName: string;
 	text: string;
 	time: string;
 	attachments?: {
