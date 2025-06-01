@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
 
 		build: {
 			sourcemap: !isProduction,
-			minify: isProduction ? 'esbuild' : false,
+			minify: false,
 			chunkSizeWarningLimit: 1000,
 			rollupOptions: {
 				output: {
