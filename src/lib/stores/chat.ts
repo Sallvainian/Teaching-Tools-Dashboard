@@ -589,9 +589,9 @@ function setupRealtimeSubscriptions(): void {
 	// Start polling as reliable fallback
 	startMessagePolling();
 
-	// Subscribe to conversations changes
+	// Subscribe to conversations changes (using official documentation pattern)
 	conversationsChannel = supabase
-		.channel('conversations-changes')
+		.channel('public:conversations')
 		.on(
 			'postgres_changes',
 			{
@@ -599,8 +599,8 @@ function setupRealtimeSubscriptions(): void {
 				schema: 'public',
 				table: 'conversations'
 			},
-			() => {
-				console.log('🔄 Conversation change detected, reloading...');
+			(payload) => {
+				console.log('🔄 Conversation change detected:', payload);
 				loadConversations();
 			}
 		)
@@ -613,9 +613,9 @@ function setupRealtimeSubscriptions(): void {
 		})
 		.subscribe();
 
-	// Subscribe to messages in conversations user is part of
+	// Subscribe to messages (using official documentation pattern)
 	messagesChannel = supabase
-		.channel('messages-changes')
+		.channel('public:messages')
 		.on(
 			'postgres_changes',
 			{
