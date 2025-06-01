@@ -26,6 +26,9 @@ vite.config.ts.timestamp-*
 .idea/
 *.iml
 
+# MCP Configuration (IDE-specific)
+mcp.json
+
 # Claude settings
 **/.claude/settings.local.json
 

@@ -1,123 +1,101 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { authStore } from '$lib/stores/auth';
+	import { chatStore } from '$lib/stores/chat';
+	import UserSelectModal from '$lib/components/UserSelectModal.svelte';
+	import TypingIndicator from '$lib/components/TypingIndicator.svelte';
+	import type { ChatUIConversation, ChatUIMessage } from '$lib/types/chat';
 
-	// Chat state
-	let conversations = $state([
-		{
-			id: '1',
-			name: 'Emily Johnson',
-			unread: 2,
-			lastMessage: 'When is the science project due?',
-			time: '10:45 AM',
-			avatar: 'EJ',
-			online: true
-		},
-		{
-			id: '2',
-			name: 'Michael Smith',
-			unread: 0,
-			lastMessage: 'I submitted my math homework',
-			time: '9:30 AM',
-			avatar: 'MS',
-			online: false
-		},
-		{
-			id: '3',
-			name: 'Sarah Williams',
-			unread: 1,
-			lastMessage: 'Can we review the test questions?',
-			time: 'Yesterday',
-			avatar: 'SW',
-			online: true
-		},
-		{
-			id: '4',
-			name: 'Math 101 Class',
-			unread: 5,
-			lastMessage: 'David: I have a question about problem #3',
-			time: 'Yesterday',
-			avatar: 'M1',
-			isGroup: true,
-			members: 24
-		},
-		{
-			id: '5',
-			name: 'Science Team',
-			unread: 0,
-			lastMessage: "You: Let's meet after school tomorrow",
-			time: 'Monday',
-			avatar: 'ST',
-			isGroup: true,
-			members: 8
-		},
-		{
-			id: '6',
-			name: 'James Wilson',
-			unread: 0,
-			lastMessage: 'Thanks for the feedback!',
-			time: 'Monday',
-			avatar: 'JW',
-			online: false
-		},
-		{
-			id: '7',
-			name: 'Parent Conference',
-			unread: 0,
-			lastMessage: 'You: Looking forward to meeting everyone',
-			time: 'Last week',
-			avatar: 'PC',
-			isGroup: true,
-			members: 15
+	// Chat state from stores
+	let conversations = $state<ChatUIConversation[]>([]);
+	let messages = $state<ChatUIMessage[]>([]);
+	let activeConversation = $state<ChatUIConversation | null>(null);
+	let typingUsers = $state<string[]>([]);
+	let loading = $state(false);
+	let error = $state<string | null>(null);
+
+	// Subscribe to store changes
+	const unsubscribeConversations = chatStore.conversations.subscribe((convs) => {
+		const user = $authStore.user;
+		if (user && convs.length > 0) {
+			conversations = convs.map((conv) => ({
+				id: conv.id,
+				name: getConversationName(conv, user.id),
+				unread: conv.unread_count || 0,
+				lastMessage: getLastMessageText(conv, user.id),
+				time: chatStore.formatTime(conv.last_message?.created_at || conv.updated_at),
+				avatar: getConversationAvatar(conv, user.id),
+				online: isConversationOnline(conv, user.id),
+				isGroup: conv.type === 'group',
+				members: conv.type === 'group' ? conv.participants?.length : undefined
+			}));
+
+			// Set active conversation to first one if none selected
+			if (!activeConversation && conversations.length > 0) {
+				selectConversation(conversations[0]);
+			}
 		}
-	]);
+	});
 
-	let activeConversation = $derived(conversations.find((c) => c.id === '1') || conversations[0]);
+	const unsubscribeMessages = chatStore.activeMessages.subscribe((msgs) => {
+		const user = $authStore.user;
+		if (user) {
+			messages = msgs.map((msg) => ({
+				id: msg.id,
+				sender: msg.sender_id === user.id ? 'me' : 'other',
+				text: msg.content,
+				time: new Date(msg.created_at).toLocaleTimeString('en-US', {
+					hour: 'numeric',
+					minute: '2-digit',
+					hour12: true
+				})
+			}));
+		}
+	});
 
-	let messages = $state([
-		{
-			id: '1',
-			sender: 'other',
-			text: 'Good morning! I had a question about the science project.',
-			time: '10:30 AM'
-		},
-		{
-			id: '2',
-			sender: 'me',
-			text: 'Good morning, Emily! What would you like to know?',
-			time: '10:32 AM'
-		},
-		{
-			id: '3',
-			sender: 'other',
-			text: "When is the final due date? I'm a bit confused because the syllabus says next Friday but you mentioned next Monday in class.",
-			time: '10:35 AM'
-		},
-		{
-			id: '4',
-			sender: 'me',
-			text: "The correct due date is next Monday. I'll update the syllabus to reflect that. Thanks for bringing this to my attention!",
-			time: '10:38 AM'
-		},
-		{
-			id: '5',
-			sender: 'other',
-			text: 'Great, thank you! One more question - do we need to include a bibliography for the research portion?',
-			time: '10:40 AM'
-		},
-		{
-			id: '6',
-			sender: 'me',
-			text: 'Yes, please include a bibliography with at least 3 sources. They should be properly formatted in MLA style.',
-			time: '10:42 AM'
-		},
-		{ id: '7', sender: 'other', text: 'When is the science project due?', time: '10:45 AM' }
-	]);
+	const unsubscribeLoading = chatStore.loading.subscribe((l) => (loading = l));
+	const unsubscribeError = chatStore.error.subscribe((e) => (error = e));
+	const unsubscribeTyping = chatStore.activeTypingUsers.subscribe((users) => (typingUsers = users));
+
+	// Helper functions
+	function getConversationName(conv: any, currentUserId: string): string {
+		if (conv.is_group) {
+			return conv.name || `Group Chat (${conv.participants?.length || 0})`;
+		}
+
+		// Direct conversation - find other participant
+		const otherParticipant = conv.participants?.find((p: any) => p.user_id !== currentUserId);
+		return otherParticipant?.user?.full_name || 'Unknown User';
+	}
+
+	function getConversationAvatar(conv: any, currentUserId: string): string {
+		if (conv.is_group) {
+			const name = conv.name || 'Group';
+			return chatStore.getInitials(name);
+		}
+
+		const otherParticipant = conv.participants?.find((p: any) => p.user_id !== currentUserId);
+		const name = otherParticipant?.user?.full_name || 'Unknown';
+		return chatStore.getInitials(name);
+	}
+
+	function getLastMessageText(conv: any, currentUserId: string): string {
+		if (!conv.last_message) return 'No messages yet';
+
+		const prefix = conv.last_message.sender_id === currentUserId ? 'You: ' : '';
+		return prefix + conv.last_message.content;
+	}
+
+	function isConversationOnline(conv: any, currentUserId: string): boolean {
+		// For now, return false. We can implement proper online status later
+		return false;
+	}
 
 	let newMessage = $state('');
 	let searchQuery = $state('');
 	let showEmojiPicker = $state(false);
 	let showAttachMenu = $state(false);
+	let showUserSelectModal = $state(false);
 	let messagesContainer: HTMLDivElement;
 
 	// Filtered conversations
@@ -127,8 +105,19 @@
 			: conversations
 	);
 
-	onMount(() => {
+	onMount(async () => {
+		// Load conversations when component mounts
+		await chatStore.loadConversations();
 		scrollToBottom();
+	});
+
+	onDestroy(() => {
+		// Clean up subscriptions
+		unsubscribeConversations();
+		unsubscribeMessages();
+		unsubscribeLoading();
+		unsubscribeError();
+		unsubscribeTyping();
 	});
 
 	$effect(() => {
@@ -144,55 +133,24 @@
 		}
 	}
 
-	function sendMessage() {
-		if (!newMessage.trim()) return;
+	async function sendMessage() {
+		if (!newMessage.trim() || !activeConversation) return;
 
-		const message = {
-			id: (messages.length + 1).toString(),
-			sender: 'me',
-			text: newMessage.trim(),
-			time: new Date().toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', hour12: true })
-		};
-
-		messages = [...messages, message];
+		const messageText = newMessage.trim();
 		newMessage = '';
 
-		// Update last message in conversation list
-		conversations = conversations.map((c) =>
-			c.id === activeConversation.id
-				? { ...c, lastMessage: `You: ${message.text}`, time: 'Just now', unread: 0 }
-				: c
-		);
-
-		// Simulate reply after 2 seconds
-		if (activeConversation.id === '1') {
-			setTimeout(() => {
-				const reply = {
-					id: (messages.length + 1).toString(),
-					sender: 'other',
-					text: "Thank you for the clarification! I'll make sure to include the bibliography.",
-					time: new Date().toLocaleString('en-US', {
-						hour: 'numeric',
-						minute: 'numeric',
-						hour12: true
-					})
-				};
-
-				messages = [...messages, reply];
-
-				// Update conversation
-				conversations = conversations.map((c) =>
-					c.id === activeConversation.id ? { ...c, lastMessage: reply.text, time: 'Just now' } : c
-				);
-			}, 2000);
+		try {
+			await chatStore.sendMessage(activeConversation.id, messageText);
+		} catch (err) {
+			console.error('Error sending message:', err);
+			// Restore message text on error
+			newMessage = messageText;
 		}
 	}
 
-	function selectConversation(conversation: any) {
+	function selectConversation(conversation: ChatUIConversation) {
 		activeConversation = conversation;
-
-		// Mark as read
-		conversations = conversations.map((c) => (c.id === conversation.id ? { ...c, unread: 0 } : c));
+		chatStore.setActiveConversation(conversation.id);
 
 		// Reset UI states
 		showEmojiPicker = false;
@@ -225,6 +183,15 @@
 			sendMessage();
 		}
 	}
+
+	function handleConversationCreated(event: CustomEvent<{ conversationId: string }>) {
+		const { conversationId } = event.detail;
+		// Find the new conversation and select it
+		const newConversation = conversations.find((c) => c.id === conversationId);
+		if (newConversation) {
+			selectConversation(newConversation);
+		}
+	}
 </script>
 
 <svelte:window on:click={handleClickOutside} />
@@ -235,6 +202,13 @@
 		<div class="mb-8">
 			<h1 class="text-3xl font-bold text-highlight mb-2">Chat</h1>
 			<p class="text-text-base">Communicate with students and classes</p>
+
+			{#if error}
+				<div class="mt-4 p-4 bg-red-100 border border-red-300 rounded-lg text-red-700">
+					<p class="font-medium">Error:</p>
+					<p class="text-sm">{error}</p>
+				</div>
+			{/if}
 		</div>
 
 		<!-- Chat Interface -->
@@ -266,57 +240,70 @@
 
 					<!-- Conversation List -->
 					<div class="flex-1 overflow-y-auto">
-						{#each filteredConversations as conversation (conversation.id)}
-							<button
-								class={`w-full text-left p-4 border-b border-border/50 hover:bg-surface/50 transition-colors flex items-center gap-3 ${activeConversation.id === conversation.id ? 'bg-purple-bg' : ''}`}
-								onclick={() => selectConversation(conversation)}
-								aria-label={`Chat with ${conversation.name}`}
-							>
-								<div class="relative">
-									<div
-										class="w-10 h-10 rounded-full bg-purple-bg text-purple flex items-center justify-center font-medium"
-									>
-										{conversation.avatar}
-									</div>
-									{#if conversation.online}
+						{#if loading}
+							<div class="p-4 text-center">
+								<div
+									class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple mx-auto"
+								></div>
+								<p class="text-text-base mt-2">Loading conversations...</p>
+							</div>
+						{:else}
+							{#each filteredConversations as conversation (conversation.id)}
+								<button
+									class={`w-full text-left p-4 border-b border-border/50 hover:bg-surface/50 transition-colors flex items-center gap-3 ${activeConversation?.id === conversation.id ? 'bg-purple-bg' : ''}`}
+									onclick={() => selectConversation(conversation)}
+									aria-label={`Chat with ${conversation.name}`}
+								>
+									<div class="relative">
 										<div
-											class="absolute bottom-0 right-0 w-3 h-3 bg-purple rounded-full border-2 border-card"
-										></div>
-									{/if}
-								</div>
-
-								<div class="flex-1 min-w-0">
-									<div class="flex justify-between items-center mb-1">
-										<div class="font-medium text-highlight truncate">
-											{conversation.name}
-											{#if conversation.isGroup}
-												<span class="text-xs text-text-base ml-1">({conversation.members})</span>
-											{/if}
+											class="w-10 h-10 rounded-full bg-purple-bg text-purple flex items-center justify-center font-medium"
+										>
+											{conversation.avatar}
 										</div>
-										<div class="text-xs text-text-base">{conversation.time}</div>
-									</div>
-									<div class="flex justify-between items-center">
-										<div class="text-sm text-text-base truncate">{conversation.lastMessage}</div>
-										{#if conversation.unread > 0}
+										{#if conversation.online}
 											<div
-												class="bg-purple text-highlight text-xs rounded-full w-5 h-5 flex items-center justify-center"
-											>
-												{conversation.unread}
-											</div>
+												class="absolute bottom-0 right-0 w-3 h-3 bg-purple rounded-full border-2 border-card"
+											></div>
 										{/if}
 									</div>
-								</div>
-							</button>
-						{/each}
 
-						{#if filteredConversations.length === 0}
-							<div class="p-4 text-center text-text-base">No conversations found</div>
+									<div class="flex-1 min-w-0">
+										<div class="flex justify-between items-center mb-1">
+											<div class="font-medium text-highlight truncate">
+												{conversation.name}
+												{#if conversation.isGroup}
+													<span class="text-xs text-text-base ml-1">({conversation.members})</span>
+												{/if}
+											</div>
+											<div class="text-xs text-text-base">{conversation.time}</div>
+										</div>
+										<div class="flex justify-between items-center">
+											<div class="text-sm text-text-base truncate">{conversation.lastMessage}</div>
+											{#if conversation.unread > 0}
+												<div
+													class="bg-purple text-highlight text-xs rounded-full w-5 h-5 flex items-center justify-center"
+												>
+													{conversation.unread}
+												</div>
+											{/if}
+										</div>
+									</div>
+								</button>
+							{/each}
+
+							{#if filteredConversations.length === 0}
+								<div class="p-4 text-center text-text-base">No conversations found</div>
+							{/if}
 						{/if}
 					</div>
 
 					<!-- New Chat Button -->
 					<div class="p-4 border-t border-border">
-						<button class="btn btn-primary w-full" aria-label="Start new chat">
+						<button
+							class="btn btn-primary w-full"
+							onclick={() => (showUserSelectModal = true)}
+							aria-label="Start new chat"
+						>
 							<svg
 								class="w-5 h-5 mr-2"
 								viewBox="0 0 24 24"
@@ -339,34 +326,40 @@
 				<div class="flex-1 flex flex-col">
 					<!-- Chat Header -->
 					<div class="p-4 border-b border-border flex justify-between items-center">
-						<div class="flex items-center gap-3">
-							<div class="relative">
-								<div
-									class="w-10 h-10 rounded-full bg-purple-bg text-purple flex items-center justify-center font-medium"
-								>
-									{activeConversation.avatar}
-								</div>
-								{#if activeConversation.online}
+						{#if activeConversation}
+							<div class="flex items-center gap-3">
+								<div class="relative">
 									<div
-										class="absolute bottom-0 right-0 w-3 h-3 bg-purple rounded-full border-2 border-card"
-									></div>
-								{/if}
-							</div>
-
-							<div>
-								<div class="font-medium text-highlight">
-									{activeConversation.name}
-									{#if activeConversation.isGroup}
-										<span class="text-xs text-text-base ml-1"
-											>({activeConversation.members} members)</span
-										>
+										class="w-10 h-10 rounded-full bg-purple-bg text-purple flex items-center justify-center font-medium"
+									>
+										{activeConversation?.avatar || '?'}
+									</div>
+									{#if activeConversation?.online}
+										<div
+											class="absolute bottom-0 right-0 w-3 h-3 bg-purple rounded-full border-2 border-card"
+										></div>
 									{/if}
 								</div>
-								{#if activeConversation.online && !activeConversation.isGroup}
-									<div class="text-xs text-purple">Online</div>
-								{/if}
+
+								<div>
+									<div class="font-medium text-highlight">
+										{activeConversation?.name || 'Select a conversation'}
+										{#if activeConversation?.isGroup}
+											<span class="text-xs text-text-base ml-1"
+												>({activeConversation.members} members)</span
+											>
+										{/if}
+									</div>
+									{#if activeConversation?.online && !activeConversation?.isGroup}
+										<div class="text-xs text-purple">Online</div>
+									{/if}
+								</div>
 							</div>
-						</div>
+						{:else}
+							<div class="flex items-center gap-3">
+								<div class="text-text-base">Select a conversation to start chatting</div>
+							</div>
+						{/if}
 
 						<div class="flex gap-2">
 							<button
@@ -432,6 +425,9 @@
 							</div>
 						{/each}
 					</div>
+
+					<!-- Typing Indicator -->
+					<TypingIndicator {typingUsers} />
 
 					<!-- Message Input -->
 					<div class="p-4 border-t border-border">
@@ -587,4 +583,10 @@
 			</div>
 		</div>
 	</div>
+
+	<!-- User Selection Modal -->
+	<UserSelectModal
+		bind:isOpen={showUserSelectModal}
+		onconversationCreated={handleConversationCreated}
+	/>
 </div>

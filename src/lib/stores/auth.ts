@@ -256,9 +256,9 @@ function createAuthStore() {
 			}
 			console.log('Supabase signOut completed');
 
-			// Force a clean navigation to login page using SvelteKit navigation
+			// Force a clean navigation to login page using our navigation utility
 			if (typeof window !== 'undefined') {
-				const { goto } = await import('$app/navigation');
+				const { goto } = await import('$lib/utils/navigation');
 				await goto('/auth/login', { replaceState: true });
 			}
 
@@ -272,7 +272,7 @@ function createAuthStore() {
 			role.set(null);
 			loading.set(false);
 			if (typeof window !== 'undefined') {
-				const { goto } = await import('$app/navigation');
+				const { goto } = await import('$lib/utils/navigation');
 				await goto('/auth/login', { replaceState: true });
 			}
 			return false;

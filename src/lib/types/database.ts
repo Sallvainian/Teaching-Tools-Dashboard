@@ -116,32 +116,35 @@ export type Database = {
 					}
 				];
 			};
-			category_students: {
+			class_students: {
 				Row: {
-					category_id: string;
+					class_id: string;
 					created_at: string;
+					id: string;
 					student_id: string;
 				};
 				Insert: {
-					category_id: string;
+					class_id: string;
 					created_at?: string;
+					id?: string;
 					student_id: string;
 				};
 				Update: {
-					category_id?: string;
+					class_id?: string;
 					created_at?: string;
+					id?: string;
 					student_id?: string;
 				};
 				Relationships: [
 					{
-						foreignKeyName: 'category_students_category_id_fkey';
-						columns: ['category_id'];
+						foreignKeyName: 'class_students_class_id_fkey';
+						columns: ['class_id'];
 						isOneToOne: false;
-						referencedRelation: 'categories';
+						referencedRelation: 'classes';
 						referencedColumns: ['id'];
 					},
 					{
-						foreignKeyName: 'category_students_student_id_fkey';
+						foreignKeyName: 'class_students_student_id_fkey';
 						columns: ['student_id'];
 						isOneToOne: false;
 						referencedRelation: 'students';
@@ -199,35 +202,247 @@ export type Database = {
 					}
 				];
 			};
-			class_students: {
+			conversation_participants: {
 				Row: {
-					class_id: string;
-					created_at: string;
-					student_id: string;
+					conversation_id: string | null;
+					id: string;
+					is_active: boolean | null;
+					is_admin: boolean | null;
+					joined_at: string | null;
+					last_read_at: string | null;
+					notification_enabled: boolean | null;
+					user_id: string | null;
 				};
 				Insert: {
-					class_id: string;
-					created_at?: string;
-					student_id: string;
+					conversation_id?: string | null;
+					id?: string;
+					is_active?: boolean | null;
+					is_admin?: boolean | null;
+					joined_at?: string | null;
+					last_read_at?: string | null;
+					notification_enabled?: boolean | null;
+					user_id?: string | null;
 				};
 				Update: {
-					class_id?: string;
-					created_at?: string;
-					student_id?: string;
+					conversation_id?: string | null;
+					id?: string;
+					is_active?: boolean | null;
+					is_admin?: boolean | null;
+					joined_at?: string | null;
+					last_read_at?: string | null;
+					notification_enabled?: boolean | null;
+					user_id?: string | null;
 				};
 				Relationships: [
 					{
-						foreignKeyName: 'class_students_class_id_fkey';
-						columns: ['class_id'];
+						foreignKeyName: 'conversation_participants_conversation_id_fkey';
+						columns: ['conversation_id'];
 						isOneToOne: false;
-						referencedRelation: 'classes';
+						referencedRelation: 'conversation_list';
 						referencedColumns: ['id'];
 					},
 					{
-						foreignKeyName: 'class_students_student_id_fkey';
-						columns: ['student_id'];
+						foreignKeyName: 'conversation_participants_conversation_id_fkey';
+						columns: ['conversation_id'];
 						isOneToOne: false;
-						referencedRelation: 'students';
+						referencedRelation: 'conversations';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'conversation_participants_user_id_fkey';
+						columns: ['user_id'];
+						isOneToOne: false;
+						referencedRelation: 'app_users';
+						referencedColumns: ['id'];
+					}
+				];
+			};
+			conversations: {
+				Row: {
+					avatar: string | null;
+					created_at: string | null;
+					created_by: string | null;
+					id: string;
+					is_group: boolean | null;
+					name: string | null;
+					updated_at: string | null;
+				};
+				Insert: {
+					avatar?: string | null;
+					created_at?: string | null;
+					created_by?: string | null;
+					id?: string;
+					is_group?: boolean | null;
+					name?: string | null;
+					updated_at?: string | null;
+				};
+				Update: {
+					avatar?: string | null;
+					created_at?: string | null;
+					created_by?: string | null;
+					id?: string;
+					is_group?: boolean | null;
+					name?: string | null;
+					updated_at?: string | null;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'conversations_created_by_fkey';
+						columns: ['created_by'];
+						isOneToOne: false;
+						referencedRelation: 'app_users';
+						referencedColumns: ['id'];
+					}
+				];
+			};
+			file_folders: {
+				Row: {
+					created_at: string;
+					id: string;
+					name: string;
+					parent_id: string | null;
+					updated_at: string;
+					user_id: string;
+				};
+				Insert: {
+					created_at?: string;
+					id?: string;
+					name: string;
+					parent_id?: string | null;
+					updated_at?: string;
+					user_id: string;
+				};
+				Update: {
+					created_at?: string;
+					id?: string;
+					name?: string;
+					parent_id?: string | null;
+					updated_at?: string;
+					user_id?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'file_folders_parent_id_fkey';
+						columns: ['parent_id'];
+						isOneToOne: false;
+						referencedRelation: 'file_folders';
+						referencedColumns: ['id'];
+					}
+				];
+			};
+			file_metadata: {
+				Row: {
+					created_at: string;
+					folder_id: string | null;
+					id: string;
+					mime_type: string | null;
+					name: string;
+					size: number;
+					storage_path: string;
+					type: string;
+					updated_at: string;
+					user_id: string;
+				};
+				Insert: {
+					created_at?: string;
+					folder_id?: string | null;
+					id?: string;
+					mime_type?: string | null;
+					name: string;
+					size: number;
+					storage_path: string;
+					type: string;
+					updated_at?: string;
+					user_id: string;
+				};
+				Update: {
+					created_at?: string;
+					folder_id?: string | null;
+					id?: string;
+					mime_type?: string | null;
+					name?: string;
+					size?: number;
+					storage_path?: string;
+					type?: string;
+					updated_at?: string;
+					user_id?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'file_metadata_folder_id_fkey';
+						columns: ['folder_id'];
+						isOneToOne: false;
+						referencedRelation: 'file_folders';
+						referencedColumns: ['id'];
+					}
+				];
+			};
+			file_shares: {
+				Row: {
+					created_at: string;
+					expires_at: string | null;
+					file_id: string;
+					id: string;
+					permission: string | null;
+					shared_by: string;
+					shared_with: string;
+				};
+				Insert: {
+					created_at?: string;
+					expires_at?: string | null;
+					file_id: string;
+					id?: string;
+					permission?: string | null;
+					shared_by: string;
+					shared_with: string;
+				};
+				Update: {
+					created_at?: string;
+					expires_at?: string | null;
+					file_id?: string;
+					id?: string;
+					permission?: string | null;
+					shared_by?: string;
+					shared_with?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'file_shares_file_id_fkey';
+						columns: ['file_id'];
+						isOneToOne: false;
+						referencedRelation: 'file_metadata';
+						referencedColumns: ['id'];
+					}
+				];
+			};
+			game_categories: {
+				Row: {
+					category_name: string;
+					created_at: string | null;
+					game_id: string | null;
+					id: string;
+					order_index: number;
+				};
+				Insert: {
+					category_name: string;
+					created_at?: string | null;
+					game_id?: string | null;
+					id?: string;
+					order_index: number;
+				};
+				Update: {
+					category_name?: string;
+					created_at?: string | null;
+					game_id?: string | null;
+					id?: string;
+					order_index?: number;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'game_categories_game_id_fkey';
+						columns: ['game_id'];
+						isOneToOne: false;
+						referencedRelation: 'games';
 						referencedColumns: ['id'];
 					}
 				];
@@ -273,34 +488,31 @@ export type Database = {
 					}
 				];
 			};
-			game_categories: {
+			gradebook_categories: {
 				Row: {
-					category_name: string;
+					category_id: string | null;
 					created_at: string | null;
-					game_id: string | null;
 					id: string;
-					order_index: number;
+					name: string;
 				};
 				Insert: {
-					category_name: string;
+					category_id?: string | null;
 					created_at?: string | null;
-					game_id?: string | null;
 					id?: string;
-					order_index: number;
+					name: string;
 				};
 				Update: {
-					category_name?: string;
+					category_id?: string | null;
 					created_at?: string | null;
-					game_id?: string | null;
 					id?: string;
-					order_index?: number;
+					name?: string;
 				};
 				Relationships: [
 					{
-						foreignKeyName: 'game_categories_game_id_fkey';
-						columns: ['game_id'];
+						foreignKeyName: 'gradebook_categories_category_id_fkey';
+						columns: ['category_id'];
 						isOneToOne: false;
-						referencedRelation: 'games';
+						referencedRelation: 'categories';
 						referencedColumns: ['id'];
 					}
 				];
@@ -377,6 +589,138 @@ export type Database = {
 				};
 				Relationships: [];
 			};
+			message_attachments: {
+				Row: {
+					created_at: string | null;
+					file_name: string;
+					file_size: number | null;
+					file_type: string;
+					file_url: string;
+					id: string;
+					message_id: string;
+				};
+				Insert: {
+					created_at?: string | null;
+					file_name: string;
+					file_size?: number | null;
+					file_type: string;
+					file_url: string;
+					id?: string;
+					message_id: string;
+				};
+				Update: {
+					created_at?: string | null;
+					file_name?: string;
+					file_size?: number | null;
+					file_type?: string;
+					file_url?: string;
+					id?: string;
+					message_id?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'message_attachments_message_id_fkey';
+						columns: ['message_id'];
+						isOneToOne: false;
+						referencedRelation: 'messages';
+						referencedColumns: ['id'];
+					}
+				];
+			};
+			message_read_status: {
+				Row: {
+					id: string;
+					message_id: string | null;
+					read_at: string | null;
+					user_id: string | null;
+				};
+				Insert: {
+					id?: string;
+					message_id?: string | null;
+					read_at?: string | null;
+					user_id?: string | null;
+				};
+				Update: {
+					id?: string;
+					message_id?: string | null;
+					read_at?: string | null;
+					user_id?: string | null;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'message_read_status_message_id_fkey';
+						columns: ['message_id'];
+						isOneToOne: false;
+						referencedRelation: 'messages';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'message_read_status_user_id_fkey';
+						columns: ['user_id'];
+						isOneToOne: false;
+						referencedRelation: 'app_users';
+						referencedColumns: ['id'];
+					}
+				];
+			};
+			messages: {
+				Row: {
+					content: string;
+					conversation_id: string | null;
+					created_at: string | null;
+					edited_at: string | null;
+					id: string;
+					is_deleted: boolean | null;
+					message_type: string | null;
+					metadata: Json | null;
+					sender_id: string | null;
+				};
+				Insert: {
+					content: string;
+					conversation_id?: string | null;
+					created_at?: string | null;
+					edited_at?: string | null;
+					id?: string;
+					is_deleted?: boolean | null;
+					message_type?: string | null;
+					metadata?: Json | null;
+					sender_id?: string | null;
+				};
+				Update: {
+					content?: string;
+					conversation_id?: string | null;
+					created_at?: string | null;
+					edited_at?: string | null;
+					id?: string;
+					is_deleted?: boolean | null;
+					message_type?: string | null;
+					metadata?: Json | null;
+					sender_id?: string | null;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'messages_conversation_id_fkey';
+						columns: ['conversation_id'];
+						isOneToOne: false;
+						referencedRelation: 'conversation_list';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'messages_conversation_id_fkey';
+						columns: ['conversation_id'];
+						isOneToOne: false;
+						referencedRelation: 'conversations';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'messages_sender_id_fkey';
+						columns: ['sender_id'];
+						isOneToOne: false;
+						referencedRelation: 'app_users';
+						referencedColumns: ['id'];
+					}
+				];
+			};
 			questions: {
 				Row: {
 					answer_text: string;
@@ -427,6 +771,75 @@ export type Database = {
 					}
 				];
 			};
+			shared_games: {
+				Row: {
+					game_id: string | null;
+					id: string;
+					permission: string | null;
+					shared_at: string | null;
+					shared_with_id: string | null;
+				};
+				Insert: {
+					game_id?: string | null;
+					id?: string;
+					permission?: string | null;
+					shared_at?: string | null;
+					shared_with_id?: string | null;
+				};
+				Update: {
+					game_id?: string | null;
+					id?: string;
+					permission?: string | null;
+					shared_at?: string | null;
+					shared_with_id?: string | null;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'shared_games_game_id_fkey';
+						columns: ['game_id'];
+						isOneToOne: false;
+						referencedRelation: 'games';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'shared_games_shared_with_id_fkey';
+						columns: ['shared_with_id'];
+						isOneToOne: false;
+						referencedRelation: 'app_users';
+						referencedColumns: ['id'];
+					}
+				];
+			};
+			student_categories: {
+				Row: {
+					category_id: string;
+					student_id: string;
+				};
+				Insert: {
+					category_id: string;
+					student_id: string;
+				};
+				Update: {
+					category_id?: string;
+					student_id?: string;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'student_categories_category_id_fkey';
+						columns: ['category_id'];
+						isOneToOne: false;
+						referencedRelation: 'gradebook_categories';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'student_categories_student_id_fkey';
+						columns: ['student_id'];
+						isOneToOne: false;
+						referencedRelation: 'students';
+						referencedColumns: ['id'];
+					}
+				];
+			};
 			students: {
 				Row: {
 					auth_user_id: string | null;
@@ -471,25 +884,290 @@ export type Database = {
 					}
 				];
 			};
+			teams: {
+				Row: {
+					color: string;
+					created_at: string | null;
+					game_id: string | null;
+					id: string;
+					name: string;
+					score: number | null;
+					user_id: string | null;
+				};
+				Insert: {
+					color: string;
+					created_at?: string | null;
+					game_id?: string | null;
+					id?: string;
+					name: string;
+					score?: number | null;
+					user_id?: string | null;
+				};
+				Update: {
+					color?: string;
+					created_at?: string | null;
+					game_id?: string | null;
+					id?: string;
+					name?: string;
+					score?: number | null;
+					user_id?: string | null;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'teams_game_id_fkey';
+						columns: ['game_id'];
+						isOneToOne: false;
+						referencedRelation: 'games';
+						referencedColumns: ['id'];
+					},
+					{
+						foreignKeyName: 'teams_user_id_fkey';
+						columns: ['user_id'];
+						isOneToOne: false;
+						referencedRelation: 'app_users';
+						referencedColumns: ['id'];
+					}
+				];
+			};
 		};
 		Views: {
-			[_ in never]: never;
+			conversation_list: {
+				Row: {
+					avatar: string | null;
+					created_at: string | null;
+					id: string | null;
+					is_group: boolean | null;
+					last_message: Json | null;
+					last_read_at: string | null;
+					name: string | null;
+					notification_enabled: boolean | null;
+					participants: Json | null;
+					unread_count: number | null;
+					updated_at: string | null;
+					user_id: string | null;
+				};
+				Relationships: [
+					{
+						foreignKeyName: 'conversation_participants_user_id_fkey';
+						columns: ['user_id'];
+						isOneToOne: false;
+						referencedRelation: 'app_users';
+						referencedColumns: ['id'];
+					}
+				];
+			};
+			user_file_stats: {
+				Row: {
+					total_files: number | null;
+					total_folders: number | null;
+					total_size_bytes: number | null;
+					total_size_mb: number | null;
+					user_id: string | null;
+				};
+				Relationships: [];
+			};
 		};
 		Functions: {
-			[_ in never]: never;
+			create_complete_class: {
+				Args: { p_name: string; p_description?: string };
+				Returns: Json;
+			};
+			create_default_folders: {
+				Args: { user_id: string };
+				Returns: undefined;
+			};
+			create_direct_conversation: {
+				Args: { other_user_id: string };
+				Returns: string;
+			};
+			create_group_conversation: {
+				Args: { conversation_name: string; participant_ids: string[] };
+				Returns: string;
+			};
+			create_log_entries_table: {
+				Args: Record<PropertyKey, never>;
+				Returns: undefined;
+			};
+			delete_class_completely: {
+				Args: { p_class_id: string };
+				Returns: boolean;
+			};
+			get_gradebook_classes: {
+				Args: Record<PropertyKey, never>;
+				Returns: Json;
+			};
+			get_gradebook_data: {
+				Args: { p_class_id: string };
+				Returns: Json;
+			};
+			get_gradebook_json: {
+				Args: { p_class_id: string };
+				Returns: Json;
+			};
+			get_or_create_direct_conversation: {
+				Args: { other_user_id: string } | { user1_id: string; user2_id: string };
+				Returns: string;
+			};
+			get_unread_count: {
+				Args: { conv_id: string } | { conv_id: string; usr_id: string };
+				Returns: number;
+			};
+			reset_all_gradebook_data: {
+				Args: Record<PropertyKey, never>;
+				Returns: Json;
+			};
+			reset_gradebook_cache: {
+				Args: Record<PropertyKey, never>;
+				Returns: boolean;
+			};
+			save_grade: {
+				Args:
+					| {
+							p_assignment_id: string;
+							p_student_id: string;
+							p_points_earned: number;
+							p_feedback?: string;
+					  }
+					| { p_student_id: string; p_assignment_id: string; p_points: number }
+					| { p_student_id: string; p_assignment_id: string; p_points: number };
+				Returns: string;
+			};
+			save_grade_json: {
+				Args:
+					| { grades_data: Json }
+					| { p_student_id: string; p_assignment_id: string; p_points: number }
+					| { p_student_id: string; p_assignment_id: string; p_points: number };
+				Returns: Json;
+			};
+			update_class_name: {
+				Args: { p_class_id: string; p_name: string; p_description?: string };
+				Returns: Json;
+			};
 		};
 		Enums: {
 			user_role: 'teacher' | 'student';
 		};
+		CompositeTypes: {
+			[_ in never]: never;
+		};
 	};
 };
 
+type DefaultSchema = Database[Extract<keyof Database, 'public'>];
+
+export type Tables<
+	DefaultSchemaTableNameOrOptions extends
+		| keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
+		| { schema: keyof Database },
+	TableName extends DefaultSchemaTableNameOrOptions extends {
+		schema: keyof Database;
+	}
+		? keyof (Database[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+				Database[DefaultSchemaTableNameOrOptions['schema']]['Views'])
+		: never = never
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+	? (Database[DefaultSchemaTableNameOrOptions['schema']]['Tables'] &
+			Database[DefaultSchemaTableNameOrOptions['schema']]['Views'])[TableName] extends {
+			Row: infer R;
+		}
+		? R
+		: never
+	: DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema['Tables'] & DefaultSchema['Views'])
+		? (DefaultSchema['Tables'] & DefaultSchema['Views'])[DefaultSchemaTableNameOrOptions] extends {
+				Row: infer R;
+			}
+			? R
+			: never
+		: never;
+
+export type TablesInsert<
+	DefaultSchemaTableNameOrOptions extends
+		| keyof DefaultSchema['Tables']
+		| { schema: keyof Database },
+	TableName extends DefaultSchemaTableNameOrOptions extends {
+		schema: keyof Database;
+	}
+		? keyof Database[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+		: never = never
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+	? Database[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+			Insert: infer I;
+		}
+		? I
+		: never
+	: DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
+		? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+				Insert: infer I;
+			}
+			? I
+			: never
+		: never;
+
+export type TablesUpdate<
+	DefaultSchemaTableNameOrOptions extends
+		| keyof DefaultSchema['Tables']
+		| { schema: keyof Database },
+	TableName extends DefaultSchemaTableNameOrOptions extends {
+		schema: keyof Database;
+	}
+		? keyof Database[DefaultSchemaTableNameOrOptions['schema']]['Tables']
+		: never = never
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof Database }
+	? Database[DefaultSchemaTableNameOrOptions['schema']]['Tables'][TableName] extends {
+			Update: infer U;
+		}
+		? U
+		: never
+	: DefaultSchemaTableNameOrOptions extends keyof DefaultSchema['Tables']
+		? DefaultSchema['Tables'][DefaultSchemaTableNameOrOptions] extends {
+				Update: infer U;
+			}
+			? U
+			: never
+		: never;
+
+export type Enums<
+	DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums'] | { schema: keyof Database },
+	EnumName extends DefaultSchemaEnumNameOrOptions extends {
+		schema: keyof Database;
+	}
+		? keyof Database[DefaultSchemaEnumNameOrOptions['schema']]['Enums']
+		: never = never
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof Database }
+	? Database[DefaultSchemaEnumNameOrOptions['schema']]['Enums'][EnumName]
+	: DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema['Enums']
+		? DefaultSchema['Enums'][DefaultSchemaEnumNameOrOptions]
+		: never;
+
+export type CompositeTypes<
+	PublicCompositeTypeNameOrOptions extends
+		| keyof DefaultSchema['CompositeTypes']
+		| { schema: keyof Database },
+	CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+		schema: keyof Database;
+	}
+		? keyof Database[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes']
+		: never = never
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof Database }
+	? Database[PublicCompositeTypeNameOrOptions['schema']]['CompositeTypes'][CompositeTypeName]
+	: PublicCompositeTypeNameOrOptions extends keyof DefaultSchema['CompositeTypes']
+		? DefaultSchema['CompositeTypes'][PublicCompositeTypeNameOrOptions]
+		: never;
+
+export const Constants = {
+	public: {
+		Enums: {
+			user_role: ['teacher', 'student']
+		}
+	}
+} as const;
+
 // Helper types for easier access
-export type Tables<T extends keyof Database['public']['Tables']> =
+export type TablesRow<T extends keyof Database['public']['Tables']> =
 	Database['public']['Tables'][T]['Row'];
-export type Inserts<T extends keyof Database['public']['Tables']> =
+export type TablesInsertRow<T extends keyof Database['public']['Tables']> =
 	Database['public']['Tables'][T]['Insert'];
-export type Updates<T extends keyof Database['public']['Tables']> =
+export type TablesUpdateRow<T extends keyof Database['public']['Tables']> =
 	Database['public']['Tables'][T]['Update'];
 
 // Export user role type for convenience

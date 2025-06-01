@@ -2,5 +2,17 @@
 	"sonarlint.connectedMode.project": {
 		"connectionId": "sallvainian",
 		"projectKey": "Sallvainian_Teaching-Tools-Dashboard"
+	},
+	"github.copilot.advanced": {
+		"debug.overrideEngine": "copilot",
+		"debug.testOverrideProxyUrl": "",
+		"debug.overrideProxyUrl": "",
+		"debug.filterLogCategories": []
+	},
+	"github.copilot.enable": {
+		"*": true,
+		"yaml": false,
+		"plaintext": false,
+		"markdown": false
 	}
 }
