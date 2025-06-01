@@ -15,15 +15,7 @@ export default defineConfig(({ mode }) => {
 
 		build: {
 			sourcemap: !isProduction,
-			minify: 'terser',
-			terserOptions: {
-				compress: {
-					drop_console: isProduction,
-					drop_debugger: isProduction,
-					pure_funcs: isProduction ? ['console.log', 'console.info'] : [],
-					passes: 2
-				}
-			},
+			minify: isProduction ? 'esbuild' : false,
 			chunkSizeWarningLimit: 1000,
 			rollupOptions: {
 				output: {
