@@ -19,13 +19,8 @@ export default defineConfig(({ mode }) => {
 			chunkSizeWarningLimit: 1000,
 			rollupOptions: {
 				output: {
-					sourcemapExcludeSources: isProduction,
-					manualChunks: (id) => {
-						// Simple vendor chunking to avoid build issues
-						if (id.includes('node_modules')) {
-							return 'vendor';
-						}
-					}
+					sourcemapExcludeSources: isProduction
+					// Disable manual chunking to prevent build issues
 				}
 			}
 		},
