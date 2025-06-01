@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { dev } from '$app/environment';
 
-	const release = import.meta.env.SENTRY_RELEASE || 'development';
+	const release = 'development';
 	const environment = import.meta.env.MODE;
 	const buildTime = import.meta.env.BUILD_TIME || new Date().toISOString();
 </script>
