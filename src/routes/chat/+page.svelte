@@ -13,6 +13,15 @@
 	let typingUsers = $state<string[]>([]);
 	let loading = $state(false);
 	let error = $state<string | null>(null);
+	
+	// UI state variables (initialize early to prevent reference errors)
+	let newMessage = $state('');
+	let searchQuery = $state('');
+	let showEmojiPicker = $state(false);
+	let showAttachMenu = $state(false);
+	let showUserSelectModal = $state(false);
+	let messagesContainer: HTMLDivElement;
+	let typingTimeout: number | null = null;
 
 	// Subscribe to store changes
 	const unsubscribeConversations = chatStore.conversations.subscribe((convs) => {
@@ -96,14 +105,6 @@
 		// For now, return false. We can implement proper online status later
 		return false;
 	}
-
-	let newMessage = $state('');
-	let searchQuery = $state('');
-	let showEmojiPicker = $state(false);
-	let showAttachMenu = $state(false);
-	let showUserSelectModal = $state(false);
-	let messagesContainer: HTMLDivElement;
-	let typingTimeout: number | null = null;
 
 	// Filtered conversations
 	let filteredConversations = $derived(

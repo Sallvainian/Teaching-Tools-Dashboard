@@ -4,15 +4,23 @@
 	import { authStore } from '$lib/stores/auth';
 	import { get } from 'svelte/store';
 
-	export const isOpen: boolean = false;
-	export let onClose: () => void;
-	export let onComplete: () => void;
+	// Props using Svelte 5 syntax
+	let { 
+		isOpen = false,
+		onClose,
+		onComplete 
+	} = $props<{
+		isOpen?: boolean;
+		onClose: () => void;
+		onComplete: () => void;
+	}>();
 
-	let mode: 'manual' | 'json' = 'manual';
-	let className = '';
-	let jsonInput = '';
-	let manualStudents: string[] = [''];
-	let error = '';
+	// State using Svelte 5 runes
+	let mode = $state<'manual' | 'json'>('manual');
+	let className = $state('');
+	let jsonInput = $state('');
+	let manualStudents = $state<string[]>(['']);
+	let error = $state('');
 
 	const exampleJson = `[
   {"name": "John Doe"},
@@ -76,12 +84,15 @@
 			// Add the class with user_id
 			await gradebookStore.addClass(categoryName, userId);
 
-			// Get the newly created class
+			// Wait a bit for the store to update, then get the newly created class
+			await new Promise(resolve => setTimeout(resolve, 100));
+			
 			const classes = get(gradebookStore).classes;
 			const newClass = classes.find((cls: Class) => cls.name === categoryName);
 
 			if (!newClass) {
-				throw new Error('Failed to create class');
+				console.error('Available classes:', classes.map(c => c.name));
+				throw new Error(`Failed to create class "${categoryName}". Available classes: ${classes.map(c => c.name).join(', ')}`);
 			}
 
 			// Add students to global list and assign to class

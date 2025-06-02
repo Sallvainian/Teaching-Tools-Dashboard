@@ -5,16 +5,16 @@
 ### Installation
 ```bash
 # Install dependencies
-pnpm install
+npm install
 
 # Start development server
-pnpm dev
+npm run dev
 
 # Build for production
-pnpm build
+npm run build
 
 # Preview production build
-pnpm preview
+npm run preview
 ```
 
 ### Environment Variables
@@ -328,7 +328,7 @@ $: console.log('Auth state:', $authStore);
 4. Try manual `loadAllData()` call
 
 ### Type Errors
-1. Run `pnpm check` to verify types
+1. Run `npm run check` to verify types
 2. Restart TypeScript server in VS Code
 3. Check imports are correct
 

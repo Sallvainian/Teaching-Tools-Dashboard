@@ -96,7 +96,17 @@ async function handleAutoResponse(conversationId: string, userMessage: string): 
 			.select('user_id, user:app_users(id, full_name, email)')
 			.eq('conversation_id', conversationId);
 
-		const otherUser = participants?.find((p) => p.user_id !== currentUser.id);
+		// Type the participants properly
+		type ParticipantWithUser = {
+			user_id: string;
+			user: {
+				id: string;
+				full_name: string;
+				email: string;
+			};
+		};
+
+		const otherUser = (participants as any[] | null)?.find((p: any) => p.user_id !== currentUser.id) as ParticipantWithUser | undefined;
 		if (!otherUser?.user) return;
 
 		// Check if this is a test user (not the real user)
@@ -604,7 +614,7 @@ function setupRealtimeSubscriptions(): void {
 				loadConversations();
 			}
 		)
-		.on('subscribe', (status, err) => {
+		.on('subscribe', (status: string, err?: any) => {
 			if (status === 'SUBSCRIBED') {
 				console.log('✅ Conversations subscription active');
 			} else {
@@ -683,7 +693,7 @@ function setupRealtimeSubscriptions(): void {
 				}
 			}
 		)
-		.on('subscribe', (status, err) => {
+		.on('subscribe', (status: string, err?: any) => {
 			if (status === 'SUBSCRIBED') {
 				console.log('✅ Messages subscription active');
 			} else {

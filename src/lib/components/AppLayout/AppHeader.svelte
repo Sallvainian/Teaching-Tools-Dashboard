@@ -7,7 +7,7 @@
 	import { debounce } from '$utils/performanceOptimized';
 
 	// Props
-	let { userMenuOpen = $bindable(false), classesDropdownOpen = $bindable(false) } = $props();
+	let { userMenuOpen = $bindable(false), classesDropdownOpen = $bindable(false), gamesDropdownOpen = $bindable(false) } = $props();
 
 	// Debounced handlers
 	const debouncedClassSelect = debounce(async (categoryId: string) => {
@@ -23,6 +23,10 @@
 		console.log('🔍 Toggle classes dropdown - before:', classesDropdownOpen);
 		classesDropdownOpen = !classesDropdownOpen;
 		console.log('🔍 Toggle classes dropdown - after:', classesDropdownOpen);
+	}
+
+	function toggleGamesDropdown() {
+		gamesDropdownOpen = !gamesDropdownOpen;
 	}
 
 	async function handleSelectClass(categoryId: string) {
@@ -44,6 +48,9 @@
 		const target = event.target as Element;
 		if (!target.closest('.classes-dropdown')) {
 			classesDropdownOpen = false;
+		}
+		if (!target.closest('.games-dropdown')) {
+			gamesDropdownOpen = false;
 		}
 		if (!target.closest('.user-menu')) {
 			userMenuOpen = false;
@@ -158,8 +165,89 @@
 					{/if}
 				</div>
 
-				<a href="/jeopardy" class="nav-button">Jeopardy</a>
-				<a href="/log-entries" class="nav-button whitespace-nowrap">Logs</a>
+				<!-- Games dropdown -->
+				<div class="relative games-dropdown">
+					<button
+						onclick={(e) => {
+							e.preventDefault();
+							toggleGamesDropdown();
+						}}
+						class="nav-button flex items-center gap-2"
+						aria-expanded={gamesDropdownOpen}
+						aria-haspopup="true"
+					>
+						<span>Games</span>
+						<svg
+							class="w-4 h-4 transition-transform duration-200"
+							class:rotate-180={gamesDropdownOpen}
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M19 9l-7 7-7-7"
+							/>
+						</svg>
+					</button>
+
+					{#if gamesDropdownOpen}
+						<div
+							class="absolute top-full left-0 mt-2 w-48 bg-card border border-border rounded-lg shadow-dropdown z-[100]"
+						>
+							<div class="p-2">
+								<div class="space-y-1">
+									<a
+										href="/jeopardy"
+										onclick={() => (gamesDropdownOpen = false)}
+										class="w-full text-left p-3 hover:bg-accent rounded-lg transition-all duration-200 flex items-center gap-3 group"
+									>
+										<svg
+											class="w-4 h-4 text-muted group-hover:text-highlight transition-colors"
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+										>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+											/>
+										</svg>
+										<span class="text-text-hover group-hover:text-highlight transition-colors">
+											Jeopardy
+										</span>
+									</a>
+									<a
+										href="/scattergories"
+										onclick={() => (gamesDropdownOpen = false)}
+										class="w-full text-left p-3 hover:bg-accent rounded-lg transition-all duration-200 flex items-center gap-3 group"
+									>
+										<svg
+											class="w-4 h-4 text-muted group-hover:text-highlight transition-colors"
+											fill="none"
+											stroke="currentColor"
+											viewBox="0 0 24 24"
+										>
+											<path
+												stroke-linecap="round"
+												stroke-linejoin="round"
+												stroke-width="2"
+												d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+											/>
+										</svg>
+										<span class="text-text-hover group-hover:text-highlight transition-colors">
+											Scattergories
+										</span>
+									</a>
+								</div>
+							</div>
+						</div>
+					{/if}
+				</div>
 			</div>
 
 			<!-- Right side actions -->

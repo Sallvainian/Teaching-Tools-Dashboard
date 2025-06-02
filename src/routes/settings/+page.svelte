@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { gradebookStore } from '$lib/stores/gradebook';
-	import { logEntriesStore } from '$lib/stores/log-entries';
 	import { jeopardyStore } from '$lib/stores/jeopardy';
 	import { get } from 'svelte/store';
 

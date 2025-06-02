@@ -1,4 +1,4 @@
-import type { Database, Tables, Inserts, Updates } from '$lib/types/database';
+import type { Database, Tables } from '$lib/types/database';
 
 // Type helpers
 type TableRecord = Record<string, unknown>;
@@ -162,7 +162,7 @@ export class SupabaseService {
 
 	public async insertItem<T extends keyof Database['public']['Tables']>(
 		table: T,
-		data: Inserts<T>
+		data: Database['public']['Tables'][T]['Insert']
 	): Promise<Tables<T> | null> {
 		if (this.useSupabase) {
 			try {
@@ -212,7 +212,7 @@ export class SupabaseService {
 	public async updateItem<T extends keyof Database['public']['Tables']>(
 		table: T,
 		id: string,
-		data: Updates<T>
+		data: Database['public']['Tables'][T]['Update']
 	): Promise<Tables<T> | null> {
 		if (this.useSupabase) {
 			try {
@@ -436,13 +436,13 @@ export class SupabaseService {
 		return this.getItemById('app_users', userId);
 	}
 
-	public async createProfile(profile: Inserts<'app_users'>): Promise<Tables<'app_users'> | null> {
+	public async createProfile(profile: Database['public']['Tables']['app_users']['Insert']): Promise<Tables<'app_users'> | null> {
 		return this.insertItem('app_users', profile);
 	}
 
 	public async updateProfile(
 		userId: string,
-		updates: Updates<'app_users'>
+		updates: Database['public']['Tables']['app_users']['Update']
 	): Promise<Tables<'app_users'> | null> {
 		return this.updateItem('app_users', userId, updates);
 	}

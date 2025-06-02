@@ -69,7 +69,7 @@ Welcome to the comprehensive documentation for the SvelteKit Teacher Dashboard a
 
 ### Prerequisites
 - Node.js >=18.x
-- pnpm package manager
+- npm package manager
 - Supabase account (optional)
 
 ### Quick Start
@@ -78,14 +78,14 @@ Welcome to the comprehensive documentation for the SvelteKit Teacher Dashboard a
 git clone [repository-url]
 
 # Install dependencies
-pnpm install
+npm install
 
 # Set up environment variables
 cp .env.example .env
 # Edit .env with your Supabase credentials
 
 # Start development server
-pnpm dev
+npm run dev
 ```
 
 ### Key Configuration Files

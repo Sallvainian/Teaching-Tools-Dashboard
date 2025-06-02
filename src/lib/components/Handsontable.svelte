@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { onMount, onDestroy, createEventDispatcher } from 'svelte';
+	import { browser } from '$app/environment';
 	import type Handsontable from 'handsontable'; // Import Handsontable type
 
-	// Define props with $props
+	// Define props with $props including callback props
 	let {
 		data = [],
 		colHeaders = true as boolean | string[],
@@ -10,7 +10,10 @@
 		height = 400,
 		width = '100%',
 		licenseKey = 'non-commercial-and-evaluation',
-		settings = {}
+		settings = {},
+		onAfterChange,
+		onAfterSelection,
+		onInit
 	} = $props<{
 		data?: any[][];
 		colHeaders?: boolean | string[];
@@ -19,16 +22,22 @@
 		width?: string | number;
 		licenseKey?: string;
 		settings?: any;
+		onAfterChange?: (event: { changes: any, source: any }) => void;
+		onAfterSelection?: (event: { row: number, column: number, row2: number, column2: number }) => void;
+		onInit?: (event: { hotInstance: Handsontable }) => void;
 	}>();
-
-	// Create Svelte event dispatcher
-	const dispatch = createEventDispatcher();
 
 	// Container reference
 	let container: HTMLDivElement;
 	let hotInstance = $state<Handsontable | null>(null); // Typed hotInstance
 
-	onMount(async () => {
+	// Initialize Handsontable with Svelte 5 $effect
+	$effect(() => {
+		if (!browser || !container) return;
+
+		let darkStyles: HTMLStyleElement | null = null;
+
+		(async () => {
 		try {
 			// Dynamically import Handsontable to avoid SSR issues
 			const Handsontable = (await import('handsontable')).default;
@@ -285,11 +294,11 @@
 					source: Handsontable.ChangeSource
 				) => {
 					if (source !== 'loadData' && changes) {
-						dispatch('afterChange', { changes, source });
+						onAfterChange?.({ changes, source });
 					}
 				},
 				afterSelection: (row: number, column: number, row2: number, column2: number) => {
-					dispatch('afterSelection', { row, column, row2, column2 });
+					onAfterSelection?.({ row, column, row2, column2 });
 				},
 				...settings
 			};
@@ -301,17 +310,22 @@
 			hotInstance = new Handsontable(container, mergedSettings);
 
 			// Make the instance available to parent components
-			dispatch('init', { hotInstance });
-		} catch (error) {
-			console.error('Error initializing Handsontable:', error);
-		}
-	});
+			onInit?.({ hotInstance });
+			} catch (error) {
+				console.error('Error initializing Handsontable:', error);
+			}
+		})();
 
-	onDestroy(() => {
-		// Clean up
-		if (hotInstance) {
-			hotInstance.destroy();
-		}
+		// Cleanup function returned by $effect
+		return () => {
+			if (hotInstance) {
+				hotInstance.destroy();
+				hotInstance = null;
+			}
+			if (darkStyles) {
+				darkStyles.remove();
+			}
+		};
 	});
 
 	// Method to update data from outside

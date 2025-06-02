@@ -56,10 +56,10 @@ dispatch('click'); // ❌ Use callback props
 ## Review Criteria for PRs
 
 ### Must Pass
-1. **Type Safety**: No TypeScript errors (run `pnpm check`)
-2. **Linting**: ESLint passes (run `pnpm lint`)
-3. **Tests**: All tests pass (run `pnpm test`)
-4. **Build**: Production build succeeds (run `pnpm build`)
+1. **Type Safety**: No TypeScript errors (run `npm run check`)
+2. **Linting**: ESLint passes (run `npm run lint`)
+3. **Tests**: All tests pass (run `npm test`)
+4. **Build**: Production build succeeds (run `npm run build`)
 
 ### Code Quality Checks
 - [ ] Uses proper Svelte 5 patterns (runes, props)

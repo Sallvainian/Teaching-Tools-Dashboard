@@ -3,11 +3,19 @@
 	import type { Class } from '$lib/types/gradebook';
 	import { gradebookStore } from '$lib/stores/gradebook';
 	import { writable, derived } from 'svelte/store';
+	import { authStore } from '$lib/stores/auth';
 
 	let { selectedClass } = $props<{ selectedClass: Class }>();
 
 	// Create a writable store for student name
 	const newStudentName = writable('');
+	
+	// State for import functionality
+	let showImportModal = $state(false);
+	let importError = $state<string | null>(null);
+	let isImporting = $state(false);
+	let importMode = $state<'file' | 'paste'>('paste');
+	let jsonInput = $state('');
 
 	// Derive students for this class with debugging
 	const students = derived(gradebookStore, ($gradebookStore) => {
@@ -74,6 +82,75 @@
 			}
 		}
 	}
+
+	async function handleFileUpload(event: Event) {
+		const target = event.target as HTMLInputElement;
+		const file = target.files?.[0];
+		
+		if (!file) return;
+		
+		if (!file.name.endsWith('.json')) {
+			importError = 'Please select a JSON file';
+			return;
+		}
+		
+		isImporting = true;
+		importError = null;
+		
+		try {
+			const text = await file.text();
+			await processJsonData(text);
+		} catch (error) {
+			importError = error instanceof Error ? error.message : 'Failed to import students';
+		} finally {
+			isImporting = false;
+			// Reset file input
+			target.value = '';
+		}
+	}
+
+	async function handlePastedImport() {
+		if (!jsonInput.trim()) {
+			importError = 'Please enter JSON data';
+			return;
+		}
+		
+		isImporting = true;
+		importError = null;
+		
+		try {
+			await processJsonData(jsonInput);
+		} catch (error) {
+			importError = error instanceof Error ? error.message : 'Failed to import students';
+		} finally {
+			isImporting = false;
+		}
+	}
+
+	async function processJsonData(jsonText: string) {
+		const jsonData = JSON.parse(jsonText);
+		
+		// Validate JSON structure
+		if (!Array.isArray(jsonData)) {
+			throw new Error('JSON must be an array of student objects');
+		}
+		
+		// Validate each student object
+		const studentsData = jsonData.filter((item) => {
+			return item && typeof item === 'object' && typeof item.name === 'string' && item.name.trim();
+		});
+		
+		if (studentsData.length === 0) {
+			throw new Error('No valid student records found. Each student must have a "name" field.');
+		}
+		
+		// Import students to this class
+		const userId = $authStore.user?.id;
+		await gradebookStore.importStudentsToClass(studentsData, selectedClass.id, userId);
+		
+		showImportModal = false;
+		jsonInput = '';
+	}
 </script>
 
 <div class="bg-card border border-border rounded-lg p-6">
@@ -122,6 +199,15 @@
 		{/if}
 
 		<div class="mb-6">
+			<div class="flex justify-between items-center mb-4">
+				<h3 class="text-lg font-medium text-text-hover">Add Students</h3>
+				<button
+					onclick={() => (showImportModal = true)}
+					class="px-3 py-2 bg-accent text-text-hover rounded-lg hover:bg-accent/80 transition-all duration-200 text-sm"
+				>
+					Import from JSON
+				</button>
+			</div>
 			<form class="flex gap-2" onsubmit={addStudent}>
 				<input
 					type="text"
@@ -177,3 +263,101 @@
 		</div>
 	{/if}
 </div>
+
+<!-- Import Students Modal -->
+{#if showImportModal}
+	<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onclick={() => (showImportModal = false)}>
+		<div class="bg-card border border-border rounded-lg p-6 max-w-lg w-full mx-4" onclick={(e) => e.stopPropagation()}>
+			<h3 class="text-xl font-semibold text-highlight mb-4">Import Students to {selectedClass.name}</h3>
+			
+			<!-- Mode Tabs -->
+			<div class="mb-4">
+				<div class="flex border-b border-border">
+					<button
+						onclick={() => (importMode = 'paste')}
+						class="px-4 py-2 text-sm font-medium border-b-2 transition-colors {importMode === 'paste'
+							? 'border-purple text-purple'
+							: 'border-transparent text-muted hover:text-text-hover'}"
+					>
+						Paste JSON
+					</button>
+					<button
+						onclick={() => (importMode = 'file')}
+						class="px-4 py-2 text-sm font-medium border-b-2 transition-colors {importMode === 'file'
+							? 'border-purple text-purple'
+							: 'border-transparent text-muted hover:text-text-hover'}"
+					>
+						Upload File
+					</button>
+				</div>
+			</div>
+
+			{#if importError}
+				<div class="bg-error/10 border border-error text-error p-3 rounded mb-4 text-sm">
+					{importError}
+				</div>
+			{/if}
+
+			{#if importMode === 'paste'}
+				<div class="mb-4">
+					<p class="text-text-hover text-sm mb-2">
+						Paste JSON array of student objects with "name" fields:
+					</p>
+					<textarea
+						bind:value={jsonInput}
+						placeholder={`[
+  {"name": "John Doe"},
+  {"name": "Jane Smith"}
+]`}
+						disabled={isImporting}
+						class="w-full h-32 px-3 py-2 bg-surface border border-border rounded-lg text-text-hover focus:outline-none focus:border-purple disabled:opacity-50 font-mono text-sm"
+					></textarea>
+				</div>
+				<div class="flex justify-end gap-2">
+					<button
+						onclick={() => (showImportModal = false)}
+						disabled={isImporting}
+						class="px-4 py-2 bg-surface text-text-hover rounded-lg hover:bg-surface/80 transition-all duration-200 disabled:opacity-50"
+					>
+						Cancel
+					</button>
+					<button
+						onclick={handlePastedImport}
+						disabled={isImporting || !jsonInput.trim()}
+						class="px-4 py-2 bg-purple text-highlight rounded-lg hover:bg-purple-hover transition-all duration-200 disabled:opacity-50"
+					>
+						Import Students
+					</button>
+				</div>
+			{:else}
+				<div class="mb-4">
+					<p class="text-text-hover text-sm mb-2">
+						Select a JSON file containing an array of student objects:
+					</p>
+					<input
+						type="file"
+						accept=".json"
+						onchange={handleFileUpload}
+						disabled={isImporting}
+						class="w-full px-3 py-2 bg-surface border border-border rounded-lg text-text-hover focus:outline-none focus:border-purple disabled:opacity-50"
+					/>
+				</div>
+				<div class="flex justify-end gap-2">
+					<button
+						onclick={() => (showImportModal = false)}
+						disabled={isImporting}
+						class="px-4 py-2 bg-surface text-text-hover rounded-lg hover:bg-surface/80 transition-all duration-200 disabled:opacity-50"
+					>
+						Cancel
+					</button>
+				</div>
+			{/if}
+
+			{#if isImporting}
+				<div class="flex items-center justify-center py-4">
+					<div class="text-purple">Importing students...</div>
+				</div>
+			{/if}
+		</div>
+	</div>
+{/if}

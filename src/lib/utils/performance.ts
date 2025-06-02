@@ -1,22 +1,20 @@
 import { browser } from '$app/environment';
 
-// Web Vitals monitoring
-export interface Metric {
+// Custom performance metric interface
+export interface PerformanceMetric {
 	name: string;
 	value: number;
 	rating: 'good' | 'needs-improvement' | 'poor';
-	delta: number;
 	id: string;
 }
 
-// Report metrics to analytics service
-function sendToAnalytics(metric: Metric) {
+// Report custom metrics to analytics service
+function sendToAnalytics(metric: PerformanceMetric) {
 	// Send to your analytics endpoint
 	if (browser && (window as any).gtag) {
 		(window as any).gtag('event', metric.name, {
 			value: Math.round(metric.value),
 			metric_rating: metric.rating,
-			metric_delta: Math.round(metric.delta),
 			non_interaction: true
 		});
 	}
@@ -24,23 +22,6 @@ function sendToAnalytics(metric: Metric) {
 	// Log in development
 	if (import.meta.env.DEV) {
 		console.log(`[Performance] ${metric.name}:`, metric.value, metric.rating);
-	}
-}
-
-// Initialize Web Vitals monitoring
-export async function initWebVitals() {
-	if (!browser) return;
-
-	try {
-		const { onCLS, onINP, onFCP, onLCP, onTTFB } = await import('web-vitals');
-
-		onCLS(sendToAnalytics);
-		onINP(sendToAnalytics);
-		onFCP(sendToAnalytics);
-		onLCP(sendToAnalytics);
-		onTTFB(sendToAnalytics);
-	} catch (error) {
-		console.error('Failed to load Web Vitals:', error);
 	}
 }
 
@@ -66,7 +47,6 @@ export function measurePerformance(name: string, startMark?: string) {
 							: measure.duration < 3000
 								? 'needs-improvement'
 								: 'poor',
-					delta: 0,
 					id: crypto.randomUUID()
 				});
 			}

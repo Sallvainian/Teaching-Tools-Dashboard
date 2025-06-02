@@ -188,6 +188,14 @@ function createGradebookStore() {
 		if (!trimmed) return;
 
 		try {
+			// Check if class already exists
+			const currentClasses = get(classes);
+			const existingClass = currentClasses.find(cls => cls.name === trimmed);
+			if (existingClass) {
+				console.warn(`Class "${trimmed}" already exists`);
+				return;
+			}
+
 			// Insert into database or localStorage
 			const result = await gradebookService.insertItem('classes', {
 				name: trimmed,
@@ -262,6 +270,26 @@ function createGradebookStore() {
 			}
 		} catch (err: unknown) {
 			error.set(err instanceof Error ? err.message : 'Failed to import classes');
+		}
+	}
+
+	// Import students to existing class from JSON
+	async function importStudentsToClass(
+		studentsData: Array<{ name: string }>,
+		classId: string,
+		userId?: string
+	): Promise<void> {
+		try {
+			for (const studentData of studentsData) {
+				if (studentData.name) {
+					const studentId = await addGlobalStudent(studentData.name.trim(), userId);
+					if (studentId) {
+						await assignStudentToClass(studentId, classId);
+					}
+				}
+			}
+		} catch (err: unknown) {
+			error.set(err instanceof Error ? err.message : 'Failed to import students to class');
 		}
 	}
 
@@ -516,6 +544,7 @@ function createGradebookStore() {
 		addClass,
 		deleteClass,
 		importClassesFromJSON,
+		importStudentsToClass,
 		selectClass,
 		assignStudentToClass,
 		removeStudentFromClass,

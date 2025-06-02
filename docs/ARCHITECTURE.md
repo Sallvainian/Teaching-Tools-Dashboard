@@ -102,7 +102,7 @@ The application uses the following main tables:
    - Many-to-many relationship between categories and students
    - Fields: category_id, student_id
 
-6. **observation_logs**
+6. **log_entries**
    - Teacher observations of student behavior
    - Fields: id, observer, date, student, subject, objective, observation, actions, follow_up, tags
 

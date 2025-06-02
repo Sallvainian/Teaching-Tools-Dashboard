@@ -27,7 +27,7 @@ vite.config.ts.timestamp-*
 *.iml
 
 # MCP Configuration (IDE-specific)
-mcp.json
+.mcp.json
 
 # Claude settings
 **/.claude/settings.local.json
@@ -35,3 +35,6 @@ mcp.json
 # Sentry Config File
 .env.sentry-build-plugin
 pnpm-lock.yaml
+
+# Platform-specific info
+.platform-info.json
