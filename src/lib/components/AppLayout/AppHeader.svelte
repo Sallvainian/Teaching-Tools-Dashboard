@@ -1,10 +1,21 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
+ import { goto } from '$app/navigation';
+ import { page as _page } from '$app/stores';
 	import ThemeToggle from '$components/ThemeToggle.svelte';
 	import { authStore, isAuthenticated, profile } from '$stores/auth';
 	import { gradebookStore } from '$stores/gradebook';
 	import { debounce } from '$utils/performanceOptimized';
+	import type { User } from '@supabase/supabase-js';
+	import type { UserRole } from '$lib/types/database';
+
+	// Define the profile type
+	interface UserProfile {
+		id: string;
+		email: string;
+		full_name: string;
+		avatar_url?: string | null;
+		role: UserRole | null;
+	}
 
 	// Props
 	let { userMenuOpen = $bindable(false), classesDropdownOpen = $bindable(false), gamesDropdownOpen = $bindable(false) } = $props();
@@ -266,10 +277,10 @@
 							<div
 								class="w-8 h-8 bg-gradient-to-br from-purple to-purple-light rounded-full flex items-center justify-center text-highlight font-medium shadow-sm"
 							>
-								{($profile?.full_name?.[0] || $authStore.user.email?.[0] || 'U').toUpperCase()}
+								{(($profile as UserProfile | null)?.full_name?.[0] || ($authStore.user as User).email?.[0] || 'U').toUpperCase()}
 							</div>
 							<span class="font-medium">
-								{$profile?.full_name || $authStore.user.email?.split('@')[0] || 'User'}
+								{($profile as UserProfile | null)?.full_name || ($authStore.user as User).email?.split('@')[0] || 'User'}
 							</span>
 							<svg
 								class="w-4 h-4 text-muted transition-transform duration-200"
@@ -357,7 +368,7 @@
 	</div>
 </nav>
 
-<style>
+<style lang="postcss">
 	.nav-button {
 		@apply text-sm text-text-hover hover:text-highlight transition-colors duration-200 relative;
 	}

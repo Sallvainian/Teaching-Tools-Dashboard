@@ -8,6 +8,7 @@
 	// Main layout component
 	import AppLayout from '$lib/components/AppLayout/AppLayout.svelte';
 	import GlobalLoader from '$lib/components/GlobalLoader.svelte';
+	import ConfirmationModalProvider from '$lib/components/ConfirmationModalProvider.svelte';
 
 	// Get children prop for Svelte 5
 	let { children } = $props();
@@ -19,3 +20,6 @@
 
 <!-- Global loading overlay -->
 <GlobalLoader />
+
+<!-- Global confirmation modal -->
+<ConfirmationModalProvider />

@@ -20,6 +20,47 @@ This application is now **production-ready** with a fully polished UI, comprehen
 - **Error Monitoring**: Sentry integration for production error tracking
 - **Performance Monitoring**: Custom performance tracking utilities
 - **CI/CD**: GitHub Actions with automated deployment to Vercel
+- **AI Integration**: Environment variables set up for Anthropic and OpenAI APIs (for future AI features)
+
+## 📂 Project Structure
+
+```
+teacher-dashboard/
+├── .github/                # GitHub Actions workflows
+├── docs/                   # Documentation files
+├── src/                    # Source code
+│   ├── lib/                # Shared libraries and components
+│   │   ├── components/     # Reusable UI components
+│   │   ├── services/       # Service layer for API calls
+│   │   ├── stores/         # Svelte stores for state management
+│   │   ├── types/          # TypeScript type definitions
+│   │   ├── utils/          # Utility functions
+│   │   └── supabaseClient.ts # Supabase client initialization
+│   ├── routes/             # SvelteKit routes (pages)
+│   │   ├── auth/           # Authentication pages
+│   │   ├── chat/           # Chat functionality
+│   │   ├── classes/        # Class management
+│   │   ├── dashboard/      # Main dashboard
+│   │   ├── files/          # File management
+│   │   ├── gradebook/      # Gradebook functionality
+│   │   ├── jeopardy/       # Jeopardy game
+│   │   ├── scattergories/  # Scattergories game
+│   │   ├── settings/       # User settings
+│   │   └── student/        # Student-specific pages
+│   ├── app.css             # Global CSS
+│   ├── app.html            # HTML template
+│   ├── hooks.client.ts     # Client-side hooks
+│   └── hooks.server.ts     # Server-side hooks
+├── static/                 # Static assets
+├── .env                    # Environment variables
+├── .env.local              # Local environment variables (not committed)
+├── CLAUDE.md               # Guidelines for Claude AI when working with this codebase
+├── package.json            # Dependencies and scripts
+├── svelte.config.js        # Svelte configuration
+├── tailwind.config.ts      # Tailwind CSS configuration
+├── tsconfig.json           # TypeScript configuration
+└── vite.config.ts          # Vite configuration
+```
 
 ### 🏗️ Current Architecture
 
@@ -37,6 +78,9 @@ This application is now **production-ready** with a fully polished UI, comprehen
 - `file_folders` - Hierarchical file organization
 - `file_metadata` - File information and ownership
 - `file_shares` - File sharing permissions
+- `conversations` - Chat conversations
+- `messages` - Chat messages
+- `conversation_participants` - Chat conversation participants
 
 #### Key Features Implemented
 1. **Gradebook Module** - Track student grades and assignments with Handsontable
@@ -50,6 +94,7 @@ This application is now **production-ready** with a fully polished UI, comprehen
 9. **Navigation System** - Intuitive navigation with dedicated gradebook vs class management
 10. **Theme System** - 100% consistent theme-based styling with CSS custom properties
 11. **Debug Tools** - Comprehensive debugging capabilities for data integrity issues
+12. **Chat System** - Real-time messaging between users with Supabase
 
 ## 🔧 Development Setup
 
@@ -150,6 +195,12 @@ npm test
    - ClassDojo remake completion
    - Parent portal
 
+4. **AI Features**
+   - AI-powered chat assistance for teachers
+   - Automated grading suggestions
+   - Content generation for educational materials
+   - Integration with Anthropic and OpenAI APIs
+
 ## 🛠️ Tech Stack
 
 - **Framework**: SvelteKit 5
@@ -160,6 +211,8 @@ npm test
 - **Data Grid**: Handsontable (migrated from AG Grid)
 - **Authentication**: Supabase Auth
 - **Deployment**: Vercel
+- **Error Tracking**: Sentry
+- **AI Integration**: Anthropic and OpenAI (future features)
 
 ## 📝 Development Notes
 
@@ -185,6 +238,12 @@ The application uses a comprehensive CSS custom properties system for theming:
 - **Developer Friendly**: Easy theme customization through CSS variables
 - **Performance Optimized**: No runtime color calculations, pure CSS
 
+### AI Integration
+The project includes API keys for Anthropic and OpenAI in the environment variables, which are set up for future AI features:
+- **Anthropic Claude**: For advanced natural language processing
+- **OpenAI**: For additional AI capabilities
+- **GitHub Actions**: Claude is used for code reviews in the CI/CD pipeline
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -209,7 +268,27 @@ The application uses a comprehensive CSS custom properties system for theming:
 
 ## 📄 License
 
-[Add your license information here]
+MIT License
+
+Copyright (c) 2025 Teacher Dashboard
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 ## 🔄 Recent Updates
 
@@ -238,3 +317,48 @@ The application uses a comprehensive CSS custom properties system for theming:
 - Added CI/CD pipeline with GitHub Actions
 - Integrated Sentry for error tracking
 - Category-to-class terminology migration completed
+
+## 🧠 For LLMs Working with This Codebase
+
+When working with this codebase, keep in mind:
+
+1. **Project Structure**: The project follows a standard SvelteKit structure with routes in `src/routes` and shared code in `src/lib`.
+
+2. **Coding Patterns**:
+   - Use Svelte 5 runes syntax ($state, $derived, $props)
+   - Follow TypeScript strict mode guidelines
+   - Use the store pattern described in CLAUDE.md
+   - Follow the error handling pattern in CLAUDE.md
+
+3. **Database Access**:
+   - All database access is through Supabase
+   - Tables have RLS policies for security
+   - Use the supabaseService for consistent error handling
+
+4. **Theme System**:
+   - Use semantic color variables from app.css
+   - Never use hardcoded colors
+   - Follow the visual hierarchy guidelines
+
+5. **Key Files to Understand**:
+   - `src/lib/supabaseClient.ts` - Supabase initialization
+   - `src/lib/stores/*.ts` - State management
+   - `src/lib/services/*.ts` - Service layer
+   - `src/routes/+layout.svelte` - Main layout
+   - `CLAUDE.md` - Detailed coding guidelines
+
+6. **Common Pitfalls**:
+   - Incorrect Svelte 5 event handler syntax
+   - Not handling Supabase errors properly
+   - Using wrong table names
+   - Using hardcoded colors instead of theme variables
+
+7. **Testing**:
+   - Run `npm run validate` before making changes
+   - Ensure all tests pass with `npm test`
+   - Check for TypeScript errors with `npm run check`
+
+8. **AI Integration**:
+   - API keys for Anthropic and OpenAI are in .env
+   - Claude is used for code reviews in GitHub Actions
+   - Future AI features are planned but not yet implemented

@@ -8,7 +8,7 @@
 	let error = $state('');
 
 	$effect(() => {
-		if ($authError) error = $authError;
+		if ($authError) error = $authError as string;
 	});
 
 	async function handleSubmit() {

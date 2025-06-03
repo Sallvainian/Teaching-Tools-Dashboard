@@ -44,7 +44,8 @@ export function goto(
  * @param title The title of the new history entry
  */
 export function updateUrl(url: string, data?: any, title?: string) {
-	pushState(data || {}, title || '', url);
+	// Pass state data directly as first parameter in newer SvelteKit versions
+	pushState(data || {}, url);
 }
 
 /**
@@ -54,5 +55,6 @@ export function updateUrl(url: string, data?: any, title?: string) {
  * @param title The title of the new history entry
  */
 export function replaceUrl(url: string, data?: any, title?: string) {
-	replaceState(data || {}, title || '', url);
+	// Pass state data directly as first parameter in newer SvelteKit versions
+	replaceState(data || {}, url);
 }

@@ -10,7 +10,7 @@
 
 {#if type === 'text'}
 	<div class="animate-pulse {className}">
-		{#each Array(lines) as _, i}
+  {#each Array(lines) as _, i (i)}
 			<div
 				class="h-4 bg-surface rounded mb-2"
 				style="width: {i === lines - 1 ? '60%' : '100%'}"
@@ -35,7 +35,7 @@
 			<table class="table">
 				<thead class="table-header">
 					<tr>
-						{#each Array(4) as _}
+						{#each Array(4) as _, i (i)}
 							<th class="table-header-cell">
 								<div class="h-4 bg-surface rounded w-20"></div>
 							</th>
@@ -43,9 +43,9 @@
 					</tr>
 				</thead>
 				<tbody class="table-body">
-					{#each Array(5) as _}
+					{#each Array(5) as _, i (i)}
 						<tr class="table-row">
-							{#each Array(4) as _}
+							{#each Array(4) as _, j (j)}
 								<td class="table-cell">
 									<div class="h-4 bg-surface rounded"></div>
 								</td>

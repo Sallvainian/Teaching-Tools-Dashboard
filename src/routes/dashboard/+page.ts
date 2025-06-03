@@ -3,6 +3,7 @@ import type { PageLoad } from './$types';
 import { get } from 'svelte/store';
 import { authStore } from '$lib/stores/auth';
 import { ensureAuthInitialized } from '$lib/utils/authInit';
+import { typedAuthStore, getIsAuthenticated } from '$lib/utils/storeHelpers';
 
 export const load: PageLoad = async () => {
 	// Ensure auth is initialized first
@@ -12,7 +13,7 @@ export const load: PageLoad = async () => {
 	const auth = get(authStore);
 
 	// If not authenticated, redirect to login
-	if (!auth.isAuthenticated) {
+	if (!getIsAuthenticated(auth)) {
 		throw redirect(307, '/auth/login');
 	}
 

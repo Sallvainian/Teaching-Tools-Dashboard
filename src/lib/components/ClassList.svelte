@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { gradebookStore } from '$lib/stores/gradebook';
+	import { confirmationStore } from '$lib/stores/confirmationModal';
 
 	interface ClassItem {
 		id: string;
@@ -32,10 +33,17 @@
 
 	async function deleteClass(classId: string, className: string, event: Event) {
 		event.stopPropagation(); // Prevent class selection
-		
-		if (confirm(`Are you sure you want to delete "${className}"? This action cannot be undone.`)) {
-			await gradebookStore.deleteClass(classId);
-		}
+
+		await confirmationStore.confirm({
+			title: 'Delete Class',
+			message: `Are you sure you want to delete "${className}"? This action cannot be undone.`,
+			confirmText: 'Delete',
+			cancelText: 'Cancel',
+			confirmButtonClass: 'bg-red-500 hover:bg-red-600',
+			onConfirm: async () => {
+				await gradebookStore.deleteClass(classId);
+			}
+		});
 	}
 </script>
 

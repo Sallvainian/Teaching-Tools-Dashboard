@@ -1,6 +1,7 @@
 import { writable, derived, get } from 'svelte/store';
 import { supabase } from '$lib/supabaseClient';
 import { authStore } from './auth';
+import { typedAuthStore, getUser } from '$lib/utils/storeHelpers';
 import type { Database } from '$lib/types/database';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -87,7 +88,7 @@ function getInitials(name: string): string {
 // Auto-response system for test users
 async function handleAutoResponse(conversationId: string, userMessage: string): Promise<void> {
 	try {
-		const currentUser = get(authStore).user;
+		const currentUser = getUser(get(authStore));
 		if (!currentUser) return;
 
 		// Get conversation participants to find the other user
@@ -106,7 +107,7 @@ async function handleAutoResponse(conversationId: string, userMessage: string): 
 			};
 		};
 
-		const otherUser = (participants as any[] | null)?.find((p: any) => p.user_id !== currentUser.id) as ParticipantWithUser | undefined;
+  const otherUser = (participants as ParticipantWithUser[] | null)?.find((p) => p.user_id !== currentUser.id);
 		if (!otherUser?.user) return;
 
 		// Check if this is a test user (not the real user)
@@ -153,13 +154,16 @@ async function handleAutoResponse(conversationId: string, userMessage: string): 
 					content: botMessageData[0].content,
 					message_type: botMessageData[0].message_type,
 					created_at: botMessageData[0].created_at,
+					edited_at: null,
+					is_deleted: false,
+					metadata: {},
 					sender: {
 						id: botMessageData[0].sender_id,
 						full_name: botMessageData[0].sender_full_name,
 						email: botMessageData[0].sender_email,
-						avatar_url: null
+						avatar_url: undefined
 					}
-				}
+				} as Message
 			: null;
 
 		if (!botMessage) throw new Error('Failed to create bot message');
@@ -167,14 +171,14 @@ async function handleAutoResponse(conversationId: string, userMessage: string): 
 		// Add bot message to local state
 		messages.update((current) => ({
 			...current,
-			[conversationId]: [...(current[conversationId] || []), botMessage]
+			[conversationId]: [...(current[conversationId] || []), botMessage as Message]
 		}));
 
 		// Update conversation's last message
 		conversations.update((current) =>
 			current.map((conv) =>
 				conv.id === conversationId
-					? { ...conv, last_message: botMessage, updated_at: botMessage.created_at }
+					? { ...conv, last_message: botMessage as Message, updated_at: botMessage.created_at }
 					: conv
 			)
 		);
@@ -335,7 +339,7 @@ async function loadConversations(): Promise<void> {
 		loading.set(true);
 		error.set(null);
 
-		const user = get(authStore).user;
+		const user = getUser(get(authStore));
 		if (!user) {
 			throw new Error('User not authenticated');
 		}
@@ -346,9 +350,9 @@ async function loadConversations(): Promise<void> {
 
 		if (conversationsError) throw conversationsError;
 
-		// Get last message for each conversation
-		const conversationsWithMessages = await Promise.all(
-			(conversationsData || []).map(async (conv) => {
+ 	// Get last message for each conversation
+ 	const conversationsWithMessages = await Promise.all(
+ 		(conversationsData || []).map(async (conv: any) => {
 				// Get last message (may not exist for new conversations)
 				const { data: lastMessages } = await supabase
 					.from('messages')
@@ -365,7 +369,7 @@ async function loadConversations(): Promise<void> {
 				const lastMessage = lastMessages?.[0] || null;
 
 				// Get participants separately
-				const { data: participants } = await supabase
+				const { data: participants, error: participantsError } = await supabase
 					.from('conversation_participants')
 					.select(
 						`
@@ -374,6 +378,7 @@ async function loadConversations(): Promise<void> {
 					`
 					)
 					.eq('conversation_id', conv.id);
+
 
 				// Calculate unread count
 				const userParticipant = participants?.find((p) => p.user_id === user.id);
@@ -439,7 +444,7 @@ async function loadMessages(conversationId: string): Promise<void> {
 
 async function sendMessage(conversationId: string, content: string): Promise<void> {
 	try {
-		const user = get(authStore).user;
+		const user = getUser(get(authStore));
 		if (!user) throw new Error('User not authenticated');
 
 		const { data: message, error: messageError } = await supabase
@@ -499,7 +504,7 @@ async function getAvailableChatUsers(): Promise<
 		const { data: users, error: usersError } = await supabase
 			.from('app_users')
 			.select('id, full_name, email, role, avatar_url')
-			.neq('id', get(authStore).user?.id || '');
+			.neq('id', getUser(get(authStore))?.id || '');
 
 		if (usersError) throw usersError;
 
@@ -563,7 +568,7 @@ async function createGroupConversation(
 
 async function markConversationAsRead(conversationId: string): Promise<void> {
 	try {
-		const user = get(authStore).user;
+		const user = getUser(get(authStore));
 		if (!user) return;
 
 		await supabase
@@ -590,7 +595,7 @@ function setActiveConversation(conversationId: string | null): void {
 
 // Real-time subscriptions
 function setupRealtimeSubscriptions(): void {
-	const user = get(authStore).user;
+	const user = getUser(get(authStore));
 	if (!user || subscriptionsActive) return;
 
 	console.log('🔄 Setting up real-time subscriptions for user:', user.id);
@@ -614,14 +619,15 @@ function setupRealtimeSubscriptions(): void {
 				loadConversations();
 			}
 		)
-		.on('subscribe', (status: string, err?: any) => {
+		.subscribe((status) => {
 			if (status === 'SUBSCRIBED') {
 				console.log('✅ Conversations subscription active');
-			} else {
-				console.error('❌ Conversations subscription failed:', err);
+			} else if (status === 'CLOSED') {
+				console.log('❌ Conversations subscription closed');
+			} else if (status === 'CHANNEL_ERROR') {
+				console.error('❌ Conversations subscription failed');
 			}
-		})
-		.subscribe();
+		});
 
 	// Subscribe to messages (using official documentation pattern)
 	messagesChannel = supabase
@@ -693,26 +699,27 @@ function setupRealtimeSubscriptions(): void {
 				}
 			}
 		)
-		.on('subscribe', (status: string, err?: any) => {
+		.subscribe((status) => {
 			if (status === 'SUBSCRIBED') {
 				console.log('✅ Messages subscription active');
-			} else {
-				console.error('❌ Messages subscription failed:', err);
+			} else if (status === 'CLOSED') {
+				console.log('❌ Messages subscription closed');
+			} else if (status === 'CHANNEL_ERROR') {
+				console.error('❌ Messages subscription failed');
 			}
-		})
-		.subscribe();
+		});
 }
 
 function cleanupRealtimeSubscriptions(): void {
 	console.log('🧹 Cleaning up real-time subscriptions and polling');
 	subscriptionsActive = false;
-	
+
 	// Stop polling
 	if (pollingInterval) {
 		clearInterval(pollingInterval);
 		pollingInterval = null;
 	}
-	
+
 	if (conversationsChannel) {
 		supabase.removeChannel(conversationsChannel);
 		conversationsChannel = null;
@@ -725,7 +732,8 @@ function cleanupRealtimeSubscriptions(): void {
 
 // Initialize store when auth state changes
 authStore.subscribe(async (auth) => {
-	if (auth.user) {
+	const typedAuth = typedAuthStore(auth);
+	if (typedAuth.user) {
 		if (!subscriptionsActive) {
 			await loadConversations();
 			setupRealtimeSubscriptions();
@@ -774,9 +782,9 @@ export const chatStore = {
 // Polling function for reliable message updates
 async function pollForNewMessages(): Promise<void> {
 	try {
-		const user = get(authStore).user;
+		const user = getUser(get(authStore));
 		const currentActiveConversationId = get(activeConversationId);
-		
+
 		if (!user || !currentActiveConversationId) return;
 
 		// Check for new messages since last check
@@ -792,7 +800,7 @@ async function pollForNewMessages(): Promise<void> {
 
 		if (newMessages && newMessages.length > 0) {
 			console.log('📨 Polling found', newMessages.length, 'new messages');
-			
+
 			// Add new messages to the store
 			messages.update((current) => ({
 				...current,
@@ -829,7 +837,7 @@ async function pollForNewMessages(): Promise<void> {
 function startMessagePolling(): void {
 	console.log('🔄 Starting message polling (3s interval)');
 	lastMessageCheck = new Date();
-	
+
 	// Poll every 3 seconds
 	pollingInterval = window.setInterval(pollForNewMessages, 3000);
 }

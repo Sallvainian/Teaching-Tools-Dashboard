@@ -4,9 +4,9 @@
 	import { authStore } from '$lib/stores/auth';
 	import { get } from 'svelte/store';
 
-	// Props using Svelte 5 syntax
+ // Props using Svelte 5 syntax
 	let { 
-		isOpen = false,
+		isOpen: _isOpen = false,
 		onClose,
 		onComplete 
 	} = $props<{
@@ -86,7 +86,7 @@
 
 			// Wait a bit for the store to update, then get the newly created class
 			await new Promise(resolve => setTimeout(resolve, 100));
-			
+
 			const classes = get(gradebookStore).classes;
 			const newClass = classes.find((cls: Class) => cls.name === categoryName);
 
@@ -155,8 +155,6 @@
 	}
 </script>
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<!-- svelte-ignore a11y_click_events_have_key_events -->
 <div
 	class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
 	onclick={(e) => e.target === e.currentTarget && onClose()}

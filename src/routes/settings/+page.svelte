@@ -58,7 +58,7 @@
 			if (useSupabase) {
 				// Clear from both Supabase and localStorage
 				gradebookStore.clearAllData();
-				logEntriesStore.clearAll();
+				// logEntriesStore doesn't exist yet
 				// jeopardyStore doesn't have clearAllData method
 			} else {
 				// Clear localStorage only

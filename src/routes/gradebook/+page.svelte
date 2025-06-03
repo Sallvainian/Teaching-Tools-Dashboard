@@ -6,6 +6,7 @@
 	import LoadingBounce from '$lib/components/LoadingBounce.svelte';
 	import ImportWizard from '$lib/components/ImportWizard.svelte';
 	import SkeletonLoader from '$lib/components/SkeletonLoader.svelte';
+	import { typedAuthStore, getUser } from '$lib/utils/storeHelpers';
 
 	// Lazy load Handsontable component
 	let Handsontable = $state<any>(null);
@@ -174,7 +175,7 @@
 	async function handleAddStudent() {
 		if (newStudentName.trim() && selectedClassId) {
 			// Get current user id
-			const currentUser = $authStore.user;
+			const currentUser = getUser($authStore);
 			if (currentUser) {
 				const studentId = await gradebookStore.addGlobalStudent(
 					newStudentName.trim(),
@@ -194,7 +195,7 @@
 	async function handleAddClass() {
 		if (newClassName.trim()) {
 			// Get the current user ID from auth store
-			const currentUser = $authStore.user;
+			const currentUser = getUser($authStore);
 			if (currentUser) {
 				await gradebookStore.addClass(newClassName.trim(), currentUser.id);
 				newClassName = '';

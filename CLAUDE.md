@@ -365,6 +365,13 @@ Remember: This is a production application for educators. Code quality, type saf
 - All components properly typed
 - Sentry integration working with v8 API
 - PostCSS properly configured
+- **IMPORTANT**: Soft delete/trash feature is FULLY IMPLEMENTED but requires database migration
+
+### Pending Database Migration
+**CRITICAL**: The trash/recycle bin feature for files is ready but REQUIRES this migration to be run in Supabase:
+- Migration file exists at: `supabase/migrations/20250203_soft_delete_files.sql`
+- After running migration, uncomment the `.eq('is_deleted', false)` filters in `fileService.ts`
+- This enables: soft delete, trash view, file restoration, and permanent deletion
 
 ### Development Workflow Reminders
 1. Always run `npm run check` before committing

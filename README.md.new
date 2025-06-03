@@ -1,0 +1,364 @@
+# Teacher Dashboard
+
+A comprehensive web application for educators to manage their classroom activities, built with SvelteKit 5, TypeScript, and Supabase.
+
+## 🚀 Current Status
+
+### 🌟 Production Ready Features
+This application is now **production-ready** with a fully polished UI, comprehensive theme system, and robust functionality suitable for real classroom use.
+
+### ✅ What's Working
+- **Core Application Structure**: SvelteKit 5 with TypeScript (strict mode, zero errors)
+- **Database Connection**: Supabase PostgreSQL with proper `.env` configuration
+- **Authentication System**: Complete auth flow with role-based signup (teacher/student)
+- **File Storage System**: Complete file upload/download with folders and sharing
+- **Database Security**: Row Level Security (RLS) enabled on all tables
+- **Local Development**: Full local development environment with hot reload
+- **State Management**: Svelte stores with Supabase integration and localStorage fallback
+- **UI Framework**: TailwindCSS with comprehensive theme system and perfect light/dark mode support
+- **Data Grid**: Handsontable integration for gradebook
+- **Error Monitoring**: Sentry integration for production error tracking
+- **Performance Monitoring**: Custom performance tracking utilities
+- **CI/CD**: GitHub Actions with automated deployment to Vercel
+- **AI Integration**: Environment variables set up for Anthropic and OpenAI APIs (for future AI features)
+
+## 📂 Project Structure
+
+```
+teacher-dashboard/
+├── .github/                # GitHub Actions workflows
+├── docs/                   # Documentation files
+├── src/                    # Source code
+│   ├── lib/                # Shared libraries and components
+│   │   ├── components/     # Reusable UI components
+│   │   ├── services/       # Service layer for API calls
+│   │   ├── stores/         # Svelte stores for state management
+│   │   ├── types/          # TypeScript type definitions
+│   │   ├── utils/          # Utility functions
+│   │   └── supabaseClient.ts # Supabase client initialization
+│   ├── routes/             # SvelteKit routes (pages)
+│   │   ├── auth/           # Authentication pages
+│   │   ├── chat/           # Chat functionality
+│   │   ├── classes/        # Class management
+│   │   ├── dashboard/      # Main dashboard
+│   │   ├── files/          # File management
+│   │   ├── gradebook/      # Gradebook functionality
+│   │   ├── jeopardy/       # Jeopardy game
+│   │   ├── scattergories/  # Scattergories game
+│   │   ├── settings/       # User settings
+│   │   └── student/        # Student-specific pages
+│   ├── app.css             # Global CSS
+│   ├── app.html            # HTML template
+│   ├── hooks.client.ts     # Client-side hooks
+│   └── hooks.server.ts     # Server-side hooks
+├── static/                 # Static assets
+├── .env                    # Environment variables
+├── .env.local              # Local environment variables (not committed)
+├── CLAUDE.md               # Guidelines for Claude AI when working with this codebase
+├── package.json            # Dependencies and scripts
+├── svelte.config.js        # Svelte configuration
+├── tailwind.config.ts      # Tailwind CSS configuration
+├── tsconfig.json           # TypeScript configuration
+└── vite.config.ts          # Vite configuration
+```
+
+### 🏗️ Current Architecture
+
+#### Database Tables
+- `app_users` - User authentication and profiles with role support
+- `students` - Student records linked to user accounts
+- `categories` - Grade categories (classes) with multi-tenant support
+- `assignments` - Assignment tracking within categories
+- `grades` - Grade recording with student/assignment relationships
+- `category_students` - Junction table for class enrollment
+- `log_entries` - Student observation logs (behavior tracking)
+- `games` - Jeopardy game storage
+- `game_categories` - Game category organization
+- `questions` - Question bank for games
+- `file_folders` - Hierarchical file organization
+- `file_metadata` - File information and ownership
+- `file_shares` - File sharing permissions
+- `conversations` - Chat conversations
+- `messages` - Chat messages
+- `conversation_participants` - Chat conversation participants
+
+#### Key Features Implemented
+1. **Gradebook Module** - Track student grades and assignments with Handsontable
+2. **Jeopardy Game Maker** - Create educational quiz games
+3. **Observation Log** - Track student behavior and notes (log_entries table)
+4. **Authentication** - Secure login with Supabase Auth and role-based access
+5. **Multi-tenant Support** - Users see only their own data
+6. **File Storage** - Upload, organize, and share educational resources
+7. **Performance Monitoring** - Sentry integration for error tracking
+8. **TypeScript Strict Mode** - Zero TypeScript errors with full type safety
+9. **Navigation System** - Intuitive navigation with dedicated gradebook vs class management
+10. **Theme System** - 100% consistent theme-based styling with CSS custom properties
+11. **Debug Tools** - Comprehensive debugging capabilities for data integrity issues
+12. **Chat System** - Real-time messaging between users with Supabase
+
+## 🔧 Development Setup
+
+### Prerequisites
+- Node.js 18+ and npm
+- Supabase account (or use built-in development credentials)
+- Git
+
+### Installation
+```bash
+# Clone the repository
+git clone [your-repo-url]
+
+# Install dependencies
+npm install
+
+# Copy environment variables
+cp .env.example .env
+
+# Add your Supabase credentials to .env
+PUBLIC_SUPABASE_URL=your_url_here
+PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+
+# Run development server
+npm run dev
+```
+
+### Code Quality Commands
+```bash
+# Run TypeScript type checking
+npm run check
+
+# Run ESLint
+npm run lint
+
+# Auto-fix linting issues
+npm run lint:fix
+
+# Run both lint and type check
+npm run validate
+
+# Run tests
+npm test
+```
+
+### Database Setup
+1. Create tables using the SQL scripts in `/supabase/migrations/`
+2. Enable RLS policies (already configured)
+3. Set up WebStorm database connection using Transaction Pooler
+
+## 🎯 Next Steps
+
+### High Priority
+1. **Student Self-Registration System**
+   - Add join codes to classes
+   - Create student signup flow
+   - Implement approval system for class enrollment
+
+2. **Role-Based Access Control**
+   - Separate teacher and student views
+   - Create `/teacher/*` and `/student/*` routes
+   - Implement route guards based on user role
+
+3. **Student Grade View**
+   - Read-only interface for students
+   - Show only their own grades
+   - Class-specific grade filtering
+
+### Medium Priority
+1. **Data Import/Export**
+   - CSV import for bulk student upload
+   - Grade export functionality
+   - Backup/restore capabilities
+
+2. **Enhanced UI/UX**
+   - Loading states for all data operations
+   - Error handling improvements
+   - Mobile responsive design
+
+3. **Testing**
+   - Unit tests for stores
+   - Integration tests for auth flow
+   - E2E tests for critical paths
+
+### Nice to Have
+1. **Email Notifications**
+   - Grade updates
+   - Assignment reminders
+   - Parent communication
+
+2. **Analytics Dashboard**
+   - Class performance overview
+   - Student progress tracking
+   - Assignment statistics
+
+3. **Additional Modules**
+   - Lesson planner improvements
+   - ClassDojo remake completion
+   - Parent portal
+
+4. **AI Features**
+   - AI-powered chat assistance for teachers
+   - Automated grading suggestions
+   - Content generation for educational materials
+   - Integration with Anthropic and OpenAI APIs
+
+## 🛠️ Tech Stack
+
+- **Framework**: SvelteKit 5
+- **Language**: TypeScript
+- **Database**: Supabase (PostgreSQL)
+- **Styling**: TailwindCSS
+- **State Management**: Svelte stores
+- **Data Grid**: Handsontable (migrated from AG Grid)
+- **Authentication**: Supabase Auth
+- **Deployment**: Vercel
+- **Error Tracking**: Sentry
+- **AI Integration**: Anthropic and OpenAI (future features)
+
+## 📝 Development Notes
+
+### Store Pattern
+All stores follow a pattern of:
+1. Primary storage in Supabase
+2. Fallback to localStorage
+3. Optimistic UI updates
+4. Error recovery
+
+### Security Considerations
+- RLS policies on all tables
+- User isolation through `user_id` foreign keys
+- Role-based access control (upcoming)
+- Secure credential management via environment variables
+
+### Theme System Architecture
+The application uses a comprehensive CSS custom properties system for theming:
+- **Single Source of Truth**: All colors defined in `src/app.css`
+- **Semantic Color Names**: `text-highlight`, `bg-card`, `border-border` instead of hardcoded values
+- **Automatic Mode Switching**: Perfect light/dark mode support with `color-mix()`
+- **Consistent Hierarchy**: Proper visual hierarchy maintained across all components
+- **Developer Friendly**: Easy theme customization through CSS variables
+- **Performance Optimized**: No runtime color calculations, pure CSS
+
+### AI Integration
+The project includes API keys for Anthropic and OpenAI in the environment variables, which are set up for future AI features:
+- **Anthropic Claude**: For advanced natural language processing
+- **OpenAI**: For additional AI capabilities
+- **GitHub Actions**: Claude is used for code reviews in the CI/CD pipeline
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Make your changes
+4. Run validation before committing:
+   ```bash
+   npm run validate  # Must pass with zero errors
+   npm run build     # Ensure production build works
+   ```
+5. Commit your changes (`git commit -m 'Add amazing feature'`)
+6. Push to the branch (`git push origin feature/amazing-feature`)
+7. Open a Pull Request
+
+### Important Guidelines
+- All TypeScript errors must be resolved
+- Use Svelte 5 runes syntax ($state, $derived, $props)
+- Follow the patterns established in CLAUDE.md
+- **Use theme-based CSS variables only** - No hardcoded colors (e.g., use `text-highlight` not `text-white`)
+- Ensure all tests pass before submitting PR
+- Maintain consistent visual hierarchy with semantic color naming
+
+## 📄 License
+
+MIT License
+
+Copyright (c) 2025 Teacher Dashboard
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+## 🔄 Recent Updates
+
+### 🎨 Major UI/UX Overhaul (January 2025)
+- **Complete Theme Migration**: Converted ALL hardcoded color classes to theme-based CSS variables across 25+ files
+- **Navigation Restructure**: Renamed "Classes" dropdown to "Gradebook" and added dedicated "Classes" page navigation
+- **Perfect Theme Consistency**: 100% theme-based styling with automatic light/dark mode support
+- **Enhanced User Experience**: Clean separation between gradebook (view grades) and classes (manage classes)
+- **Data Integrity Tools**: Added comprehensive debug capabilities for troubleshooting class/student mismatches
+
+### Latest Technical Fixes (January 2025)
+- Fixed all TypeScript errors - now running with zero errors in strict mode
+- Fixed file upload functionality with correct Svelte 5 event handler syntax
+- Fixed LogEntriesList.svelte parsing error
+- Fixed nested button accessibility issue in files page
+- Updated all catch clauses to use proper TypeScript types
+- Fixed Sentry integration to use v8 API
+- Fixed PostCSS @apply directive warning with proper lang attribute
+- Added missing auth store methods (signUpStudent, signUpTeacher, role)
+- Enhanced auth storage management with extracted utility functions
+
+### Previous Major Updates
+- Migrated from AG-Grid to Handsontable for better performance and licensing
+- Added comprehensive TypeScript types for all components
+- Implemented proper error handling and loading states
+- Added CI/CD pipeline with GitHub Actions
+- Integrated Sentry for error tracking
+- Category-to-class terminology migration completed
+
+## 🧠 For LLMs Working with This Codebase
+
+When working with this codebase, keep in mind:
+
+1. **Project Structure**: The project follows a standard SvelteKit structure with routes in `src/routes` and shared code in `src/lib`.
+
+2. **Coding Patterns**:
+   - Use Svelte 5 runes syntax ($state, $derived, $props)
+   - Follow TypeScript strict mode guidelines
+   - Use the store pattern described in CLAUDE.md
+   - Follow the error handling pattern in CLAUDE.md
+
+3. **Database Access**:
+   - All database access is through Supabase
+   - Tables have RLS policies for security
+   - Use the supabaseService for consistent error handling
+
+4. **Theme System**:
+   - Use semantic color variables from app.css
+   - Never use hardcoded colors
+   - Follow the visual hierarchy guidelines
+
+5. **Key Files to Understand**:
+   - `src/lib/supabaseClient.ts` - Supabase initialization
+   - `src/lib/stores/*.ts` - State management
+   - `src/lib/services/*.ts` - Service layer
+   - `src/routes/+layout.svelte` - Main layout
+   - `CLAUDE.md` - Detailed coding guidelines
+
+6. **Common Pitfalls**:
+   - Incorrect Svelte 5 event handler syntax
+   - Not handling Supabase errors properly
+   - Using wrong table names
+   - Using hardcoded colors instead of theme variables
+
+7. **Testing**:
+   - Run `npm run validate` before making changes
+   - Ensure all tests pass with `npm test`
+   - Check for TypeScript errors with `npm run check`
+
+8. **AI Integration**:
+   - API keys for Anthropic and OpenAI are in .env
+   - Claude is used for code reviews in GitHub Actions
+   - Future AI features are planned but not yet implemented

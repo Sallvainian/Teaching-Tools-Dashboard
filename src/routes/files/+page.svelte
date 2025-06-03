@@ -1,21 +1,25 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import {
-		filesActions,
-		files,
-		folders,
-		currentFolderId,
-		isLoading,
-		error,
-		userStats,
-		uploadProgress
-	} from '$lib/stores/files';
-	import FilePreviewModal from '$lib/components/FilePreviewModal.svelte';
-	import FileShareModal from '$lib/components/FileShareModal.svelte';
-	import FolderTree from '$lib/components/FolderTree.svelte';
-	import type { FileMetadata, FileFolder } from '$lib/types/files';
-	import { formatFileSize, getFileType, getFileIcon } from '$lib/types/files';
-	import { supabase } from '$lib/supabaseClient';
+ import { onMount } from 'svelte';
+ import {
+ 	filesActions,
+ 	files,
+ 	deletedFiles,
+ 	folders,
+ 	currentFolderId,
+ 	isLoading,
+ 	error,
+ 	userStats,
+ 	uploadProgress,
+ 	showTrash
+ } from '$lib/stores/files';
+ import FilePreviewModal from '$lib/components/FilePreviewModal.svelte';
+ import FileShareModal from '$lib/components/FileShareModal.svelte';
+ import FolderTree from '$lib/components/FolderTree.svelte';
+ import type { FileMetadata, FileFolder } from '$lib/types/files';
+ import { formatFileSize, getFileType, getFileIcon } from '$lib/types/files';
+ import { supabase } from '$lib/supabaseClient';
+ import { isAuthenticated } from '$lib/stores/auth';
+ import { goto } from '$app/navigation';
 
 	// UI state
 	let currentView = $state('grid'); // 'grid' or 'list'
@@ -72,7 +76,8 @@
 
 	// Filtered and sorted files
 	const filteredFiles = $derived(() => {
-		let result = [...$files];
+		// Use deleted files if showing trash, otherwise regular files
+		let result = $showTrash ? [...$deletedFiles] : [...$files];
 
 		// Filter by current folder
 		if ($currentFolderId === null) {
@@ -107,15 +112,18 @@
 		return result;
 	});
 
-	onMount(async () => {
-		// Check auth state
-		const {
-			data: { user }
-		} = await supabase.auth.getUser();
-		console.log('Current user:', user);
+ onMount(async () => {
+ 	// Check auth state
+ 	const {
+ 		data: { user }
+ 	} = await supabase.auth.getUser();
+ 	console.log('Current user:', user);
 
-		await filesActions.ensureDataLoaded();
-	});
+ 	// Only load files if user is authenticated
+ 	if (user) {
+ 		await filesActions.ensureDataLoaded();
+ 	}
+ });
 
 	function toggleSort(column: string) {
 		if (sortBy === column) {
@@ -170,8 +178,19 @@
 	}
 
 	async function deleteFile(file: FileMetadata) {
-		if (confirm(`Are you sure you want to delete "${file.name}"?`)) {
+		try {
+			const confirmed = confirm(`Are you sure you want to delete "${file.name}"?\n\nThis action cannot be undone.`);
+			
+			if (!confirmed) {
+				console.log('Delete cancelled by user');
+				return;
+			}
+			
+			console.log('Deleting file:', file.name);
 			await filesActions.deleteFile(file.id);
+		} catch (error) {
+			console.error('Error deleting file:', error);
+			alert('Failed to delete file. Please try again.');
 		}
 	}
 
@@ -208,9 +227,38 @@
 	<div class="container mx-auto px-4 py-8">
 		<!-- Header -->
 		<div class="mb-8">
-			<h1 class="text-3xl font-bold text-highlight mb-2">File Storage</h1>
-			<p class="text-text-base">Organize and manage your teaching materials</p>
+			<h1 class="text-3xl font-bold text-highlight mb-2">
+				{$showTrash ? 'Trash' : 'File Storage'}
+			</h1>
+			<p class="text-text-base">
+				{$showTrash ? 'Recover deleted files or permanently remove them' : 'Organize and manage your teaching materials'}
+			</p>
 		</div>
+
+		{#if !$isAuthenticated}
+			<div class="card-dark p-8 text-center">
+				<div class="flex flex-col items-center justify-center py-12">
+					<svg
+						class="w-16 h-16 text-muted mb-4"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+					>
+						<path d="M12 15v2m0 0v2m0-2h2m-2 0H9.5"></path>
+						<path d="M4 21V8a2 2 0 012-2h12a2 2 0 012 2v13a2 2 0 01-2 2H6a2 2 0 01-2-2z"></path>
+						<path d="M8 10V7a4 4 0 118 0v3"></path>
+					</svg>
+					<h3 class="text-lg font-medium text-highlight mb-2">Authentication Required</h3>
+					<p class="text-text-base text-center max-w-md mb-6">
+						You need to be signed in to view and manage your files.
+					</p>
+					<button class="btn btn-primary" onclick={() => goto('/auth/login')}>
+						Sign In
+					</button>
+				</div>
+			</div>
+		{:else}
 
 		<!-- Actions Bar -->
 		<div class="flex flex-wrap gap-4 mb-6">
@@ -243,7 +291,7 @@
 					onchange={(e) => handleFileUpload(e)}
 					class="hidden"
 				/>
-				<button class="btn btn-primary" onclick={() => fileInput?.click()} disabled={$isLoading}>
+				<button class="btn btn-primary" onclick={() => fileInput?.click()} disabled={$isLoading || $showTrash}>
 					<svg
 						class="w-5 h-5 mr-2"
 						viewBox="0 0 24 24"
@@ -258,20 +306,46 @@
 					Upload
 				</button>
 
-				<button class="btn btn-secondary" onclick={() => (showNewFolderModal = true)}>
+				{#if !$showTrash}
+					<button class="btn btn-secondary" onclick={() => (showNewFolderModal = true)}>
+						<svg
+							class="w-5 h-5 mr-2"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+							></path>
+							<line x1="12" y1="11" x2="12" y2="17"></line>
+							<line x1="9" y1="14" x2="15" y2="14"></line>
+						</svg>
+						New Folder
+					</button>
+				{/if}
+
+				<button
+					class={`btn ${$showTrash ? 'btn-error' : 'btn-secondary'}`}
+					onclick={() => {
+						filesActions.toggleTrash();
+						if (!$showTrash) {
+							filesActions.loadDeletedFiles();
+						}
+					}}
+				>
 					<svg
 						class="w-5 h-5 mr-2"
 						viewBox="0 0 24 24"
 						fill="none"
 						stroke="currentColor"
 						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
 					>
-						<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
-						></path>
-						<line x1="12" y1="11" x2="12" y2="17"></line>
-						<line x1="9" y1="14" x2="15" y2="14"></line>
+						<polyline points="3 6 5 6 21 6"></polyline>
+						<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
 					</svg>
-					New Folder
+					{$showTrash ? 'Exit Trash' : 'View Trash'}
 				</button>
 
 				<div class="flex border border-border rounded-lg overflow-hidden">
@@ -896,6 +970,7 @@
 				</div>
 			</div>
 		</div>
+{/if}
 	</div>
 </div>
 

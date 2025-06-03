@@ -3,11 +3,12 @@
 	import { goto } from '$app/navigation';
 	import { authStore } from '$lib/stores/auth';
 	import { page } from '$app/stores';
+	import { typedAuthStore, getUser, getRole, getIsAuthenticated } from '$lib/utils/storeHelpers';
 
 	// Redirect if already authenticated
 	$effect(() => {
-		if ($authStore.isAuthenticated && $page.url) {
-			const role = $authStore.role;
+		if (getIsAuthenticated($authStore) && $page.url) {
+			const role = getRole($authStore);
 			const redirectTo = role === 'student' ? '/student/dashboard' : '/dashboard';
 			void goto(redirectTo);
 		}

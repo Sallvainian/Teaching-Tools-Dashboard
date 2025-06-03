@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { dev } from '$app/environment';
-
 	interface Props {
 		error?: Error | null;
 		retry?: () => void;
-		children?: any;
+ 	children?: () => any;
 		fallback?: boolean;
 	}
 
@@ -104,5 +103,6 @@
 		</div>
 	</div>
 {:else}
+	<!-- svelte-ignore a11y_missing_attribute -->
 	{@render children?.()}
 {/if}

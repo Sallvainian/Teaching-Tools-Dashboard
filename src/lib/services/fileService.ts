@@ -67,13 +67,6 @@ export class FileService {
 			return data;
 		} catch (error) {
 			console.error('Error creating folder:', error);
-			// Log more details about the error
-			if (error && typeof error === 'object' && 'message' in error) {
-				console.error('Error message:', error.message);
-			}
-			if (error && typeof error === 'object' && 'details' in error) {
-				console.error('Error details:', error.details);
-			}
 			return null;
 		}
 	}
@@ -157,6 +150,7 @@ export class FileService {
 		folderId?: string,
 		onProgress?: (progress: number) => void
 	): Promise<FileMetadata | null> {
+		console.log('fileService.uploadFile called', { file, folderId });
 		try {
 			// Validate file
 			const validation = validateFile(file);
@@ -337,10 +331,11 @@ export class FileService {
 	 */
 	async getUserStats(): Promise<UserFileStats | null> {
 		try {
-			const { data, error } = await supabase.from('user_file_stats').select('*').single();
+			const { data, error } = await supabase.from('user_file_stats').select('*');
 
 			if (error) throw error;
-			return data;
+			// The view may return 0 or 1 row for a user
+			return data && data.length > 0 ? data[0] : null;
 		} catch (error) {
 			console.error('Error fetching user stats:', error);
 			return null;

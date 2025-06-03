@@ -12,24 +12,28 @@ import { fileService } from '$lib/services/fileService';
 interface FileStoreState {
 	folders: FileFolder[];
 	files: FileMetadataWithFolder[];
+	deletedFiles: FileMetadataWithFolder[];
 	currentFolderId: string | null;
 	uploadProgress: FileUploadProgress[];
 	userStats: UserFileStats | null;
 	isLoading: boolean;
 	error: string | null;
 	dataLoaded: boolean;
+	showTrash: boolean;
 }
 
 // Initial state
 const initialState: FileStoreState = {
 	folders: [],
 	files: [],
+	deletedFiles: [],
 	currentFolderId: null,
 	uploadProgress: [],
 	userStats: null,
 	isLoading: false,
 	error: null,
-	dataLoaded: false
+	dataLoaded: false,
+	showTrash: false
 };
 
 // Create the main store
@@ -53,11 +57,13 @@ function setError(error: string | null) {
 // Derived stores for computed values
 export const folders = derived(fileStore, ($store) => $store.folders);
 export const files = derived(fileStore, ($store) => $store.files);
+export const deletedFiles = derived(fileStore, ($store) => $store.deletedFiles);
 export const currentFolderId = derived(fileStore, ($store) => $store.currentFolderId);
 export const uploadProgress = derived(fileStore, ($store) => $store.uploadProgress);
 export const userStats = derived(fileStore, ($store) => $store.userStats);
 export const isLoading = derived(fileStore, ($store) => $store.isLoading);
 export const error = derived(fileStore, ($store) => $store.error);
+export const showTrash = derived(fileStore, ($store) => $store.showTrash);
 
 // Derived store for folder tree
 export const folderTree = derived(fileStore, ($store) => {
@@ -414,6 +420,86 @@ export const filesActions = {
 			console.error('Error getting shared files:', err);
 			setError(err instanceof Error ? err.message : 'Failed to get shared files');
 			return [];
+		}
+	},
+
+	// Toggle trash view
+	toggleTrash() {
+		updateStore((state) => ({
+			...state,
+			showTrash: !state.showTrash
+		}));
+	},
+
+	// Load deleted files
+	async loadDeletedFiles() {
+		try {
+			setLoading(true);
+			setError(null);
+			const deletedFiles = await fileService.getDeletedFiles();
+			updateStore((state) => ({
+				...state,
+				deletedFiles
+			}));
+		} catch (err) {
+			console.error('Error loading deleted files:', err);
+			setError(err instanceof Error ? err.message : 'Failed to load deleted files');
+		} finally {
+			setLoading(false);
+		}
+	},
+
+	// Restore a deleted file
+	async restoreFile(fileId: string) {
+		try {
+			setError(null);
+			const success = await fileService.restoreFile(fileId);
+			
+			if (success) {
+				// Move file from deleted to active
+				const state = get(fileStore);
+				const restoredFile = state.deletedFiles.find(f => f.id === fileId);
+				
+				if (restoredFile) {
+					updateStore((state) => ({
+						...state,
+						deletedFiles: state.deletedFiles.filter(f => f.id !== fileId),
+						files: [restoredFile, ...state.files]
+					}));
+				}
+				
+				return true;
+			}
+			throw new Error('Failed to restore file');
+		} catch (err) {
+			console.error('Error restoring file:', err);
+			setError(err instanceof Error ? err.message : 'Failed to restore file');
+			return false;
+		}
+	},
+
+	// Permanently delete a file
+	async permanentlyDeleteFile(fileId: string) {
+		try {
+			setError(null);
+			const confirmed = confirm('Are you sure you want to permanently delete this file? This action cannot be undone.');
+			
+			if (!confirmed) return false;
+			
+			const success = await fileService.permanentlyDeleteFile(fileId);
+			
+			if (success) {
+				updateStore((state) => ({
+					...state,
+					deletedFiles: state.deletedFiles.filter(f => f.id !== fileId)
+				}));
+				return true;
+			}
+			throw new Error('Failed to permanently delete file');
+		} catch (err) {
+			console.error('Error permanently deleting file:', err);
+			setError(err instanceof Error ? err.message : 'Failed to permanently delete file');
+			return false;
 		}
 	}
 };

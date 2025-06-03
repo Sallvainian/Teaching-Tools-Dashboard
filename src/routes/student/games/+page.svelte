@@ -2,6 +2,7 @@
 	import { authStore } from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import { typedAuthStore, getUser } from '$lib/utils/storeHelpers';
 
 	interface Game {
 		id: string;
@@ -27,7 +28,7 @@
 
 		try {
 			const { supabase } = await import('$lib/supabaseClient');
-			const user = $authStore.user;
+			const user = getUser($authStore);
 
 			if (!user) {
 				error = 'Not authenticated';

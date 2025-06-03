@@ -9,11 +9,20 @@ export interface AppUser extends User {
 }
 
 export interface AuthState {
-  user: AppUser | null;
+  user: User | null;
+  profile: {
+    id: string;
+    email: string;
+    full_name: string;
+    avatar_url?: string | null;
+    role: UserRole | null;
+  } | null;
+  session: any | null;
   role: UserRole | null;
   isAuthenticated: boolean;
-  isTeacher: boolean;
-  isStudent: boolean;
+  isTeacher?: boolean;
+  isStudent?: boolean;
+  isInitialized: boolean;
   loading: boolean;
   error: string | null;
 }

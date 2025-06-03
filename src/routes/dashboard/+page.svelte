@@ -5,6 +5,7 @@
 	import ErrorBoundary from '$lib/components/ErrorBoundary.svelte';
 	import SkeletonLoader from '$lib/components/SkeletonLoader.svelte';
 	import { useKeyboardShortcuts } from '$lib/utils/keyboard';
+	import * as Sentry from '@sentry/sveltekit';
 
 	// Current date
 	const today = new Date();
@@ -59,6 +60,16 @@
 		showHelp = true;
 	}
 
+	function testSentry() {
+		try {
+			// Trigger a test error
+			throw new Error('Sentry test error from Teacher Dashboard');
+		} catch (error) {
+			Sentry.captureException(error);
+			console.log('Test error sent to Sentry');
+		}
+	}
+
 	onMount(async () => {
 		// Simulate data loading
 		try {
@@ -77,22 +88,27 @@
 		<div class="container mx-auto px-4 py-8">
 			<!-- Header -->
 			<div class="mb-8">
-				<div class="flex items-center gap-3">
-					<div class="text-purple">
-						<svg
-							class="w-10 h-10"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-						>
-							<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-						</svg>
+				<div class="flex items-center justify-between">
+					<div class="flex items-center gap-3">
+						<div class="text-purple">
+							<svg
+								class="w-10 h-10"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+							</svg>
+						</div>
+						<div>
+							<h1 class="text-3xl font-bold text-highlight">Dashboard</h1>
+							<p class="text-text-base">Today, {formattedDate}</p>
+						</div>
 					</div>
-					<div>
-						<h1 class="text-3xl font-bold text-highlight">Dashboard</h1>
-						<p class="text-text-base">Today, {formattedDate}</p>
-					</div>
+					<button onclick={testSentry} class="btn btn-sm btn-outline">
+						Test Sentry
+					</button>
 				</div>
 			</div>
 

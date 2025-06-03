@@ -4,6 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import SkeletonLoader from '$lib/components/SkeletonLoader.svelte';
+	import { typedAuthStore, getUser } from '$lib/utils/storeHelpers';
 
 	let studentGames = $state<any[]>([]);
 	let sharedGames = $state<any[]>([]);
@@ -18,7 +19,7 @@
 		isLoading = true;
 		try {
 			const { supabase } = await import('$lib/supabaseClient');
-			const user = $authStore.user;
+			const user = getUser($authStore);
 
 			if (!user) return;
 
@@ -77,7 +78,7 @@
 <div class="container mx-auto px-4 py-8">
 	<div class="mb-8">
 		<h1 class="text-3xl font-bold text-dark-highlight mb-2">Student Dashboard</h1>
-		<p class="text-dark-text">Welcome back, {$authStore.user?.email}!</p>
+		<p class="text-dark-text">Welcome back, {getUser($authStore)?.email}!</p>
 	</div>
 
 	{#if isLoading}

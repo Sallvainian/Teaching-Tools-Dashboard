@@ -2,9 +2,12 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { authStore } from '$lib/stores/auth';
 	import { chatStore } from '$lib/stores/chat';
+	import { confirmationStore } from '$lib/stores/confirmationModal';
+	import { supabase } from '$lib/supabaseClient';
 	import UserSelectModal from '$lib/components/UserSelectModal.svelte';
 	import TypingIndicator from '$lib/components/TypingIndicator.svelte';
 	import type { ChatUIConversation, ChatUIMessage } from '$lib/types/chat';
+	import { typedAuthStore, getUser } from '$lib/utils/storeHelpers';
 
 	// Chat state from stores
 	let conversations = $state<ChatUIConversation[]>([]);
@@ -13,7 +16,7 @@
 	let typingUsers = $state<string[]>([]);
 	let loading = $state(false);
 	let error = $state<string | null>(null);
-	
+
 	// UI state variables (initialize early to prevent reference errors)
 	let newMessage = $state('');
 	let searchQuery = $state('');
@@ -24,20 +27,25 @@
 	let typingTimeout: number | null = null;
 
 	// Subscribe to store changes
-	const unsubscribeConversations = chatStore.conversations.subscribe((convs) => {
-		const user = $authStore.user;
+	const unsubscribeConversations = chatStore.conversations.subscribe(async (convs) => {
+		const user = getUser($authStore);
 		if (user && convs.length > 0) {
-			conversations = convs.map((conv) => ({
-				id: conv.id,
-				name: getConversationName(conv, user.id),
-				unread: conv.unread_count || 0,
-				lastMessage: getLastMessageText(conv, user.id),
-				time: chatStore.formatTime(conv.last_message?.created_at || conv.updated_at),
-				avatar: getConversationAvatar(conv, user.id),
-				online: isConversationOnline(conv, user.id),
-				isGroup: (conv as any).type === 'group',
-				members: (conv as any).type === 'group' ? conv.participants?.length : undefined
-			}));
+			// Process conversations with async name resolution
+			const processedConversations = await Promise.all(
+				convs.map(async (conv) => ({
+					id: conv.id,
+					name: await getConversationName(conv, user.id),
+					unread: conv.unread_count || 0,
+					lastMessage: getLastMessageText(conv, user.id),
+					time: chatStore.formatTime(conv.last_message?.created_at || conv.updated_at),
+					avatar: getConversationAvatar(conv, user.id),
+					online: isConversationOnline(conv, user.id),
+					isGroup: (conv as any).type === 'group',
+					members: (conv as any).type === 'group' ? conv.participants?.length : undefined
+				}))
+			);
+
+			conversations = processedConversations;
 
 			// Set active conversation to first one if none selected
 			if (!activeConversation && conversations.length > 0) {
@@ -52,7 +60,7 @@
 			messages = msgs.map((msg) => ({
 				id: msg.id,
 				sender: msg.sender_id === user.id ? 'me' : 'other',
-				senderName: msg.sender_id === user.id ? 'You' : (msg.sender?.full_name || 'Unknown User'),
+				senderName: msg.sender_id === user.id ? 'You' : (msg.sender?.full_name || msg.sender?.name || 'Chat Partner'),
 				text: msg.content,
 				time: new Date(msg.created_at || '').toLocaleTimeString('en-US', {
 					hour: 'numeric',
@@ -68,14 +76,62 @@
 	const unsubscribeTyping = chatStore.activeTypingUsers.subscribe((users) => (typingUsers = users));
 
 	// Helper functions
-	function getConversationName(conv: any, currentUserId: string): string {
+	async function getConversationName(conv: any, currentUserId: string): Promise<string> {
 		if (conv.is_group) {
 			return conv.name || `Group Chat (${conv.participants?.length || 0})`;
 		}
 
 		// Direct conversation - find other participant
 		const otherParticipant = conv.participants?.find((p: any) => p.user_id !== currentUserId);
-		return otherParticipant?.user?.full_name || 'Unknown User';
+
+		// If we have participant data, use it
+		if (otherParticipant) {
+			return otherParticipant?.user?.full_name || 
+				   otherParticipant?.full_name || 
+				   otherParticipant?.name || 
+				   'Unknown User';
+		}
+
+		// If we don't have participant data, try to find it in conversation_participants
+		if (conv.conversation_participants) {
+			const otherParticipantFromConv = conv.conversation_participants.find((p: any) => p.user_id !== currentUserId);
+			if (otherParticipantFromConv) {
+				return otherParticipantFromConv?.user?.full_name || 
+					   otherParticipantFromConv?.full_name || 
+					   otherParticipantFromConv?.name || 
+					   'Unknown User';
+			}
+		}
+
+		// If participant data is missing, load all messages from this conversation to find the other user
+		try {
+			const { data: messages } = await supabase
+				.from('messages')
+				.select(`
+					sender_id,
+					sender:app_users (id, full_name, email)
+				`)
+				.eq('conversation_id', conv.id)
+				.neq('sender_id', currentUserId)
+				.limit(1);
+
+			if (messages && messages.length > 0 && messages[0].sender) {
+				return messages[0].sender.full_name || messages[0].sender.email || 'Unknown User';
+			}
+		} catch (error) {
+			console.error('Error fetching conversation participant:', error);
+		}
+
+		// Fallback: try to get name from last message (any sender, not just others)
+		if (conv.last_message?.sender && conv.last_message.sender_id !== currentUserId) {
+			const senderName = conv.last_message.sender.full_name || 
+							   conv.last_message.sender.name || 
+							   'Unknown User';
+			return senderName;
+		}
+
+		// Last resort: use conversation name or a more friendly generic name
+		return conv.name || 'Unknown User';
 	}
 
 	function getConversationAvatar(conv: any, currentUserId: string): string {
@@ -85,8 +141,39 @@
 		}
 
 		const otherParticipant = conv.participants?.find((p: any) => p.user_id !== currentUserId);
-		const name = otherParticipant?.user?.full_name || 'Unknown';
-		return chatStore.getInitials(name);
+
+		// If we have participant data, use it
+		if (otherParticipant) {
+			const name = otherParticipant?.user?.full_name || 
+						 otherParticipant?.full_name || 
+						 otherParticipant?.name || 
+						 'Unknown';
+			return chatStore.getInitials(name);
+		}
+
+		// If we don't have participant data, try to find it in conversation_participants
+		if (conv.conversation_participants) {
+			const otherParticipantFromConv = conv.conversation_participants.find((p: any) => p.user_id !== currentUserId);
+			if (otherParticipantFromConv) {
+				const name = otherParticipantFromConv?.user?.full_name || 
+							 otherParticipantFromConv?.full_name || 
+							 otherParticipantFromConv?.name || 
+							 'Unknown';
+				return chatStore.getInitials(name);
+			}
+		}
+
+		// Fallback: try to get name from last message
+		if (conv.last_message?.sender && conv.last_message.sender_id !== currentUserId) {
+			const name = conv.last_message.sender.full_name || 
+						 conv.last_message.sender.name || 
+						 'Unknown';
+			return chatStore.getInitials(name);
+		}
+
+
+		// Last resort
+		return chatStore.getInitials('Direct Chat');
 	}
 
 	function getLastMessageText(conv: any, currentUserId: string): string {
@@ -95,8 +182,35 @@
 		let prefix = '';
 		if (conv.last_message.sender_id === currentUserId) {
 			prefix = 'You: ';
-		} else if (conv.last_message.sender?.full_name) {
-			prefix = `${conv.last_message.sender.full_name}: `;
+		} else {
+			// Try to get the sender name from the last message
+			const senderName = conv.last_message.sender?.full_name || 
+							   conv.last_message.sender?.name;
+
+			if (senderName) {
+				prefix = `${senderName}: `;
+			} else {
+				// If sender name is not available in the last message, try to get it from participants
+				const otherParticipant = conv.participants?.find((p: any) => p.user_id !== currentUserId);
+				if (otherParticipant) {
+					const participantName = otherParticipant?.user?.full_name || 
+										   otherParticipant?.full_name || 
+										   otherParticipant?.name;
+					prefix = participantName ? `${participantName}: ` : 'Chat Partner: ';
+				} else if (conv.conversation_participants) {
+					const otherParticipantFromConv = conv.conversation_participants.find((p: any) => p.user_id !== currentUserId);
+					if (otherParticipantFromConv) {
+						const participantName = otherParticipantFromConv?.user?.full_name || 
+											   otherParticipantFromConv?.full_name || 
+											   otherParticipantFromConv?.name;
+						prefix = participantName ? `${participantName}: ` : 'Chat Partner: ';
+					} else {
+						prefix = 'Chat Partner: ';
+					}
+				} else {
+					prefix = 'Chat Partner: ';
+				}
+			}
 		}
 		return prefix + conv.last_message.content;
 	}
@@ -126,7 +240,7 @@
 		unsubscribeLoading();
 		unsubscribeError();
 		unsubscribeTyping();
-		
+
 		// Clean up typing timeout
 		if (typingTimeout) {
 			clearTimeout(typingTimeout);
@@ -203,12 +317,18 @@
 	// Handle typing indicator for real users
 	function handleTyping() {
 		if (!activeConversation) return;
-		
+
 		const user = $authStore.user;
 		if (!user) return;
 
+		// Get the user's display name with better fallbacks
+		const userName = user.user_metadata?.full_name || 
+						 user.user_metadata?.name || 
+						 (user.email ? user.email.split('@')[0] : null) || 
+						 'You';
+
 		// Show typing indicator
-		chatStore.setUserTyping(activeConversation.id, user.full_name);
+		chatStore.setUserTyping(activeConversation.id, userName);
 
 		// Clear existing timeout
 		if (typingTimeout) {
@@ -223,12 +343,18 @@
 
 	function stopTyping() {
 		if (!activeConversation) return;
-		
+
 		const user = $authStore.user;
 		if (!user) return;
 
-		chatStore.setUserNotTyping(activeConversation.id, user.full_name);
-		
+		// Get the user's display name with better fallbacks (same as in handleTyping)
+		const userName = user.user_metadata?.full_name || 
+						 user.user_metadata?.name || 
+						 (user.email ? user.email.split('@')[0] : null) || 
+						 'You';
+
+		chatStore.setUserNotTyping(activeConversation.id, userName);
+
 		if (typingTimeout) {
 			clearTimeout(typingTimeout);
 			typingTimeout = null;
@@ -241,6 +367,44 @@
 		if (newConversation) {
 			selectConversation(newConversation);
 		}
+	}
+
+	async function deleteConversation(conversationId: string, event: Event) {
+		event.stopPropagation(); // Prevent selecting the conversation
+
+		// Use custom confirmation modal instead of browser's default
+		const confirmed = await confirmationStore.confirm({
+			title: 'Delete Conversation',
+			message: 'Are you sure you want to delete this conversation? This action cannot be undone.',
+			confirmText: 'Delete',
+			cancelText: 'Cancel',
+			confirmButtonClass: 'bg-red-500 hover:bg-red-600',
+			onConfirm: async () => {
+				try {
+					// Delete the conversation from the database
+					const { error } = await supabase
+						.from('conversations')
+						.delete()
+						.eq('id', conversationId);
+
+					if (error) throw error;
+
+					// Remove from local state
+					conversations = conversations.filter(c => c.id !== conversationId);
+
+					// If this was the active conversation, clear it
+					if (activeConversation?.id === conversationId) {
+						activeConversation = null;
+						chatStore.setActiveConversation(null);
+					}
+
+					console.log('Conversation deleted successfully');
+				} catch (error) {
+					console.error('Error deleting conversation:', error);
+					alert('Failed to delete conversation. Please try again.');
+				}
+			}
+		});
 	}
 </script>
 
@@ -299,46 +463,71 @@
 							</div>
 						{:else}
 							{#each filteredConversations as conversation (conversation.id)}
-								<button
-									class={`w-full text-left p-4 border-b border-border/50 hover:bg-surface/50 transition-colors flex items-center gap-3 ${activeConversation?.id === conversation.id ? 'bg-purple-bg' : ''}`}
-									onclick={() => selectConversation(conversation)}
-									aria-label={`Chat with ${conversation.name}`}
+								<div
+									class={`w-full border-b border-border/50 hover:bg-surface/50 transition-colors flex items-center group ${activeConversation?.id === conversation.id ? 'bg-purple-bg' : ''}`}
 								>
-									<div class="relative">
-										<div
-											class="w-10 h-10 rounded-full bg-purple-bg text-purple flex items-center justify-center font-medium"
-										>
-											{conversation.avatar}
-										</div>
-										{#if conversation.online}
+									<button
+										class="flex-1 text-left p-4 flex items-center gap-3"
+										onclick={() => selectConversation(conversation)}
+										aria-label={`Chat with ${conversation.name}`}
+									>
+										<div class="relative">
 											<div
-												class="absolute bottom-0 right-0 w-3 h-3 bg-purple rounded-full border-2 border-card"
-											></div>
-										{/if}
-									</div>
-
-									<div class="flex-1 min-w-0">
-										<div class="flex justify-between items-center mb-1">
-											<div class="font-medium text-highlight truncate">
-												{conversation.name}
-												{#if conversation.isGroup}
-													<span class="text-xs text-text-base ml-1">({conversation.members})</span>
-												{/if}
+												class="w-10 h-10 rounded-full bg-purple-bg text-purple flex items-center justify-center font-medium"
+											>
+												{conversation.avatar}
 											</div>
-											<div class="text-xs text-text-base">{conversation.time}</div>
-										</div>
-										<div class="flex justify-between items-center">
-											<div class="text-sm text-text-base truncate">{conversation.lastMessage}</div>
-											{#if conversation.unread > 0}
+											{#if conversation.online}
 												<div
-													class="bg-purple text-highlight text-xs rounded-full w-5 h-5 flex items-center justify-center"
-												>
-													{conversation.unread}
-												</div>
+													class="absolute bottom-0 right-0 w-3 h-3 bg-purple rounded-full border-2 border-card"
+												></div>
 											{/if}
 										</div>
-									</div>
-								</button>
+
+										<div class="flex-1 min-w-0 overflow-hidden">
+											<div class="flex justify-between items-center mb-1">
+												<div class="font-medium text-highlight truncate">
+													{conversation.name}
+													{#if conversation.isGroup}
+														<span class="text-xs text-text-base ml-1">({conversation.members})</span>
+													{/if}
+												</div>
+												<div class="text-xs text-text-base">{conversation.time}</div>
+											</div>
+											<div class="flex justify-between items-center">
+												<div class="text-sm text-text-base truncate max-w-[180px]">{conversation.lastMessage}</div>
+												{#if conversation.unread > 0}
+													<div
+														class="bg-purple text-highlight text-xs rounded-full w-5 h-5 flex items-center justify-center"
+													>
+														{conversation.unread}
+													</div>
+												{/if}
+											</div>
+										</div>
+									</button>
+
+									<!-- Delete button -->
+									<button
+										class="p-2 mr-2 text-text-base hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+										onclick={(e) => deleteConversation(conversation.id, e)}
+										aria-label="Delete conversation"
+										title="Delete conversation"
+									>
+										<svg
+											class="w-4 h-4"
+											viewBox="0 0 24 24"
+											fill="none"
+											stroke="currentColor"
+											stroke-width="2"
+										>
+											<polyline points="3 6 5 6 21 6"></polyline>
+											<path d="m19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+											<line x1="10" y1="11" x2="10" y2="17"></line>
+											<line x1="14" y1="11" x2="14" y2="17"></line>
+										</svg>
+									</button>
+								</div>
 							{/each}
 
 							{#if filteredConversations.length === 0}

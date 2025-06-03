@@ -59,7 +59,7 @@
 		{/if}
 
 		<div class="space-y-2">
-			{#each navItems as item}
+   {#each navItems as item (item.href)}
 				<a
 					href={item.href}
 					class="flex items-center py-2 text-sm font-medium rounded-md transition-colors"
@@ -70,14 +70,16 @@
 							background-color: {isActivePath(item.href) ? 'var(--purple-bg)' : 'transparent'};"
 					onmouseenter={(e) => {
 						if (!isActivePath(item.href)) {
-							e.target.style.backgroundColor = 'var(--purple-bg)';
-							e.target.style.color = 'var(--highlight)';
+							const target = e.target as HTMLElement;
+							target.style.backgroundColor = 'var(--purple-bg)';
+							target.style.color = 'var(--highlight)';
 						}
 					}}
 					onmouseleave={(e) => {
 						if (!isActivePath(item.href)) {
-							e.target.style.backgroundColor = 'transparent';
-							e.target.style.color = 'var(--text-hover)';
+							const target = e.target as HTMLElement;
+							target.style.backgroundColor = 'transparent';
+							target.style.color = 'var(--text-hover)';
 						}
 					}}
 				>

@@ -50,10 +50,8 @@
 	}
 
 	// PDF.js variables
-	// svelte-ignore non_reactive_update
-	let pdfjsLib: PDFJSLib | null = null;
-	// svelte-ignore non_reactive_update
-	let pdfDoc: PDFDocumentProxy | null = null;
+	let pdfjsLib: PDFJSLib | null = $state(null);
+	let pdfDoc: PDFDocumentProxy | null = $state(null);
 
 	onMount(async () => {
 		isMounted = true;

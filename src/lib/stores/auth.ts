@@ -1,8 +1,10 @@
 // src/lib/stores/auth.ts
-import { writable, derived } from 'svelte/store';
 import type { AuthSession, User } from '@supabase/supabase-js';
 import type { UserRole } from '$lib/types/database';
+import type { AppUser, AuthState } from '$lib/types/auth';
 import { clearSupabaseAuthStorage } from '$lib/utils/authStorage';
+import { createStore, createDerivedStore, type EnhancedStore } from './storeFactory';
+import { storeRegistry } from './registry';
 
 interface UserProfile {
 	id: string;
@@ -12,15 +14,80 @@ interface UserProfile {
 	role: UserRole | null;
 }
 
+interface AuthStoreState {
+	user: User | null;
+	profile: UserProfile | null;
+	session: AuthSession | null;
+	loading: boolean;
+	error: string | null;
+	role: UserRole | null;
+	isInitialized: boolean;
+}
+
 function createAuthStore() {
-	const user = writable<User | null>(null);
-	const profile = writable<UserProfile | null>(null);
-	const session = writable<AuthSession | null>(null);
-	const loading = writable(true);
-	const error = writable<string | null>(null);
-	const role = writable<UserRole | null>(null);
-	const isAuthenticated = derived(user, ($user) => !!$user);
-	const isInitialized = writable(false);
+	// Create the main auth store with all state
+	const authStore = createStore<AuthStoreState>({
+		name: 'auth',
+		initialValue: {
+			user: null,
+			profile: null,
+			session: null,
+			loading: true,
+			error: null,
+			role: null,
+			isInitialized: false
+		},
+		localStorageKey: 'teacher-dashboard-auth-state'
+	});
+
+	// Create individual slices for better performance
+	const user = createDerivedStore({
+		name: 'auth.user',
+		stores: [authStore],
+		deriveFn: ([$auth]) => $auth.user
+	});
+
+	const profile = createDerivedStore({
+		name: 'auth.profile',
+		stores: [authStore],
+		deriveFn: ([$auth]) => $auth.profile
+	});
+
+	const session = createDerivedStore({
+		name: 'auth.session',
+		stores: [authStore],
+		deriveFn: ([$auth]) => $auth.session
+	});
+
+	const loading = createDerivedStore({
+		name: 'auth.loading',
+		stores: [authStore],
+		deriveFn: ([$auth]) => $auth.loading
+	});
+
+	const error = createDerivedStore({
+		name: 'auth.error',
+		stores: [authStore],
+		deriveFn: ([$auth]) => $auth.error
+	});
+
+	const role = createDerivedStore({
+		name: 'auth.role',
+		stores: [authStore],
+		deriveFn: ([$auth]) => $auth.role
+	});
+
+	const isAuthenticated = createDerivedStore({
+		name: 'auth.isAuthenticated',
+		stores: [user],
+		deriveFn: ([$user]) => !!$user
+	});
+
+	const isInitialized = createDerivedStore({
+		name: 'auth.isInitialized',
+		stores: [authStore],
+		deriveFn: ([$auth]) => $auth.isInitialized
+	});
 
 	// Track if we've already set up auth listener
 	let authListenerSetup = false;
@@ -36,8 +103,11 @@ function createAuthStore() {
 
 			if (error) {
 				console.error('Database error fetching user profile:', error);
-				role.set(null);
-				profile.set(null);
+				authStore.update(state => ({
+					...state,
+					role: null,
+					profile: null
+				}));
 				return;
 			}
 
@@ -49,14 +119,20 @@ function createAuthStore() {
 					avatar_url: data.avatar_url,
 					role: data.role as UserRole
 				};
-				profile.set(userProfile);
-				role.set(data.role as UserRole);
+				authStore.update(state => ({
+					...state,
+					profile: userProfile,
+					role: data.role as UserRole
+				}));
 			} else {
 				// Check localStorage fallback first
 				const fallbackRole = localStorage.getItem(`user-role-${userId}`);
 				if (fallbackRole) {
 					console.warn(`Using fallback role from localStorage: ${fallbackRole}`);
-					role.set(fallbackRole as UserRole);
+					authStore.update(state => ({
+						...state,
+						role: fallbackRole as UserRole
+					}));
 				} else {
 					// No record found - user needs to be created in app_users table
 					console.warn(`No app_users record found for user ${userId}. Creating default record...`);
@@ -65,8 +141,11 @@ function createAuthStore() {
 			}
 		} catch (err) {
 			console.error('Error fetching user profile:', err);
-			role.set(null);
-			profile.set(null);
+			authStore.update(state => ({
+				...state,
+				role: null,
+				profile: null
+			}));
 		}
 	}
 
@@ -109,10 +188,13 @@ function createAuthStore() {
 					// Store role in localStorage as fallback until RLS is fixed
 					localStorage.setItem(`user-role-${userId}`, 'teacher');
 				}
-				role.set('teacher'); // Fallback to teacher role
+				// Fallback to teacher role
+				authStore.update(state => ({
+					...state,
+					role: 'teacher'
+				}));
 			} else {
 				console.log('Created app_users record with role:', data.role);
-				role.set(data.role);
 				// Also set the profile data
 				const userProfile: UserProfile = {
 					id: userId,
@@ -121,11 +203,19 @@ function createAuthStore() {
 					avatar_url: user.user_metadata?.avatar_url || null,
 					role: data.role as UserRole
 				};
-				profile.set(userProfile);
+				authStore.update(state => ({
+					...state,
+					role: data.role,
+					profile: userProfile
+				}));
 			}
 		} catch (err) {
 			console.error('Error creating app_users record:', err);
-			role.set('teacher'); // Fallback to teacher role
+			// Fallback to teacher role
+			authStore.update(state => ({
+				...state,
+				role: 'teacher'
+			}));
 		}
 	}
 
@@ -134,8 +224,12 @@ function createAuthStore() {
 			return;
 		}
 
-		loading.set(true);
-		error.set(null);
+		authStore.update(state => ({
+			...state,
+			loading: true,
+			error: null
+		}));
+
 		try {
 			const { supabase } = await import('$lib/supabaseClient');
 
@@ -150,8 +244,12 @@ function createAuthStore() {
 					const parsed = JSON.parse(storedSession);
 					if (parsed?.currentSession?.access_token) {
 						// Optimistically set the session while we verify it
-						session.set(parsed.currentSession);
-						user.set(parsed.currentSession.user);
+						authStore.update(state => ({
+							...state,
+							session: parsed.currentSession,
+							user: parsed.currentSession.user
+						}));
+
 						// Don't wait for role fetch in the critical path - make it fully async
 						setTimeout(() => {
 							fetchUserRole(parsed.currentSession.user.id).catch(console.error);
@@ -167,82 +265,127 @@ function createAuthStore() {
 			if (sessionError) throw sessionError;
 
 			if (data?.session) {
-				session.set(data.session);
-				user.set(data.session.user);
+				authStore.update(state => ({
+					...state,
+					session: data.session,
+					user: data.session.user
+				}));
+
 				// Make role fetching non-blocking for faster initial load
 				setTimeout(() => {
 					fetchUserRole(data.session.user.id).catch(console.error);
 				}, 0);
 			} else if (!storedSession) {
 				// Only clear if we didn't have a stored session
-				session.set(null);
-				user.set(null);
-				role.set(null);
+				authStore.update(state => ({
+					...state,
+					session: null,
+					user: null,
+					role: null
+				}));
 			}
 
 			// Only set up auth listener once
 			if (!authListenerSetup) {
 				const { data: _authListener } = supabase.auth.onAuthStateChange(
 					async (event, newSession) => {
-						session.set(newSession);
-						user.set(newSession?.user ?? null);
+						authStore.update(state => ({
+							...state,
+							session: newSession,
+							user: newSession?.user ?? null
+						}));
+
 						if (newSession?.user) {
 							await fetchUserRole(newSession.user.id);
 						} else {
-							role.set(null);
+							authStore.update(state => ({
+								...state,
+								role: null
+							}));
 						}
 					}
 				);
 				authListenerSetup = true;
 			}
 		} catch (err) {
-			error.set(err instanceof Error ? err.message : 'Auth check failed');
+			authStore.update(state => ({
+				...state,
+				error: err instanceof Error ? err.message : 'Auth check failed'
+			}));
 		} finally {
-			loading.set(false);
-			// Always set initialized to true after the first attempt
-			isInitialized.set(true);
+			authStore.update(state => ({
+				...state,
+				loading: false,
+				isInitialized: true
+			}));
 		}
 	}
 
 	async function signIn(email: string, password: string) {
-		loading.set(true);
-		error.set(null);
+		authStore.update(state => ({
+			...state,
+			loading: true,
+			error: null
+		}));
+
 		try {
 			const { supabase } = await import('$lib/supabaseClient');
 			const { data, error: signInError } = await supabase.auth.signInWithPassword({
 				email,
 				password
 			});
+
 			if (signInError) {
-				error.set(
-					signInError.message.includes('Invalid login')
+				authStore.update(state => ({
+					...state,
+					error: signInError.message.includes('Invalid login')
 						? 'Invalid email or password'
 						: signInError.message
-				);
+				}));
 				return false;
 			}
+
 			if (data?.session) {
-				session.set(data.session);
-				user.set(data.session.user);
+				authStore.update(state => ({
+					...state,
+					session: data.session,
+					user: data.session.user
+				}));
+
 				// Fetch user role immediately after sign in
 				await fetchUserRole(data.session.user.id);
+
 				// Give auth state time to propagate
 				await new Promise((resolve) => setTimeout(resolve, 100));
 				return true;
 			}
-			error.set('Sign in failed');
+
+			authStore.update(state => ({
+				...state,
+				error: 'Sign in failed'
+			}));
 			return false;
 		} catch (err) {
-			error.set(err instanceof Error ? err.message : 'Sign in failed');
+			authStore.update(state => ({
+				...state,
+				error: err instanceof Error ? err.message : 'Sign in failed'
+			}));
 			return false;
 		} finally {
-			loading.set(false);
+			authStore.update(state => ({
+				...state,
+				loading: false
+			}));
 		}
 	}
 
 	async function signUp(email: string, password: string, userData = {}) {
-		loading.set(true);
-		error.set(null);
+		authStore.update(state => ({
+			...state,
+			loading: true,
+			error: null
+		}));
+
 		try {
 			const { supabase } = await import('$lib/supabaseClient');
 			const { data, error: signUpError } = await supabase.auth.signUp({
@@ -250,18 +393,30 @@ function createAuthStore() {
 				password,
 				options: { data: userData }
 			});
+
 			if (signUpError) throw signUpError;
+
 			if (data?.session) {
-				session.set(data.session);
-				user.set(data.session.user);
+				authStore.update(state => ({
+					...state,
+					session: data.session,
+					user: data.session?.user || null
+				}));
 				return true;
 			}
+
 			return { needsEmailConfirmation: true };
 		} catch (err) {
-			error.set(err instanceof Error ? err.message : 'Sign up failed');
+			authStore.update(state => ({
+				...state,
+				error: err instanceof Error ? err.message : 'Sign up failed'
+			}));
 			return false;
 		} finally {
-			loading.set(false);
+			authStore.update(state => ({
+				...state,
+				loading: false
+			}));
 		}
 	}
 
@@ -269,10 +424,13 @@ function createAuthStore() {
 		console.log('Auth store signOut called');
 		try {
 			// First clear local state immediately
-			session.set(null);
-			user.set(null);
-			role.set(null);
-			loading.set(false);
+			authStore.update(state => ({
+				...state,
+				session: null,
+				user: null,
+				role: null,
+				loading: false
+			}));
 
 			// Clear any stored authentication keys
 			clearSupabaseAuthStorage();
@@ -298,12 +456,18 @@ function createAuthStore() {
 			return true;
 		} catch (err) {
 			console.error('Error during sign out:', err);
-			error.set(err instanceof Error ? err.message : 'Sign out failed');
-			// Even on error, clear local state and redirect
-			session.set(null);
-			user.set(null);
-			role.set(null);
-			loading.set(false);
+
+			// Update error state but still clear auth state
+			authStore.update(state => ({
+				...state,
+				error: err instanceof Error ? err.message : 'Sign out failed',
+				session: null,
+				user: null,
+				role: null,
+				loading: false
+			}));
+
+			// Even on error, redirect
 			if (typeof window !== 'undefined') {
 				const { goto } = await import('$lib/utils/navigation');
 				await goto('/auth/login', { replaceState: true });
@@ -313,35 +477,64 @@ function createAuthStore() {
 	}
 
 	async function resetPassword(email: string) {
-		loading.set(true);
-		error.set(null);
+		authStore.update(state => ({
+			...state,
+			loading: true,
+			error: null
+		}));
+
 		try {
 			const { supabase } = await import('$lib/supabaseClient');
 			const { error: resetError } = await supabase.auth.resetPasswordForEmail(email);
+
 			if (resetError) throw resetError;
 			return true;
 		} catch (err) {
-			error.set(err instanceof Error ? err.message : 'Password reset failed');
+			authStore.update(state => ({
+				...state,
+				error: err instanceof Error ? err.message : 'Password reset failed'
+			}));
 			return false;
 		} finally {
-			loading.set(false);
+			authStore.update(state => ({
+				...state,
+				loading: false
+			}));
 		}
 	}
 
 	async function updateUserProfile(userData: Record<string, unknown>) {
-		loading.set(true);
-		error.set(null);
+		authStore.update(state => ({
+			...state,
+			loading: true,
+			error: null
+		}));
+
 		try {
 			const { supabase } = await import('$lib/supabaseClient');
 			const { data, error: updateError } = await supabase.auth.updateUser({ data: userData });
+
 			if (updateError) throw updateError;
-			if (data?.user) user.set(data.user);
+
+			if (data?.user) {
+				authStore.update(state => ({
+					...state,
+					user: data.user
+				}));
+			}
+
 			return true;
 		} catch (err) {
-			error.set(err instanceof Error ? err.message : 'Profile update failed');
+			authStore.update(state => ({
+				...state,
+				error: err instanceof Error ? err.message : 'Profile update failed'
+			}));
 			return false;
 		} finally {
-			loading.set(false);
+			authStore.update(state => ({
+				...state,
+				loading: false
+			}));
 		}
 	}
 
@@ -351,8 +544,12 @@ function createAuthStore() {
 		fullName: string;
 		joinCode?: string;
 	}) {
-		loading.set(true);
-		error.set(null);
+		authStore.update(state => ({
+			...state,
+			loading: true,
+			error: null
+		}));
+
 		try {
 			const { supabase } = await import('$lib/supabaseClient');
 
@@ -389,10 +586,16 @@ function createAuthStore() {
 
 			return { needsEmailConfirmation: true };
 		} catch (err) {
-			error.set(err instanceof Error ? err.message : 'Sign up failed');
+			authStore.update(state => ({
+				...state,
+				error: err instanceof Error ? err.message : 'Sign up failed'
+			}));
 			return false;
 		} finally {
-			loading.set(false);
+			authStore.update(state => ({
+				...state,
+				loading: false
+			}));
 		}
 	}
 
@@ -402,8 +605,12 @@ function createAuthStore() {
 		fullName: string;
 		schoolName?: string;
 	}) {
-		loading.set(true);
-		error.set(null);
+		authStore.update(state => ({
+			...state,
+			loading: true,
+			error: null
+		}));
+
 		try {
 			const { supabase } = await import('$lib/supabaseClient');
 
@@ -432,30 +639,51 @@ function createAuthStore() {
 
 			return { needsEmailConfirmation: true };
 		} catch (err) {
-			error.set(err instanceof Error ? err.message : 'Sign up failed');
+			authStore.update(state => ({
+				...state,
+				error: err instanceof Error ? err.message : 'Sign up failed'
+			}));
 			return false;
 		} finally {
-			loading.set(false);
+			authStore.update(state => ({
+				...state,
+				loading: false
+			}));
 		}
 	}
 
 	// Don't auto-initialize - let ensureAuthInitialized handle it
 	// void initialize();
 
-	return {
-		subscribe: derived(
-			[user, session, loading, error, isAuthenticated, role, isInitialized, profile],
-			([$user, $session, $loading, $error, $isAuthenticated, $role, $isInitialized, $profile]) => ({
+ // Create a combined store with all the state and methods
+ const combinedStore: {
+ 	subscribe: (callback: (value: AuthState) => void) => () => void;
+ 	signIn: (email: string, password: string) => Promise<boolean>;
+ 	signUp: (email: string, password: string, userData?: Record<string, any>) => Promise<boolean | { needsEmailConfirmation: boolean }>;
+ 	signUpStudent: (data: { email: string; password: string; fullName: string; joinCode?: string }) => Promise<boolean | { needsEmailConfirmation: boolean }>;
+ 	signUpTeacher: (data: { email: string; password: string; fullName: string; schoolName?: string }) => Promise<boolean | { needsEmailConfirmation: boolean }>;
+ 	signOut: () => Promise<boolean>;
+ 	resetPassword: (email: string) => Promise<boolean>;
+ 	updateUserProfile: (userData: Record<string, unknown>) => Promise<boolean>;
+ 	initialize: () => Promise<void>;
+ } = {
+ 	subscribe: createDerivedStore<any, AuthState>({
+			name: 'auth.combined',
+			stores: [
+				user, profile, session, loading, error, 
+				isAuthenticated, role, isInitialized
+			] as any[],
+			deriveFn: ([$user, $profile, $session, $loading, $error, $isAuthenticated, $role, $isInitialized]: any[]) => ({
 				user: $user,
+				profile: $profile,
 				session: $session,
 				loading: $loading,
 				error: $error,
 				isAuthenticated: $isAuthenticated,
 				role: $role,
-				isInitialized: $isInitialized,
-				profile: $profile
+				isInitialized: $isInitialized
 			})
-		).subscribe,
+		}).subscribe,
 		signIn,
 		signUp,
 		signUpStudent,
@@ -465,14 +693,20 @@ function createAuthStore() {
 		updateUserProfile,
 		initialize
 	};
+
+	return combinedStore;
 }
 
+// Create and export the auth store and its derived stores
 export const authStore = createAuthStore();
-export const user = derived(authStore, ($store) => $store.user);
-export const profile = derived(authStore, ($store) => $store.profile);
-export const session = derived(authStore, ($store) => $store.session);
-export const loading = derived(authStore, ($store) => $store.loading);
-export const error = derived(authStore, ($store) => $store.error);
-export const isAuthenticated = derived(authStore, ($store) => $store.isAuthenticated);
-export const role = derived(authStore, ($store) => $store.role);
-export const isInitialized = derived(authStore, ($store) => $store.isInitialized);
+
+// These exports are maintained for backward compatibility
+// but they now use the centralized store registry
+export const user = storeRegistry.get('auth.user')!;
+export const profile = storeRegistry.get('auth.profile')!;
+export const session = storeRegistry.get('auth.session')!;
+export const loading = storeRegistry.get('auth.loading')!;
+export const error = storeRegistry.get('auth.error')!;
+export const isAuthenticated = storeRegistry.get('auth.isAuthenticated')!;
+export const role = storeRegistry.get('auth.role')!;
+export const isInitialized = storeRegistry.get('auth.isInitialized')!;

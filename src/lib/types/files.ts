@@ -47,6 +47,7 @@ export interface FileMetadataWithFolder extends FileMetadata {
 
 export interface FileShareWithDetails extends FileShare {
 	file?: FileMetadata;
+	permission: 'view' | 'edit' | 'delete';
 	shared_with_user?: {
 		id: string;
 		email: string;

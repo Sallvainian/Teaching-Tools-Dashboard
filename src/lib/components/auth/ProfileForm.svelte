@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { authStore, user } from '$lib/stores/auth';
+ import { authStore, user } from '$lib/stores/auth';
+ 	import type { User } from '@supabase/supabase-js';
 
-	let fullName = $state($user?.user_metadata?.full_name || '');
+ let fullName = $state(($user as User | null)?.user_metadata?.full_name || '');
 	let loading = $state(false);
 	let error = $state('');
 	let success = $state(false);
@@ -58,7 +59,7 @@
 		<div class="mb-4">
 			<label class="block text-sm font-medium mb-2" for="email"> Email </label>
 			<input
-				value={$user?.email || ''}
+				value={($user as User | null)?.email || ''}
 				class="input input-bordered w-full"
 				id="email"
 				type="email"
