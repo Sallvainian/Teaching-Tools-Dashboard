@@ -23,7 +23,7 @@
 		applyGameTemplate
 	} = jeopardyStore;
 
-	let gameId = $page.params.gameId;
+	let gameId = $derived($page.params?.gameId);
 	let isLoading = $state(true);
 	let activeTab = $state('categories');
 	let showTemplateModal = $state(false);
@@ -62,6 +62,10 @@
 
 	$effect(() => {
 		const loadData = async () => {
+			if (!gameId) {
+				goto('/jeopardy');
+				return;
+			}
 			console.log('🎮 Loading jeopardy data for game:', gameId);
 			await jeopardyStore.ensureDataLoaded();
 			setActiveGame(gameId);

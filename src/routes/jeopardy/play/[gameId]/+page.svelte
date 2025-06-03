@@ -21,7 +21,7 @@
 		resetGameBoard
 	} = jeopardyStore;
 
-	let gameId = $page.params.gameId;
+	let gameId = $derived($page.params?.gameId);
 	let isLoading = $state(true);
 	let showAnswer = $state(false);
 	let selectedTeamId = '';
@@ -29,7 +29,12 @@
 
 	onMount(async () => {
 		await jeopardyStore.ensureDataLoaded();
-		setActiveGame(gameId);
+		if (gameId) {
+			setActiveGame(gameId);
+		} else {
+			goto('/jeopardy');
+			return;
+		}
 		isLoading = false;
 	});
 
