@@ -38,7 +38,7 @@
 	let fileToShare = $state<FileMetadata | null>(null);
 
 	// File input for uploads
-	let fileInput: HTMLInputElement;
+	let fileInput = $state<HTMLInputElement>();
 
 	// Get current folder name and breadcrumb path
 	const currentFolderData = $derived(() => {

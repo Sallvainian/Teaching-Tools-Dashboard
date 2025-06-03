@@ -504,5 +504,19 @@ export const filesActions = {
 	}
 };
 
-// Export the main store
+// Create enhanced store with methods
+function createEnhancedFileStore() {
+	const baseStore = fileStore;
+	return {
+		subscribe: baseStore.subscribe,
+		...filesActions,
+		// Add ensureDataLoaded method to match other stores
+		async ensureDataLoaded() {
+			return filesActions.ensureDataLoaded();
+		}
+	};
+}
+
+// Export the main store with both names for compatibility  
 export { fileStore };
+export const filesStore = createEnhancedFileStore();

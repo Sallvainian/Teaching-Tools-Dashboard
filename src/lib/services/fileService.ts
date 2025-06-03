@@ -548,6 +548,89 @@ export class FileService {
 			return [];
 		}
 	}
+
+	/**
+	 * Get deleted files (soft delete)
+	 */
+	async getDeletedFiles(): Promise<FileMetadataWithFolder[]> {
+		try {
+			const { data, error } = await supabase
+				.from('file_metadata')
+				.select(`
+					*,
+					folder:file_folders(*)
+				`)
+				.eq('is_deleted', true)
+				.order('deleted_at', { ascending: false });
+
+			if (error) throw error;
+			return data || [];
+		} catch (error) {
+			console.error('Error getting deleted files:', error);
+			return [];
+		}
+	}
+
+	/**
+	 * Restore a deleted file
+	 */
+	async restoreFile(fileId: string): Promise<boolean> {
+		try {
+			const { error } = await supabase
+				.from('file_metadata')
+				.update({
+					is_deleted: false,
+					deleted_at: null,
+					updated_at: new Date().toISOString()
+				})
+				.eq('id', fileId);
+
+			if (error) throw error;
+			return true;
+		} catch (error) {
+			console.error('Error restoring file:', error);
+			return false;
+		}
+	}
+
+	/**
+	 * Permanently delete a file
+	 */
+	async permanentlyDeleteFile(fileId: string): Promise<boolean> {
+		try {
+			// Get file metadata first
+			const { data: fileData, error: fetchError } = await supabase
+				.from('file_metadata')
+				.select('storage_path')
+				.eq('id', fileId)
+				.single();
+
+			if (fetchError) throw fetchError;
+
+			// Delete from storage
+			if (fileData?.storage_path) {
+				const { error: storageError } = await supabase.storage
+					.from(FileService.STORAGE_BUCKET)
+					.remove([fileData.storage_path]);
+
+				if (storageError) {
+					console.warn('Error deleting from storage:', storageError);
+				}
+			}
+
+			// Delete metadata record
+			const { error } = await supabase
+				.from('file_metadata')
+				.delete()
+				.eq('id', fileId);
+
+			if (error) throw error;
+			return true;
+		} catch (error) {
+			console.error('Error permanently deleting file:', error);
+			return false;
+		}
+}
 }
 
 // Export singleton instance

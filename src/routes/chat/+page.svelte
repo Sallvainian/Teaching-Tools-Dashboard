@@ -60,7 +60,7 @@
 			messages = msgs.map((msg) => ({
 				id: msg.id,
 				sender: msg.sender_id === user.id ? 'me' : 'other',
-				senderName: msg.sender_id === user.id ? 'You' : (msg.sender?.full_name || msg.sender?.name || 'Chat Partner'),
+				senderName: msg.sender_id === user.id ? 'You' : (msg.sender?.full_name || 'Chat Partner'),
 				text: msg.content,
 				time: new Date(msg.created_at || '').toLocaleTimeString('en-US', {
 					hour: 'numeric',
@@ -115,8 +115,9 @@
 				.neq('sender_id', currentUserId)
 				.limit(1);
 
-			if (messages && messages.length > 0 && messages[0].sender) {
-				return messages[0].sender.full_name || messages[0].sender.email || 'Unknown User';
+			if (messages && messages.length > 0) {
+				const sender = messages[0].sender as any;
+				return sender?.full_name || sender?.email || 'Unknown User';
 			}
 		} catch (error) {
 			console.error('Error fetching conversation participant:', error);

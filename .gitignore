@@ -12,6 +12,9 @@ node_modules_backup/
 # OS
 .DS_Store
 Thumbs.db
+*~
+.directory
+.Trash-*
 
 # Env
 .env
@@ -39,3 +42,4 @@ pnpm-lock.yaml
 
 # Platform-specific info
 .platform-info.json
+.env
