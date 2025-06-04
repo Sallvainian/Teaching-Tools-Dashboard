@@ -21,7 +21,7 @@
 		resetGameBoard
 	} = jeopardyStore;
 
-	let gameId = $derived($page?.params?.gameId);
+	let gameId = $page.params.gameId;
 	let isLoading = $state(true);
 	let showAnswer = $state(false);
 	let selectedTeamId = '';

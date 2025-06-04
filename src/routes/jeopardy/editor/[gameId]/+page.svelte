@@ -23,7 +23,7 @@
 		applyGameTemplate
 	} = jeopardyStore;
 
-	let gameId = $derived($page?.params?.gameId);
+	let gameId = $page.params.gameId;
 	let isLoading = $state(true);
 	let activeTab = $state('categories');
 	let showTemplateModal = $state(false);
