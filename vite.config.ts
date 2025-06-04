@@ -82,7 +82,6 @@ export default defineConfig(({ mode }) => {
 					// Enable manual chunking for better code splitting
 					manualChunks: isProduction
 						? {
-								'vendor-supabase': ['@supabase/supabase-js'],
 								'vendor-svelte': ['svelte', 'svelte/store', 'svelte/transition', 'svelte/animate'],
 								'vendor-ui': ['@floating-ui/dom', 'focus-trap'],
 								'vendor-utils': ['idb', 'zod', 'date-fns']
