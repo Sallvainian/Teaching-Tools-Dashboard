@@ -7,7 +7,7 @@
 
 	// Redirect if already authenticated
 	$effect(() => {
-		if (getIsAuthenticated($authStore) && $page.url) {
+		if (getIsAuthenticated($authStore) && $page?.url) {
 			const role = getRole($authStore);
 			const redirectTo = role === 'student' ? '/student/dashboard' : '/dashboard';
 			void goto(redirectTo);

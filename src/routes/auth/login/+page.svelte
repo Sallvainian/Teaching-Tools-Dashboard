@@ -16,7 +16,7 @@
 
 	// Handle auth errors from the redirect
 	$effect(() => {
-		if ($page.url) {
+		if ($page?.url?.searchParams) {
 			const error = $page.url.searchParams.get('error');
 			const error_description = $page.url.searchParams.get('error_description');
 			if (error) {

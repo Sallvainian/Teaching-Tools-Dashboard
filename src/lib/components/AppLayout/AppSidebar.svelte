@@ -34,6 +34,7 @@
 	];
 
 	function isActivePath(path: string): boolean {
+		if (!$page?.url?.pathname) return false;
 		return $page.url.pathname === path || $page.url.pathname.startsWith(path + '/');
 	}
 </script>
