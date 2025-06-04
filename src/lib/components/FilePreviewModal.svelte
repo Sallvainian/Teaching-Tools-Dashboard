@@ -2,6 +2,7 @@
 	import type { FileMetadata } from '$lib/types/files';
 	import { getFileType } from '$lib/types/files';
 	import { fileService } from '$lib/services/fileService';
+	import PDFViewer from './PDFViewer.svelte';
 
 	let {
 		isOpen = $bindable(false),
@@ -17,33 +18,11 @@
 	let pdfUrl = $state<string | null>(null);
 	let isLoading = $state(false);
 	let error = $state<string | null>(null);
-	
-	// Lazy load PDFViewer component
-	let PDFViewer = $state<any>(null);
-	let pdfViewerLoading = $state(true);
-
-	// Load PDFViewer component when needed
-	async function loadPDFViewer() {
-		if (!PDFViewer && typeof window !== 'undefined') {
-			try {
-				const module = await import('./PDFViewer.svelte');
-				PDFViewer = module.default;
-				pdfViewerLoading = false;
-			} catch (err) {
-				console.error('Failed to load PDFViewer:', err);
-				pdfViewerLoading = false;
-			}
-		}
-	}
 
 	// Watch for file changes
 	$effect(() => {
 		if (file && isOpen) {
 			loadFilePreview();
-			// Load PDFViewer if this is a PDF
-			if (getFileType(file) === 'pdf') {
-				loadPDFViewer();
-			}
 		} else {
 			cleanup();
 		}
@@ -334,19 +313,9 @@
 						</div>
 					{:else if pdfUrl}
 						<div class="h-[70vh] relative">
-							{#if pdfViewerLoading}
-								<div class="flex items-center justify-center h-full">
-									<div class="text-dark-text">Loading PDF viewer...</div>
-								</div>
-							{:else if PDFViewer}
-								{#key pdfUrl}
-									<PDFViewer {pdfUrl} height="100%" />
-								{/key}
-							{:else}
-								<div class="flex items-center justify-center h-full">
-									<div class="text-dark-error">Failed to load PDF viewer</div>
-								</div>
-							{/if}
+							{#key pdfUrl}
+								<PDFViewer {pdfUrl} height="100%" />
+							{/key}
 						</div>
 					{/if}
 				{:else}
