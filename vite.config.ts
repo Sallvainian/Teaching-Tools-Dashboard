@@ -78,23 +78,7 @@ export default defineConfig(({ mode }) => {
 				: undefined,
 			rollupOptions: {
 				output: {
-					sourcemapExcludeSources: isProduction,
-					// Enable manual chunking for better code splitting
-					manualChunks: isProduction
-						? {
-								'vendor-svelte': ['svelte', 'svelte/store', 'svelte/transition', 'svelte/animate'],
-								'vendor-ui': ['@floating-ui/dom', 'focus-trap'],
-								'vendor-utils': ['idb', 'zod', 'date-fns']
-						  }
-						: undefined,
-					// Optimize chunk naming
-					chunkFileNames: isProduction
-						? 'chunks/[name]-[hash].js'
-						: 'chunks/[name].js',
-					// Optimize asset naming
-					assetFileNames: isProduction
-						? 'assets/[name]-[hash][extname]'
-						: 'assets/[name][extname]'
+					sourcemapExcludeSources: isProduction
 				}
 			}
 		},
