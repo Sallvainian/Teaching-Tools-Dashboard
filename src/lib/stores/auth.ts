@@ -449,7 +449,7 @@ function createAuthStore() {
 
 			// Force a clean navigation to login page using our navigation utility
 			if (typeof window !== 'undefined') {
-				const { goto } = await import('$lib/utils/navigation');
+				const { goto } = await import('$app/navigation');
 				await goto('/auth/login', { replaceState: true });
 			}
 
@@ -469,7 +469,7 @@ function createAuthStore() {
 
 			// Even on error, redirect
 			if (typeof window !== 'undefined') {
-				const { goto } = await import('$lib/utils/navigation');
+				const { goto } = await import('$app/navigation');
 				await goto('/auth/login', { replaceState: true });
 			}
 			return false;

@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { gradebookStore } from '$lib/stores/gradebook';
-	import { jeopardyStore } from '$lib/stores/jeopardy';
-	import { get } from 'svelte/store';
 
 	// Settings values
 	let darkMode = $state(true);

@@ -53,7 +53,7 @@ export function deferHydration(callback?: () => void): void {
 
   onMount(() => {
     if ('requestIdleCallback' in window) {
-      (window as any).requestIdleCallback(() => {
+      (window as unknown as { requestIdleCallback: (callback: () => void) => void }).requestIdleCallback(() => {
         if (callback) callback();
       });
     } else {
@@ -136,7 +136,7 @@ export function createStreamingSSR() {
     // No-op in browser
     return {
       flush: () => {},
-      chunk: (id: string, content: string) => {}
+      chunk: (_id: string, _content: string) => {}
     };
   }
 
@@ -154,7 +154,7 @@ export function createStreamingSSR() {
      * @param id Chunk ID
      * @param content Chunk content
      */
-    chunk: (id: string, content: string) => {
+    chunk: (_id: string, _content: string) => {
       // This would be implemented by the framework
       console.log(`Adding content to chunk ${id}`);
     }

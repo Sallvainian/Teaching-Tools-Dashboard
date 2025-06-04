@@ -1,684 +1,799 @@
 <script lang="ts">
 	import { gradebookStore } from '$lib/stores/gradebook';
 	import { authStore } from '$lib/stores/auth';
-	import { onMount } from 'svelte';
-	import { browser } from '$app/environment';
 	import LoadingBounce from '$lib/components/LoadingBounce.svelte';
 	import ImportWizard from '$lib/components/ImportWizard.svelte';
-	import SkeletonLoader from '$lib/components/SkeletonLoader.svelte';
-	import { typedAuthStore, getUser } from '$lib/utils/storeHelpers';
 
-	// Lazy load Handsontable component
-	let Handsontable = $state<any>(null);
-	let handsontableLoading = $state(true);
-
-	onMount(async () => {
-		if (browser) {
-			const module = await import('$lib/components/Handsontable.svelte');
-			Handsontable = module.default;
-			handsontableLoading = false;
-		}
-	});
-
-	// State variables using $state
-	let selectedClassId = $state($gradebookStore.selectedClassId || null);
+	// State variables
 	let assignmentName = $state('');
 	let maxPoints = $state(100);
 	let newStudentName = $state('');
 	let newClassName = $state('');
 	let showNewClassModal = $state(false);
 	let showNewAssignmentModal = $state(false);
-	let hotInstance = $state<any>(null);
 	let showStudentModal = $state(false);
 	let showImportModal = $state(false);
-	let showDeleteConfirm = $state('');
+	
+	// PowerTeacher Pro features
+	let selectedCells = $state(new Set<string>());
+	let bulkGradeValue = $state('');
+	let bulkGradeType = $state<'points' | 'percentage' | 'letter'>('points');
+	let colorMode = $state(false);
+	let colorScheme = $state<'performance' | 'custom'>('performance');
+	let customColors = $state<Record<string, string>>({});
+	let showBulkActions = $state(false);
+	let showColorPanel = $state(false);
 
-	// Reactive values using $derived
-	let selectedClass = $derived($gradebookStore.getSelectedClass);
-	let classStudents = $derived($gradebookStore.getStudentsInSelectedClass);
-	let classAssignments = $derived($gradebookStore.getAssignmentsForSelectedClass);
-	let allGrades = $derived($gradebookStore.grades || []);
+	// Reactive values from store
+	let selectedClass = $derived($gradebookStore.classes.find(c => c.id === $gradebookStore.selectedClassId));
+	let classStudents = $derived($gradebookStore.students.filter(s => selectedClass?.studentIds.includes(s.id)));
+	let classAssignments = $derived($gradebookStore.assignments.filter(a => a.classId === $gradebookStore.selectedClassId));
 
-	// Create reactive data and headers for Handsontable
-	let hotData = $derived(createTableData());
-	let columnHeaders = $derived(createColumnHeaders());
-
-	// Table functions
-	function createTableData() {
-		if (!classStudents || classStudents.length === 0) {
-			return [];
-		}
-
-		return classStudents.map((student, index) => {
-			// Start with student number and name
-			const row: (string | number | null)[] = [index + 1, student.name];
-
-			// Add grades for each assignment
-			if (classAssignments && classAssignments.length > 0) {
-				classAssignments.forEach((assignment) => {
-					const grade = allGrades.find(
-						(g) => g.studentId === student.id && g.assignmentId === assignment.id
-					);
-					row.push(grade ? grade.points : null);
-				});
-			}
-
-			// Add average at the end
-			try {
-				const average = gradebookStore.studentAverageInClass(student.id, selectedClassId || '');
-				row.push(average);
-			} catch (err) {
-				console.error('Error calculating average:', err);
-				row.push(0);
-			}
-
-			return row;
-		});
-	}
-
-	function createColumnHeaders(): string[] {
-		const headers = ['#', 'Student Name'];
-
-		// Add assignment headers
-		if (classAssignments && classAssignments.length > 0) {
-			classAssignments.forEach((assignment) => {
-				headers.push(`${assignment.name} (${assignment.maxPoints})`);
-			});
-		}
-
-		// Add average header
-		headers.push('Average');
-
-		return headers;
-	}
-
-	// Grade color coding for visual feedback
-	function getCellBackgroundColor(value: number | null): string {
-		if (value === null || value === undefined) return 'transparent';
-		if (value >= 90) return 'rgba(34, 197, 94, 0.2)'; // Green for A
-		if (value >= 80) return 'rgba(96, 165, 250, 0.2)'; // Blue for B
-		if (value >= 70) return 'rgba(251, 191, 36, 0.2)'; // Yellow for C
-		if (value >= 60) return 'rgba(249, 115, 22, 0.2)'; // Orange for D
-		return 'rgba(239, 68, 68, 0.2)'; // Red for F
-	}
-
-	// Handle table events
-	async function handleAfterChange(event: any) {
-		const { changes, source } = event.detail;
-
-		if (source === 'edit' && changes) {
-			for (const [row, col, oldValue, newValue] of changes) {
-				// Skip the first two columns (# and Name) and the Average column
-				if (col <= 2) continue;
-
-				// Get the corresponding student and assignment
-				const student = classStudents[row];
-				// Adjust column index to match assignments array (subtract 3 to account for #, Name, and Average columns)
-				const assignmentIndex = col - 3;
-				const assignment = classAssignments[assignmentIndex];
-
-				if (student && assignment) {
-					// Record the grade
-					await gradebookStore.recordGrade(student.id, assignment.id, parseFloat(newValue) || 0);
-				}
-			}
+	async function handleClassChange(event: Event) {
+		const target = event.target as HTMLSelectElement;
+		const classId = target.value;
+		
+		if (classId) {
+			await gradebookStore.selectClass(classId);
 		}
 	}
 
-	function handleTableInit(event: any) {
-		hotInstance = event.detail.hotInstance;
-	}
-
-	onMount(async () => {
-		// Ensure data is loaded when gradebook is accessed
-		await gradebookStore.ensureDataLoaded();
-	});
-
-	// Handle class selection
-	$effect(() => {
-		// If store has a selectedClassId but local doesn't, sync from store
-		if ($gradebookStore.selectedClassId && !selectedClassId) {
-			selectedClassId = $gradebookStore.selectedClassId;
-		}
-		// If classes are loaded but no class is selected, select the first one
-		else if (
-			$gradebookStore.classes?.length > 0 &&
-			!selectedClassId &&
-			!$gradebookStore.selectedClassId
-		) {
-			const firstClassId = $gradebookStore.classes[0].id;
-			gradebookStore.selectClass(firstClassId);
-			selectedClassId = firstClassId;
-		}
-	});
-
-	// Watch for dropdown selection changes and update store
-	$effect(() => {
-		if (selectedClassId && selectedClassId !== $gradebookStore.selectedClassId) {
-			gradebookStore.selectClass(selectedClassId);
-		}
-	});
-
-	async function handleAddAssignment() {
-		if (selectedClassId && assignmentName.trim()) {
-			await gradebookStore.addAssignmentToClass(
-				assignmentName.trim(),
-				maxPoints || 0,
-				selectedClassId
-			);
-			assignmentName = '';
-			maxPoints = 100;
-			showNewAssignmentModal = false;
-		}
-	}
-
-	async function handleAddStudent() {
-		if (newStudentName.trim() && selectedClassId) {
-			// Get current user id
-			const currentUser = getUser($authStore);
-			if (currentUser) {
-				const studentId = await gradebookStore.addGlobalStudent(
-					newStudentName.trim(),
-					currentUser.id
-				);
-				if (studentId) {
-					await gradebookStore.assignStudentToClass(studentId, selectedClassId);
-					newStudentName = '';
-					showStudentModal = false;
-				}
-			} else {
-				console.error('No authenticated user found');
-			}
-		}
-	}
-
-	async function handleAddClass() {
+	async function createNewClass() {
 		if (newClassName.trim()) {
-			// Get the current user ID from auth store
-			const currentUser = getUser($authStore);
-			if (currentUser) {
-				await gradebookStore.addClass(newClassName.trim(), currentUser.id);
+			try {
+				await gradebookStore.addClass(newClassName.trim(), $authStore.user?.id);
 				newClassName = '';
 				showNewClassModal = false;
-			} else {
-				console.error('No authenticated user found');
+			} catch (error) {
+				console.error('Failed to create class:', error);
 			}
 		}
 	}
 
-	async function handleDeleteClass(classIdToDelete: string) {
-		if (
-			confirm(
-				'Are you sure you want to delete this class? This will also delete all assignments and grades for this class.'
+	async function addStudent() {
+		if (newStudentName.trim() && $gradebookStore.selectedClassId) {
+			try {
+				const studentId = await gradebookStore.addGlobalStudent(newStudentName.trim(), $authStore.user?.id);
+				
+				if (studentId) {
+					await gradebookStore.assignStudentToClass(studentId, $gradebookStore.selectedClassId);
+				}
+				
+				newStudentName = '';
+				showStudentModal = false;
+			} catch (error) {
+				console.error('Failed to add student:', error);
+			}
+		}
+	}
+
+	async function addAssignment() {
+		if (assignmentName.trim() && $gradebookStore.selectedClassId) {
+			try {
+				await gradebookStore.addAssignmentToClass(
+					assignmentName.trim(),
+					maxPoints,
+					$gradebookStore.selectedClassId
+				);
+				
+				assignmentName = '';
+				maxPoints = 100;
+				showNewAssignmentModal = false;
+			} catch (error) {
+				console.error('Failed to add assignment:', error);
+			}
+		}
+	}
+
+	async function handleGradeChange(studentId: string, assignmentId: string, maxPoints: number, value: string) {
+		const points = parseFloat(value) || 0;
+		
+		if (points < 0 || points > maxPoints) {
+			return; // Invalid grade
+		}
+		
+		try {
+			await gradebookStore.recordGrade(studentId, assignmentId, points);
+		} catch (error) {
+			console.error('Failed to record grade:', error);
+		}
+	}
+
+	async function handleGradeKeydown(event: KeyboardEvent, studentId: string, assignmentId: string) {
+		if (event.key === 'Delete' || event.key === 'Backspace') {
+			event.preventDefault();
+			
+			// Check if there's a grade to delete
+			const existingGrade = $gradebookStore.grades.find(
+				g => g.studentId === studentId && g.assignmentId === assignmentId
+			);
+			
+			if (existingGrade && existingGrade.points > 0) {
+				try {
+					await gradebookStore.recordGrade(studentId, assignmentId, 0);
+					// Clear the input field
+					const target = event.target as HTMLInputElement;
+					target.value = '';
+				} catch (error) {
+					console.error('Failed to delete grade:', error);
+				}
+			}
+		}
+	}
+
+	// PowerTeacher Pro-inspired functions
+	function toggleCellSelection(studentId: string, assignmentId: string) {
+		const cellId = `${studentId}|${assignmentId}`;
+		if (selectedCells.has(cellId)) {
+			selectedCells.delete(cellId);
+		} else {
+			selectedCells.add(cellId);
+		}
+		selectedCells = new Set(selectedCells);
+	}
+
+	function selectColumn(assignmentId: string) {
+		classStudents.forEach(student => {
+			selectedCells.add(`${student.id}|${assignmentId}`);
+		});
+		selectedCells = new Set(selectedCells);
+	}
+
+	function selectRow(studentId: string) {
+		classAssignments.forEach(assignment => {
+			selectedCells.add(`${studentId}|${assignment.id}`);
+		});
+		selectedCells = new Set(selectedCells);
+	}
+
+	function clearSelection() {
+		selectedCells.clear();
+		selectedCells = new Set(selectedCells);
+	}
+
+	async function applyBulkGrade() {
+		if (!bulkGradeValue || selectedCells.size === 0) return;
+
+		// Only apply to cells without existing grades
+		let skippedCount = 0;
+		const gradesToApply: Array<{ studentId: string; assignmentId: string; points: number }> = [];
+
+		for (const cellId of selectedCells) {
+			const [studentId, assignmentId] = cellId.split('|');
+			const assignment = classAssignments.find(a => a.id === assignmentId);
+			
+			if (!assignment) continue;
+
+			// Skip if there's already a grade
+			const existingGrade = $gradebookStore.grades.find(
+				g => g.studentId === studentId && g.assignmentId === assignmentId
+			);
+			if (existingGrade && existingGrade.points > 0) {
+				skippedCount++;
+				continue; // Skip this cell
+			}
+
+			let points = 0;
+			
+			if (bulkGradeType === 'points') {
+				points = parseFloat(bulkGradeValue);
+			} else if (bulkGradeType === 'percentage') {
+				points = (parseFloat(bulkGradeValue) / 100) * assignment.maxPoints;
+			} else if (bulkGradeType === 'letter') {
+				const letterGrades: Record<string, number> = {
+					'A+': 97, 'A': 93, 'A-': 90,
+					'B+': 87, 'B': 83, 'B-': 80,
+					'C+': 77, 'C': 73, 'C-': 70,
+					'D+': 67, 'D': 63, 'D-': 60,
+					'F': 0
+				};
+				const percentage = letterGrades[bulkGradeValue.toUpperCase()] || 0;
+				points = (percentage / 100) * assignment.maxPoints;
+			}
+
+			if (points >= 0 && points <= assignment.maxPoints) {
+				gradesToApply.push({ studentId, assignmentId, points });
+			}
+		}
+
+		// Apply all grades in parallel for better performance
+		const results = await Promise.allSettled(
+			gradesToApply.map(({ studentId, assignmentId, points }) =>
+				gradebookStore.recordGrade(studentId, assignmentId, points)
 			)
-		) {
-			await gradebookStore.deleteClass(classIdToDelete);
-			// If we deleted the selected class, clear the selection
-			if (selectedClassId === classIdToDelete) {
-				selectedClassId = '';
+		);
+
+		// Count successes and failures
+		const succeeded = results.filter(r => r.status === 'fulfilled').length;
+		const failed = results.filter(r => r.status === 'rejected').length;
+
+		// Show summary message
+		let message = `Applied ${succeeded} grade${succeeded !== 1 ? 's' : ''}`;
+		if (skippedCount > 0) {
+			message += `, skipped ${skippedCount} existing grade${skippedCount !== 1 ? 's' : ''}`;
+		}
+		if (failed > 0) {
+			message += `, ${failed} failed`;
+		}
+		
+		// You could show this in a toast or alert if you want
+		console.log(message);
+
+		clearSelection();
+		bulkGradeValue = '';
+		showBulkActions = false;
+	}
+
+	async function deleteBulkGrades() {
+		if (selectedCells.size === 0) return;
+
+		const gradesToDelete: Array<{ studentId: string; assignmentId: string }> = [];
+
+		for (const cellId of selectedCells) {
+			const [studentId, assignmentId] = cellId.split('|');
+			
+			// Check if there's a grade to delete
+			const existingGrade = $gradebookStore.grades.find(
+				g => g.studentId === studentId && g.assignmentId === assignmentId
+			);
+			if (existingGrade && existingGrade.points > 0) {
+				gradesToDelete.push({ studentId, assignmentId });
 			}
 		}
-	}
 
-	async function handleImportClasses() {
-		showImportModal = true;
-	}
-
-	async function handleImportComplete() {
-		showImportModal = false;
-		// Refresh data
-		await gradebookStore.loadAllData();
-	}
-
-	// Function to toggle the new class modal
-	function toggleNewClassModal() {
-		showNewClassModal = !showNewClassModal;
-		if (showNewClassModal) {
-			newClassName = '';
+		if (gradesToDelete.length === 0) {
+			console.log('No grades to delete in selection');
+			return;
 		}
+
+		// Confirm deletion
+		const confirmed = confirm(
+			`Delete ${gradesToDelete.length} grade${gradesToDelete.length !== 1 ? 's' : ''}?`
+		);
+		if (!confirmed) return;
+
+		// Delete all grades in parallel
+		const results = await Promise.allSettled(
+			gradesToDelete.map(({ studentId, assignmentId }) =>
+				gradebookStore.recordGrade(studentId, assignmentId, 0)
+			)
+		);
+
+		// Count successes and failures
+		const succeeded = results.filter(r => r.status === 'fulfilled').length;
+		const failed = results.filter(r => r.status === 'rejected').length;
+
+		// Show summary message
+		let message = `Deleted ${succeeded} grade${succeeded !== 1 ? 's' : ''}`;
+		if (failed > 0) {
+			message += `, ${failed} failed`;
+		}
+		
+		console.log(message);
+
+		clearSelection();
+		showBulkActions = false;
 	}
+
+	function getGradeColor(points: number, maxPoints: number): string {
+		if (!colorMode || !points) return '';
+		
+		const percentage = (points / maxPoints) * 100;
+		
+		if (colorScheme === 'performance') {
+			if (percentage >= 90) return 'bg-green-100 border-green-300 text-green-800';
+			if (percentage >= 80) return 'bg-blue-100 border-blue-300 text-blue-800';
+			if (percentage >= 70) return 'bg-yellow-100 border-yellow-300 text-yellow-800';
+			if (percentage >= 60) return 'bg-orange-100 border-orange-300 text-orange-800';
+			return 'bg-red-100 border-red-300 text-red-800';
+		}
+		
+		return customColors[`${points}-${maxPoints}`] || '';
+	}
+
+	function getCellId(studentId: string, assignmentId: string): string {
+		return `${studentId}|${assignmentId}`;
+	}
+
+	function isSelected(studentId: string, assignmentId: string): boolean {
+		return selectedCells.has(getCellId(studentId, assignmentId));
+	}
+
+	// Initialize data
+	$effect(() => {
+		gradebookStore.ensureDataLoaded();
+	});
 </script>
 
-<div class="min-h-screen bg-bg-base">
-	<div class="container mx-auto px-4 py-8">
-		<!-- Page Header -->
-		<div class="mb-8">
-			<div class="flex items-center gap-4">
-				<div class="p-3 bg-purple-bg rounded-lg">
-					<svg
-						class="w-8 h-8 text-highlight"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-					>
-						<path
-							d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-						></path>
-					</svg>
-				</div>
-				<div>
-					<h1 class="text-3xl font-bold text-highlight">Gradebook</h1>
-					<p class="text-text-base">Manage student grades and assignments</p>
-				</div>
-			</div>
+{#if $gradebookStore.isLoading}
+	<div class="min-h-screen flex items-center justify-center">
+		<div class="text-center">
+			<LoadingBounce />
+			<p class="mt-4 text-muted">Loading gradebook...</p>
 		</div>
-
-		{#if $gradebookStore.isLoading}
-			<div class="flex items-center justify-center min-h-[500px]">
-				<LoadingBounce />
+	</div>
+{:else}
+	<div class="min-h-screen">
+		<div class="container mx-auto px-4 py-8">
+			<!-- Header -->
+			<div class="mb-8">
+				<h1 class="text-3xl font-bold text-highlight mb-2">PowerTeacher Pro</h1>
+				<p class="text-text-base">Professional gradebook with advanced grading tools</p>
 			</div>
-		{:else}
-			<!-- Action Bar -->
-			<div class="flex flex-wrap gap-4 mb-6">
+
+			<!-- Controls -->
+			<div class="flex flex-col lg:flex-row gap-4 mb-6">
+				<!-- Class Selector -->
 				<div class="flex-1">
-					<div class="card-dark p-4">
-						<label for="class-selector" class="block text-sm font-medium text-text-base mb-2"
-							>Select Class</label
+					<label for="class-select" class="block text-sm font-medium text-text-base mb-2">
+						Select Class
+					</label>
+					<select
+						id="class-select"
+						onchange={handleClassChange}
+						value={$gradebookStore.selectedClassId ?? ''}
+						class="input w-full"
+					>
+						<option value="">Choose a class...</option>
+						{#each $gradebookStore.classes as cls}
+							<option value={cls.id}>{cls.name}</option>
+						{/each}
+					</select>
+				</div>
+				
+				<!-- Action Buttons -->
+				<div class="flex gap-3 lg:items-end">
+					<button
+						onclick={() => showNewClassModal = true}
+						class="btn btn-primary"
+					>
+						<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+						</svg>
+						New Class
+					</button>
+					
+					{#if $gradebookStore.selectedClassId}
+						<button
+							onclick={() => showImportModal = true}
+							class="btn btn-secondary"
 						>
-						<div class="flex gap-2">
-							<select id="class-selector" class="select w-full" bind:value={selectedClassId}>
-								<option value={null} disabled>Select a class</option>
-								{#each $gradebookStore.classes as cls (cls.id)}
-									<option value={cls.id}>{cls.name}</option>
-								{/each}
-							</select>
+							<svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"/>
+							</svg>
+							Import
+						</button>
+					{/if}
+				</div>
+			</div>
+
+			{#if $gradebookStore.selectedClassId && selectedClass}
+				<!-- PowerTeacher Pro Toolbar -->
+				<div class="bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg p-4 mb-6 text-white">
+					<div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+						<div class="flex items-center gap-6">
+							<h2 class="text-xl font-bold">{selectedClass.name}</h2>
+							<div class="flex items-center gap-4 text-purple-100">
+								<span>{classStudents.length} students</span>
+								<span>{classAssignments.length} assignments</span>
+								{#if selectedCells.size > 0}
+									<span class="bg-white/20 px-2 py-1 rounded text-sm">
+										{selectedCells.size} cells selected
+									</span>
+								{/if}
+							</div>
+						</div>
+						
+						<div class="flex flex-wrap gap-2">
 							<button
-								onclick={toggleNewClassModal}
-								class="btn btn-primary"
-								aria-label="Create new class"
+								onclick={() => showStudentModal = true}
+								class="bg-white/20 hover:bg-white/30 px-3 py-2 rounded text-sm font-medium transition-colors"
 							>
-								<svg
-									class="w-5 h-5"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-								>
-									<path d="M12 5v14M5 12h14"></path>
-								</svg>
+								+ Student
 							</button>
+							
 							<button
-								onclick={handleImportClasses}
-								class="btn btn-secondary"
-								aria-label="Import classes"
+								onclick={() => showNewAssignmentModal = true}
+								class="bg-white/20 hover:bg-white/30 px-3 py-2 rounded text-sm font-medium transition-colors"
 							>
-								<svg
-									class="w-5 h-5"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-								>
-									<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
-									<polyline points="7,10 12,15 17,10"></polyline>
-									<line x1="12" y1="15" x2="12" y2="3"></line>
-								</svg>
+								+ Assignment
 							</button>
-							{#if selectedClass}
+							
+							<button
+								onclick={() => showBulkActions = !showBulkActions}
+								class="bg-white/20 hover:bg-white/30 px-3 py-2 rounded text-sm font-medium transition-colors"
+								class:bg-opacity-60={showBulkActions}
+							>
+								Bulk Actions
+							</button>
+							
+							<button
+								onclick={() => colorMode = !colorMode}
+								class="bg-white/20 hover:bg-white/30 px-3 py-2 rounded text-sm font-medium transition-colors"
+								class:bg-opacity-60={colorMode}
+							>
+								Color Mode
+							</button>
+							
+							{#if selectedCells.size > 0}
 								<button
-									onclick={() => handleDeleteClass(selectedClass.id)}
-									class="btn btn-danger"
-									aria-label="Delete class"
+									onclick={clearSelection}
+									class="bg-red-500/80 hover:bg-red-500 px-3 py-2 rounded text-sm font-medium transition-colors"
 								>
-									<svg
-										class="w-5 h-5"
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										stroke-width="2"
-									>
-										<polyline points="3,6 5,6 21,6"></polyline>
-										<path
-											d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"
-										></path>
-										<line x1="10" y1="11" x2="10" y2="17"></line>
-										<line x1="14" y1="11" x2="14" y2="17"></line>
-									</svg>
+									Clear Selection
 								</button>
 							{/if}
 						</div>
 					</div>
 				</div>
 
-				{#if selectedClass}
-					<div class="flex gap-2">
-						<button class="btn btn-primary" onclick={() => (showNewAssignmentModal = true)}>
-							<svg
-								class="w-5 h-5 mr-2"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-							>
-								<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
-								<path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-							</svg>
-							New Assignment
-						</button>
+				<!-- Bulk Actions Panel -->
+				{#if showBulkActions}
+					<div class="card-dark p-4 mb-6 border-l-4 border-blue-500">
+						<h3 class="font-semibold text-highlight mb-3">Bulk Actions</h3>
+						<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+							<div>
+								<label class="block text-sm font-medium text-text-base mb-1">Grade Value</label>
+								<input
+									bind:value={bulkGradeValue}
+									type="text"
+									placeholder="Enter grade"
+									class="input w-full"
+								/>
+							</div>
+							<div>
+								<label class="block text-sm font-medium text-text-base mb-1">Grade Type</label>
+								<select bind:value={bulkGradeType} class="input w-full">
+									<option value="points">Points</option>
+									<option value="percentage">Percentage</option>
+									<option value="letter">Letter Grade</option>
+								</select>
+							</div>
+							<div class="flex items-end">
+								<button
+									onclick={applyBulkGrade}
+									disabled={!bulkGradeValue || selectedCells.size === 0}
+									class="btn btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
+								>
+									Apply to Selected
+								</button>
+							</div>
+							<div class="flex items-end">
+								<button
+									onclick={deleteBulkGrades}
+									disabled={selectedCells.size === 0}
+									class="btn btn-error w-full disabled:opacity-50 disabled:cursor-not-allowed"
+								>
+									Delete Selected Grades
+								</button>
+							</div>
+							<div class="flex items-end">
+								<button
+									onclick={() => showColorPanel = !showColorPanel}
+									class="btn btn-outline w-full"
+								>
+									Color Options
+								</button>
+							</div>
+						</div>
 
-						<button class="btn btn-secondary" onclick={() => (showStudentModal = true)}>
-							<svg
-								class="w-5 h-5 mr-2"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-							>
-								<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path>
-								<circle cx="12" cy="7" r="4"></circle>
-							</svg>
-							Add Student
-						</button>
+						{#if showColorPanel}
+							<div class="mt-4 p-4 bg-bg-base rounded border">
+								<h4 class="font-medium text-text-base mb-3">Color Scheme</h4>
+								<div class="flex gap-4 mb-4">
+									<label class="flex items-center gap-2">
+										<input type="radio" bind:group={colorScheme} value="performance" />
+										<span class="text-text-base">Performance Based</span>
+									</label>
+									<label class="flex items-center gap-2">
+										<input type="radio" bind:group={colorScheme} value="custom" />
+										<span class="text-text-base">Custom Colors</span>
+									</label>
+								</div>
+								
+								{#if colorScheme === 'performance'}
+									<div class="grid grid-cols-5 gap-2 text-sm">
+										<div class="bg-green-100 border-green-300 text-green-800 p-2 rounded text-center">90-100%</div>
+										<div class="bg-blue-100 border-blue-300 text-blue-800 p-2 rounded text-center">80-89%</div>
+										<div class="bg-yellow-100 border-yellow-300 text-yellow-800 p-2 rounded text-center">70-79%</div>
+										<div class="bg-orange-100 border-orange-300 text-orange-800 p-2 rounded text-center">60-69%</div>
+										<div class="bg-red-100 border-red-300 text-red-800 p-2 rounded text-center">Below 60%</div>
+									</div>
+								{/if}
+							</div>
+						{/if}
 					</div>
 				{/if}
-			</div>
 
-			{#if selectedClass}
-				<div class="card-dark mb-6">
-					<div class="flex justify-between items-center mb-6">
-						<div>
-							<h2 class="text-xl font-bold text-highlight">{selectedClass.name}</h2>
-							<p class="text-text-base text-sm mt-1">
-								{classStudents.length} student{classStudents.length !== 1 ? 's' : ''} •
-								{classAssignments.length} assignment{classAssignments.length !== 1 ? 's' : ''}
-							</p>
-						</div>
-
-						<div class="flex gap-2">
-							<button class="btn btn-sm btn-secondary">
-								<svg
-									class="w-4 h-4 mr-1"
-									viewBox="0 0 24 24"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-								>
-									<path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
-									<polyline points="17,8 12,3 7,8"></polyline>
-									<line x1="12" y1="3" x2="12" y2="15"></line>
-								</svg>
-								Export
-							</button>
-						</div>
-					</div>
-
-					{#if classStudents.length > 0 && classAssignments.length > 0}
-						<div class="overflow-x-auto">
-							{#if handsontableLoading || !Handsontable}
-								<SkeletonLoader type="table" />
-							{:else}
-								{@const Component = Handsontable}
-								<Component
-									data={hotData}
-									colHeaders={columnHeaders}
-									rowHeaders={false}
-									width="100%"
-									height={400}
-									settings={{
-										stretchH: 'all',
-										manualRowResize: true,
-										manualColumnResize: true,
-										contextMenu: false,
-										readOnly: false,
-										cells: (row: number, col: number) => {
-											// Make first two columns and last column read-only
-											if (col === 0 || col === 1 || col === columnHeaders.length - 1) {
-												return { readOnly: true };
-											}
-											return {};
-										},
-										afterChange: handleAfterChange,
-										afterInit: handleTableInit,
-										beforeRenderer: (
-											instance: any,
-											td: HTMLTableCellElement,
-											row: number,
-											col: number,
-											prop: string,
-											value: any,
-											_cellProperties: any
-										) => {
-											// Apply grade color coding to grade cells
-											if (col > 1 && col < columnHeaders.length - 1 && typeof value === 'number') {
-												td.style.backgroundColor = getCellBackgroundColor(value);
-											}
-											// Apply average color coding to last column
-											if (col === columnHeaders.length - 1 && typeof value === 'number') {
-												td.style.backgroundColor = getCellBackgroundColor(value);
-												td.style.fontWeight = 'bold';
-											}
-										}
-									}}
-								/>
-							{/if}
-						</div>
-					{:else if classStudents.length === 0}
+				<!-- PowerTeacher Pro Gradebook Grid -->
+				<div class="card-dark overflow-hidden">
+					{#if classStudents.length === 0}
 						<div class="text-center py-12">
-							<svg
-								class="w-16 h-16 text-muted mx-auto mb-4"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-							>
-								<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path>
-								<circle cx="12" cy="7" r="4"></circle>
-							</svg>
-							<h3 class="text-lg font-medium text-text-base mb-2">No students in this class</h3>
-							<p class="text-muted mb-4">Add students to start recording grades</p>
-							<button class="btn btn-primary" onclick={() => (showStudentModal = true)}>
-								Add Student
-							</button>
+							<p class="text-muted">No students in this class yet. Add students to get started.</p>
 						</div>
 					{:else if classAssignments.length === 0}
 						<div class="text-center py-12">
-							<svg
-								class="w-16 h-16 text-muted mx-auto mb-4"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								stroke-width="2"
-							>
-								<path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
-								<path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-							</svg>
-							<h3 class="text-lg font-medium text-text-base mb-2">No assignments in this class</h3>
-							<p class="text-muted mb-4">Create assignments to start recording grades</p>
-							<button class="btn btn-primary" onclick={() => (showNewAssignmentModal = true)}>
-								New Assignment
-							</button>
+							<p class="text-muted">No assignments created yet. Add assignments to start grading.</p>
+						</div>
+					{:else}
+						<div class="overflow-auto max-h-[600px]">
+							<table class="w-full">
+								<thead class="bg-card-dark">
+									<tr class="border-b-2 border-purple-500">
+										<th class="bg-card-dark p-3 text-left border-r border-border">
+											<div class="font-semibold text-highlight">Student</div>
+											<div class="text-xs text-muted mt-1">{classStudents.length} total</div>
+										</th>
+										{#each classAssignments as assignment, index}
+											<th class="p-3 text-center min-w-[120px] border-r border-border">
+												<div class="flex flex-col items-center gap-1">
+													<div class="font-semibold text-text-base">{assignment.name}</div>
+													<div class="text-xs text-muted">Max: {assignment.maxPoints}</div>
+													<button
+														onclick={() => selectColumn(assignment.id)}
+														class="text-xs text-blue-400 hover:text-blue-300 underline"
+													>
+														Select Column
+													</button>
+												</div>
+											</th>
+										{/each}
+										<th class="p-3 text-center min-w-[100px] bg-purple-900/50">
+											<div class="font-semibold text-purple-400">Average</div>
+											<div class="text-xs text-purple-300">Overall</div>
+										</th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each classStudents as student, studentIndex}
+										<tr class="border-b border-border hover:bg-purple-bg/20 transition-colors">
+											<td class="bg-card-dark p-3 border-r border-border">
+												<div class="flex items-center justify-between">
+													<div>
+														<div class="font-medium text-highlight">{student.name}</div>
+														<div class="text-xs text-muted">Student #{studentIndex + 1}</div>
+													</div>
+													<button
+														onclick={() => selectRow(student.id)}
+														class="text-xs text-blue-400 hover:text-blue-300 underline"
+													>
+														Select Row
+													</button>
+												</div>
+											</td>
+											{#each classAssignments as assignment}
+												{@const grade = $gradebookStore.grades.find(g => g.studentId === student.id && g.assignmentId === assignment.id)}
+												{@const cellId = getCellId(student.id, assignment.id)}
+												{@const selected = isSelected(student.id, assignment.id)}
+												<td class="p-1 text-center border-r border-border">
+													<div class="relative">
+														<input
+															type="number"
+															value={grade?.points || ''}
+															placeholder="—"
+															min="0"
+															max={assignment.maxPoints}
+															step="0.1"
+															class="w-full px-2 py-2 text-center bg-transparent border rounded text-text-base transition-all focus:ring-2 focus:ring-purple-500 focus:border-purple-500 {selected ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-border'} {colorMode && grade ? getGradeColor(grade.points, assignment.maxPoints) : ''}"
+															onchange={(e) => handleGradeChange(student.id, assignment.id, assignment.maxPoints, e.target.value)}
+															onkeydown={(e) => handleGradeKeydown(e, student.id, assignment.id)}
+															onclick={() => toggleCellSelection(student.id, assignment.id)}
+														/>
+														{#if grade && grade.points > 0}
+															<div class="absolute -top-1 -right-1 text-xs text-muted bg-card px-1 rounded">
+																{Math.round((grade.points / assignment.maxPoints) * 100)}%
+															</div>
+														{/if}
+													</div>
+												</td>
+											{/each}
+											<td class="p-3 text-center bg-purple-bg/30">
+												{#snippet averageCalculation()}
+													{@const studentGrades = classAssignments.map(assignment => {
+														const grade = $gradebookStore.grades.find(g => g.studentId === student.id && g.assignmentId === assignment.id);
+														return grade ? grade.points : null;
+													}).filter(g => g !== null && g > 0)}
+													{@const totalPossible = classAssignments.reduce((sum, assignment) => sum + assignment.maxPoints, 0)}
+													{@const totalEarned = studentGrades.reduce((sum, g) => sum + (g || 0), 0)}
+													{@const average = studentGrades.length > 0 ? Math.round((totalEarned / (studentGrades.length * (totalPossible / classAssignments.length))) * 100) : 0}
+													<div class="font-bold text-purple-400">
+														{average || '—'}%
+													</div>
+													<div class="text-xs text-purple-300">
+														{studentGrades.length}/{classAssignments.length}
+													</div>
+												{/snippet}
+												{@render averageCalculation()}
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
 						</div>
 					{/if}
 				</div>
-			{:else}
-				<div class="text-center py-12">
-					<svg
-						class="w-16 h-16 text-muted mx-auto mb-4"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-					>
-						<path
-							d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-						></path>
-					</svg>
-					<h3 class="text-lg font-medium text-text-base mb-2">No class selected</h3>
-					<p class="text-muted mb-4">Select a class from the dropdown above or create a new one</p>
-					<button class="btn btn-primary" onclick={toggleNewClassModal}>Create New Class</button>
+
+				<!-- Grade Distribution Summary -->
+				{#if classStudents.length > 0 && classAssignments.length > 0}
+					<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+						<div class="card-dark p-4">
+							<h3 class="font-semibold text-highlight mb-2">Class Statistics</h3>
+							<div class="space-y-2 text-sm">
+								<div class="flex justify-between">
+									<span class="text-muted">Total Students:</span>
+									<span class="text-text-base">{classStudents.length}</span>
+								</div>
+								<div class="flex justify-between">
+									<span class="text-muted">Total Assignments:</span>
+									<span class="text-text-base">{classAssignments.length}</span>
+								</div>
+								<div class="flex justify-between">
+									<span class="text-muted">Grades Entered:</span>
+									<span class="text-text-base">{$gradebookStore.grades.length}</span>
+								</div>
+							</div>
+						</div>
+
+						<div class="card-dark p-4">
+							<h3 class="font-semibold text-highlight mb-2">Quick Actions</h3>
+							<div class="space-y-2">
+								<button class="btn btn-outline w-full text-sm" onclick={() => showBulkActions = true}>
+									Bulk Grade Entry
+								</button>
+								<button class="btn btn-outline w-full text-sm" onclick={() => colorMode = !colorMode}>
+									Toggle Color Coding
+								</button>
+							</div>
+						</div>
+
+						<div class="card-dark p-4">
+							<h3 class="font-semibold text-highlight mb-2">Selection Tools</h3>
+							<div class="space-y-2">
+								<button 
+									class="btn btn-outline w-full text-sm"
+									onclick={() => {
+										classStudents.forEach(student => {
+											classAssignments.forEach(assignment => {
+												selectedCells.add(getCellId(student.id, assignment.id));
+											});
+										});
+										selectedCells = new Set(selectedCells);
+									}}
+								>
+									Select All Cells
+								</button>
+								<button class="btn btn-outline w-full text-sm" onclick={clearSelection}>
+									Clear Selection
+								</button>
+							</div>
+						</div>
+					</div>
+				{/if}
+
+			{:else if !$gradebookStore.selectedClassId}
+				<!-- Empty State -->
+				<div class="card-dark p-8 text-center">
+					<div class="flex flex-col items-center justify-center py-12">
+						<svg
+							class="w-16 h-16 text-muted mb-4"
+							fill="none"
+							stroke="currentColor"
+							viewBox="0 0 24 24"
+						>
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+						</svg>
+						<h3 class="text-lg font-medium text-highlight mb-2">Welcome to PowerTeacher Pro</h3>
+						<p class="text-text-base text-center max-w-md mb-6">
+							Select a class to access the advanced gradebook with bulk actions, color coding, and professional grading tools.
+						</p>
+						<button
+							onclick={() => showNewClassModal = true}
+							class="btn btn-primary"
+						>
+							Create Your First Class
+						</button>
+					</div>
 				</div>
 			{/if}
-		{/if}
-	</div>
-</div>
-
-<!-- New Class Modal -->
-{#if showNewClassModal}
-	<div
-		class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
-		onclick={(e) => e.target === e.currentTarget && toggleNewClassModal()}
-		onkeydown={(e) => e.key === 'Escape' && toggleNewClassModal()}
-		role="dialog"
-		aria-modal="true"
-		aria-label="Create new class"
-		tabindex="0"
-	>
-		<div class="bg-card border border-border rounded-lg p-6 w-full max-w-md mx-4">
-			<h2 class="text-xl font-bold text-highlight mb-4">Create New Class</h2>
-			<form
-				onsubmit={(e) => {
-					e.preventDefault();
-					handleAddClass();
-				}}
-			>
-				<div class="mb-4">
-					<label for="new-class-name" class="block text-sm font-medium text-text-base mb-2">
-						Class Name
-					</label>
-					<input
-						id="new-class-name"
-						type="text"
-						bind:value={newClassName}
-						placeholder="e.g., Math 101, Science 6B"
-						class="input w-full"
-						required
-					/>
-				</div>
-				<div class="flex justify-end gap-3">
-					<button type="button" onclick={toggleNewClassModal} class="btn btn-secondary">
-						Cancel
-					</button>
-					<button type="submit" class="btn btn-primary" disabled={!newClassName.trim()}>
-						Create Class
-					</button>
-				</div>
-			</form>
 		</div>
 	</div>
 {/if}
 
-<!-- Import Modal -->
+<!-- Modals -->
+{#if showNewClassModal}
+	<div class="fixed inset-0 bg-bg-base/80 backdrop-blur-sm flex items-center justify-center z-50">
+		<div class="bg-card border border-border rounded-lg p-6 w-full max-w-md">
+			<h3 class="text-xl font-bold text-highlight mb-4">Create New Class</h3>
+			<input
+				bind:value={newClassName}
+				placeholder="Class name"
+				class="input w-full mb-4"
+			/>
+			<div class="flex justify-end gap-2">
+				<button
+					onclick={() => showNewClassModal = false}
+					class="btn btn-outline"
+				>
+					Cancel
+				</button>
+				<button
+					onclick={createNewClass}
+					class="btn btn-primary"
+				>
+					Create
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+{#if showStudentModal}
+	<div class="fixed inset-0 bg-bg-base/80 backdrop-blur-sm flex items-center justify-center z-50">
+		<div class="bg-card border border-border rounded-lg p-6 w-full max-w-md">
+			<h3 class="text-xl font-bold text-highlight mb-4">Add Student</h3>
+			<input
+				bind:value={newStudentName}
+				placeholder="Student name"
+				class="input w-full mb-4"
+			/>
+			<div class="flex justify-end gap-2">
+				<button
+					onclick={() => showStudentModal = false}
+					class="btn btn-outline"
+				>
+					Cancel
+				</button>
+				<button
+					onclick={addStudent}
+					class="btn btn-primary"
+				>
+					Add
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+{#if showNewAssignmentModal}
+	<div class="fixed inset-0 bg-bg-base/80 backdrop-blur-sm flex items-center justify-center z-50">
+		<div class="bg-card border border-border rounded-lg p-6 w-full max-w-md">
+			<h3 class="text-xl font-bold text-highlight mb-4">Add Assignment</h3>
+			<input
+				bind:value={assignmentName}
+				placeholder="Assignment name"
+				class="input w-full mb-4"
+			/>
+			<input
+				bind:value={maxPoints}
+				type="number"
+				min="1"
+				placeholder="Max points"
+				class="input w-full mb-4"
+			/>
+			<div class="flex justify-end gap-2">
+				<button
+					onclick={() => showNewAssignmentModal = false}
+					class="btn btn-outline"
+				>
+					Cancel
+				</button>
+				<button
+					onclick={addAssignment}
+					class="btn btn-primary"
+				>
+					Add
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
 {#if showImportModal}
 	<ImportWizard
-		isOpen={showImportModal}
-		onClose={() => (showImportModal = false)}
-		onComplete={handleImportComplete}
+		onClose={() => showImportModal = false}
+		onComplete={() => {
+			// Handle import completion
+			showImportModal = false;
+		}}
 	/>
-{/if}
-
-<!-- New Assignment Modal -->
-{#if showNewAssignmentModal}
-	<div
-		class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
-		onclick={(e) => e.target === e.currentTarget && (showNewAssignmentModal = false)}
-		onkeydown={(e) => e.key === 'Escape' && (showNewAssignmentModal = false)}
-		role="dialog"
-		aria-modal="true"
-		aria-label="Create new assignment"
-		tabindex="0"
-	>
-		<div class="bg-card border border-border rounded-lg p-6 w-full max-w-md mx-4">
-			<h2 class="text-xl font-bold text-highlight mb-4">Create New Assignment</h2>
-			<form
-				onsubmit={(e) => {
-					e.preventDefault();
-					handleAddAssignment();
-				}}
-			>
-				<div class="mb-4">
-					<label for="assignment-name" class="block text-sm font-medium text-text-base mb-2">
-						Assignment Name
-					</label>
-					<input
-						id="assignment-name"
-						type="text"
-						bind:value={assignmentName}
-						placeholder="e.g., Quiz 1, Homework 3"
-						class="input w-full"
-						required
-					/>
-				</div>
-				<div class="mb-4">
-					<label for="max-points" class="block text-sm font-medium text-text-base mb-2">
-						Maximum Points
-					</label>
-					<input
-						id="max-points"
-						type="number"
-						bind:value={maxPoints}
-						min="1"
-						max="1000"
-						class="input w-full"
-						required
-					/>
-				</div>
-				<div class="flex justify-end gap-3">
-					<button
-						type="button"
-						onclick={() => (showNewAssignmentModal = false)}
-						class="btn btn-secondary"
-					>
-						Cancel
-					</button>
-					<button
-						type="submit"
-						class="btn btn-primary"
-						disabled={!assignmentName.trim() || !maxPoints}
-					>
-						Create Assignment
-					</button>
-				</div>
-			</form>
-		</div>
-	</div>
-{/if}
-
-<!-- Add Student Modal -->
-{#if showStudentModal}
-	<div
-		class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
-		onclick={(e) => e.target === e.currentTarget && (showStudentModal = false)}
-		onkeydown={(e) => e.key === 'Escape' && (showStudentModal = false)}
-		role="dialog"
-		aria-modal="true"
-		aria-label="Add student"
-		tabindex="0"
-	>
-		<div class="bg-card border border-border rounded-lg p-6 w-full max-w-md mx-4">
-			<h2 class="text-xl font-bold text-highlight mb-4">Add Student</h2>
-			<form
-				onsubmit={(e) => {
-					e.preventDefault();
-					handleAddStudent();
-				}}
-			>
-				<div class="mb-4">
-					<label for="student-name" class="block text-sm font-medium text-text-base mb-2">
-						Student Name
-					</label>
-					<input
-						id="student-name"
-						type="text"
-						bind:value={newStudentName}
-						placeholder="Enter student name"
-						class="input w-full"
-						required
-					/>
-				</div>
-				<div class="flex justify-end gap-3">
-					<button
-						type="button"
-						onclick={() => (showStudentModal = false)}
-						class="btn btn-secondary"
-					>
-						Cancel
-					</button>
-					<button type="submit" class="btn btn-primary" disabled={!newStudentName.trim()}>
-						Add Student
-					</button>
-				</div>
-			</form>
-		</div>
-	</div>
 {/if}

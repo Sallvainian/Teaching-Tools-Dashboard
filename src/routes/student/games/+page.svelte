@@ -2,7 +2,7 @@
 	import { authStore } from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { typedAuthStore, getUser } from '$lib/utils/storeHelpers';
+	import { getUser } from '$lib/utils/storeHelpers';
 
 	interface Game {
 		id: string;
@@ -10,7 +10,7 @@
 		created_at: string;
 		last_modified: string;
 		is_public: boolean;
-		settings: any;
+		settings: unknown;
 	}
 
 	let ownGames = $state<Game[]>([]);
@@ -57,7 +57,7 @@
 				.eq('shared_with_id', user.id);
 
 			if (sharedError) throw sharedError;
-			if (shared) sharedGames = shared.map((s) => s.games);
+			if (shared) sharedGames = shared.map((s: any) => s.games);
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'Failed to load games';
 		} finally {

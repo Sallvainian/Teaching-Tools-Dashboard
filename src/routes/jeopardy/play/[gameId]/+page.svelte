@@ -24,7 +24,7 @@
 	let gameId = $page.params.gameId;
 	let isLoading = $state(true);
 	let showAnswer = $state(false);
-	let selectedTeamId = '';
+	let _selectedTeamId = '';
 	let wagerInputValue = $state('0');
 
 	onMount(async () => {
@@ -43,7 +43,7 @@
 				categoryName: category?.name || ''
 			});
 			showAnswer = false;
-			selectedTeamId = '';
+			_selectedTeamId = '';
 			wagerInputValue = question.pointValue.toString();
 		}
 	}
@@ -64,7 +64,7 @@
 	function handleBackToBoard() {
 		setActiveQuestion(null);
 		showAnswer = false;
-		selectedTeamId = '';
+		_selectedTeamId = '';
 	}
 
 	function handleResetScores() {

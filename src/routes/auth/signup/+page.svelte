@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import { authStore } from '$lib/stores/auth';
 	import { page } from '$app/stores';
-	import { typedAuthStore, getUser, getRole, getIsAuthenticated } from '$lib/utils/storeHelpers';
+	import { getRole, getIsAuthenticated } from '$lib/utils/storeHelpers';
 
 	// Redirect if already authenticated
 	$effect(() => {

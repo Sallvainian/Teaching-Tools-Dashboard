@@ -1,47 +1,57 @@
 const CACHE_NAME = 'teacher-dashboard-v1';
 const urlsToCache = ['/', '/static/js/bundle.js', '/static/css/main.css'];
 
-self.addEventListener('install', (event: any) => {
-	event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache)));
-});
-
-self.addEventListener('activate', (event: any) => {
+self.addEventListener('install', (event: ExtendableEvent) => {
 	event.waitUntil(
-		caches
-			.keys()
-			.then((names) => Promise.all(names.map((name) => name !== CACHE_NAME && caches.delete(name))))
+		caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache))
 	);
 });
 
-self.addEventListener('fetch', (event: any) => {
+self.addEventListener('activate', (event: ExtendableEvent) => {
+	event.waitUntil(
+		caches.keys().then((names) =>
+			Promise.all(
+				names
+					.filter((name) => name !== CACHE_NAME)
+					.map((name) => caches.delete(name))
+			)
+		)
+	);
+});
+
+self.addEventListener('fetch', (event: FetchEvent) => {
 	if (event.request.method !== 'GET') return;
 
+	const url = new URL(event.request.url);
+
+	if (url.pathname.startsWith('/api')) {
+		event.respondWith(
+			fetch(event.request).catch(() =>
+				new Response('{}', {
+					status: 503,
+					headers: { 'Content-Type': 'application/json' }
+				})
+			)
+		);
+		return;
+	}
+
 	event.respondWith(
-		(async () => {
-			const url = new URL(event.request.url);
-			const cache = await caches.open(CACHE_NAME);
-
-			if (url.pathname.startsWith('/api')) {
-				try {
-					return await fetch(event.request);
-				} catch {
-					return new Response('{}', {
-						status: 503,
-						headers: { 'Content-Type': 'application/json' }
-					});
-				}
-			}
-
-			try {
-				const response = await fetch(event.request);
-				if (response.status === 200) cache.put(event.request, response.clone());
-				return response;
-			} catch {
-				const cachedResponse = await cache.match(event.request);
-				if (cachedResponse) return cachedResponse;
-				if (event.request.mode === 'navigate') return cache.match('/');
-				return new Response('Network error', { status: 503 });
-			}
-		})()
+		caches.match(event.request).then((cached) => {
+			if (cached) return cached;
+			return fetch(event.request)
+				.then((response) => {
+					if (response.status === 200) {
+						const responseClone = response.clone();
+						caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+					}
+					return response;
+				})
+				.catch(() =>
+					event.request.mode === 'navigate'
+						? caches.match('/')
+						: new Response('Network error', { status: 503 })
+				);
+		})
 	);
 });

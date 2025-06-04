@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { authStore } from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
 	import ErrorBoundary from '$lib/components/ErrorBoundary.svelte';
 	import SkeletonLoader from '$lib/components/SkeletonLoader.svelte';
@@ -117,7 +116,7 @@
 				<div class="space-y-6">
 					<!-- Stats skeleton -->
 					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-						{#each Array(4) as _}
+      {#each Array(4) as _, i (i)}
 							<SkeletonLoader type="card" />
 						{/each}
 					</div>

@@ -96,8 +96,12 @@ function createGradebookStore() {
 			// Load class_students relations
 			const classStudentsData = await gradebookService.getItems('class_students');
 
-			// Load assignments
+			// Load assignments with class relationships
 			const assignmentsData = await gradebookService.getItems('assignments');
+			
+			// Load gradebook_categories and categories to map assignments to classes
+			const gradebookCategoriesData = await gradebookService.getItems('gradebook_categories');
+			const categoriesData = await gradebookService.getItems('categories');
 
 			// Load grades
 			const gradesData = await gradebookService.getItems('grades');
@@ -109,7 +113,21 @@ function createGradebookStore() {
 				dbClassToAppClass(cls, classStudentsData)
 			);
 
-			const transformedAssignments = assignmentsData.map(dbAssignmentToAppAssignment);
+			// Map assignments to their classes through the foreign key chain
+			const transformedAssignments = assignmentsData.map((assignment) => {
+				// Find gradebook_category for this assignment
+				const gradebookCategory = gradebookCategoriesData.find(gc => gc.id === assignment.category_id);
+				if (gradebookCategory) {
+					// Find category for this gradebook_category
+					const category = categoriesData.find(c => c.id === gradebookCategory.category_id);
+					if (category) {
+						// Use the class_id from the category
+						return dbAssignmentToAppAssignment(assignment, category.class_id);
+					}
+				}
+				// Fallback to original behavior
+				return dbAssignmentToAppAssignment(assignment);
+			});
 
 			const transformedGrades = gradesData.map(dbGradeToAppGrade);
 
@@ -364,21 +382,84 @@ function createGradebookStore() {
 		if (!trimmed || maxPoints <= 0) return;
 
 		try {
-			// Insert into database or localStorage
+			console.log('🔧 Creating assignment with classId:', classId);
+			
+			// Verify the class exists first
+			const classData = await gradebookService.getItems('classes', {
+				filters: { id: classId }
+			});
+			
+			if (!classData || classData.length === 0) {
+				throw new Error(`Class with ID ${classId} not found`);
+			}
+			
+			console.log('🔧 Class found:', classData[0]);
+
+			// First, ensure a category exists for this class (assignments by default)
+			const existingCategoryEntries = await gradebookService.getItems('categories', {
+				filters: { class_id: classId, name: 'Assignments' }
+			});
+
+			let categoryId;
+			if (!existingCategoryEntries || existingCategoryEntries.length === 0) {
+				console.log('🔧 Creating category "Assignments" for class:', classData[0].name);
+				// Create category entry (class_id points to classes table)
+				const newCategoryEntry = await gradebookService.insertItem('categories', {
+					class_id: classId,
+					name: 'Assignments',
+					weight: 1.0,
+					description: 'General assignments for this class',
+					user_id: classData[0].user_id // Required for RLS policy
+				});
+				
+				if (newCategoryEntry) {
+					categoryId = newCategoryEntry.id;
+					console.log('🔧 Category created:', newCategoryEntry);
+				}
+			} else {
+				categoryId = existingCategoryEntries[0].id;
+				console.log('🔧 Using existing category:', existingCategoryEntries[0]);
+			}
+
+			// Now check if gradebook_category exists for this category
+			const existingGradebookCategories = await gradebookService.getItems('gradebook_categories', {
+				filters: { category_id: categoryId }
+			});
+
+			let gradebookCategoryId;
+			if (!existingGradebookCategories || existingGradebookCategories.length === 0) {
+				console.log('🔧 Creating gradebook_category for category:', categoryId);
+				// Create gradebook_category entry (category_id points to categories table)
+				const newGradebookCategory = await gradebookService.insertItem('gradebook_categories', {
+					name: 'Assignments',
+					category_id: categoryId
+				});
+				
+				if (newGradebookCategory) {
+					gradebookCategoryId = newGradebookCategory.id;
+					console.log('🔧 Gradebook category created:', newGradebookCategory);
+				}
+			} else {
+				gradebookCategoryId = existingGradebookCategories[0].id;
+				console.log('🔧 Using existing gradebook category:', existingGradebookCategories[0]);
+			}
+
+			// Insert assignment referencing the gradebook category
 			const result = await gradebookService.insertItem('assignments', {
-				// Type assertion for Inserts<T>
 				name: trimmed,
 				max_points: maxPoints,
-				category_id: classId // DB column is still category_id but it references classes
+				category_id: gradebookCategoryId
 			});
 
 			if (!result) throw new Error('Failed to add assignment');
 
-			// Update local store
-			const newAssignment = dbAssignmentToAppAssignment(result);
+			console.log('🔧 Assignment created successfully:', result);
+
+			// Update local store with correct class ID
+			const newAssignment = dbAssignmentToAppAssignment(result, classId);
 			assignments.update((arr: Assignment[]) => [...arr, newAssignment]);
 		} catch (err: unknown) {
-			// Error adding assignment: err
+			console.error('🔧 Error adding assignment:', err);
 			error.set(err instanceof Error ? err.message : 'Failed to add assignment');
 		}
 	}

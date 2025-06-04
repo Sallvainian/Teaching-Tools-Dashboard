@@ -3,7 +3,7 @@ import type { PageLoad } from './$types';
 import { get } from 'svelte/store';
 import { authStore } from '$lib/stores/auth';
 import { ensureAuthInitialized } from '$lib/utils/authInit';
-import { typedAuthStore, getIsAuthenticated } from '$lib/utils/storeHelpers';
+import { getIsAuthenticated } from '$lib/utils/storeHelpers';
 
 export const load: PageLoad = async () => {
 	// Ensure auth is initialized first

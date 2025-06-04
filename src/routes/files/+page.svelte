@@ -16,7 +16,7 @@
  import FileShareModal from '$lib/components/FileShareModal.svelte';
  import FolderTree from '$lib/components/FolderTree.svelte';
  import type { FileMetadata, FileFolder } from '$lib/types/files';
- import { formatFileSize, getFileType, getFileIcon } from '$lib/types/files';
+ import { formatFileSize, getFileIcon } from '$lib/types/files';
  import { supabase } from '$lib/supabaseClient';
  import { isAuthenticated } from '$lib/stores/auth';
  import { goto } from '$app/navigation';

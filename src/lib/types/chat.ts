@@ -64,7 +64,7 @@ export function conversationToUI(
 	conversation: ConversationWithDetails,
 	currentUserId: string
 ): ChatUIConversation {
-	const isGroup = (conversation as any).type === 'group';
+	const isGroup = (conversation as Record<string, unknown>).type === 'group';
 
 	let name = conversation.name || '';
 	let avatar = '';

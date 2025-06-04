@@ -48,7 +48,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 export const initializeDB = async () => {
 	try {
 		// Check connection to Supabase
-		const { data, error } = await supabase.from('app_users').select('count').limit(1);
+		const { data: _data, error } = await supabase.from('app_users').select('count').limit(1);
 		if (error) throw error;
 		console.info('Supabase connection successful');
 		return { success: true };

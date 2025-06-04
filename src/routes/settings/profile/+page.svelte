@@ -2,7 +2,7 @@
 	import ProfileForm from '$lib/components/auth/ProfileForm.svelte';
 	import { authStore, user } from '$lib/stores/auth';
 	import { goto } from '$app/navigation';
-	import { typedAuthStore, getUser } from '$lib/utils/storeHelpers';
+	import { getUser } from '$lib/utils/storeHelpers';
 
 	// Redirect if not authenticated
 	$effect(() => {

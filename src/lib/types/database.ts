@@ -63,7 +63,7 @@ export type Database = {
 						foreignKeyName: 'assignments_category_id_fkey';
 						columns: ['category_id'];
 						isOneToOne: false;
-						referencedRelation: 'gradebook_categories';
+						referencedRelation: 'classes';
 						referencedColumns: ['id'];
 					}
 				];
@@ -828,7 +828,7 @@ export type Database = {
 						foreignKeyName: 'student_categories_category_id_fkey';
 						columns: ['category_id'];
 						isOneToOne: false;
-						referencedRelation: 'gradebook_categories';
+						referencedRelation: 'classes';
 						referencedColumns: ['id'];
 					},
 					{

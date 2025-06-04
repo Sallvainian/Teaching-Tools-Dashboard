@@ -16,7 +16,3 @@ export async function ensureAuthInitialized(): Promise<void> {
 
 	return initPromise;
 }
-
-export function isAuthReady(): boolean {
-	return initPromise !== null;
-}

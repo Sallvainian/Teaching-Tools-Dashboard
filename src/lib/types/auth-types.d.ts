@@ -1,6 +1,6 @@
 import type { User, AuthSession } from '@supabase/supabase-js';
 import type { UserRole } from './database';
-import type { Readable } from 'svelte/store';
+import type { Readable as _Readable } from 'svelte/store';
 
 // Define the structure of the auth store for TypeScript
 export interface AuthStore {

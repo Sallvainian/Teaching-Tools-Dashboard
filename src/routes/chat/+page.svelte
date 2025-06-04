@@ -6,8 +6,8 @@
 	import { supabase } from '$lib/supabaseClient';
 	import UserSelectModal from '$lib/components/UserSelectModal.svelte';
 	import TypingIndicator from '$lib/components/TypingIndicator.svelte';
-	import type { ChatUIConversation, ChatUIMessage } from '$lib/types/chat';
-	import { typedAuthStore, getUser } from '$lib/utils/storeHelpers';
+ import type { ChatUIConversation, ChatUIMessage, ConversationWithDetails, ConversationParticipant } from '$lib/types/chat';
+	import { getUser } from '$lib/utils/storeHelpers';
 
 	// Chat state from stores
 	let conversations = $state<ChatUIConversation[]>([]);
@@ -40,8 +40,8 @@
 					time: chatStore.formatTime(conv.last_message?.created_at || conv.updated_at),
 					avatar: getConversationAvatar(conv, user.id),
 					online: isConversationOnline(conv, user.id),
-					isGroup: (conv as any).type === 'group',
-					members: (conv as any).type === 'group' ? conv.participants?.length : undefined
+					isGroup: (conv as ConversationWithDetails).type === 'group',
+					members: (conv as ConversationWithDetails).type === 'group' ? conv.participants?.length : undefined
 				}))
 			);
 
@@ -76,13 +76,20 @@
 	const unsubscribeTyping = chatStore.activeTypingUsers.subscribe((users) => (typingUsers = users));
 
 	// Helper functions
-	async function getConversationName(conv: any, currentUserId: string): Promise<string> {
+ async function getConversationName(conv: ConversationWithDetails, currentUserId: string): Promise<string> {
 		if (conv.is_group) {
 			return conv.name || `Group Chat (${conv.participants?.length || 0})`;
 		}
 
 		// Direct conversation - find other participant
-		const otherParticipant = conv.participants?.find((p: any) => p.user_id !== currentUserId);
+		const otherParticipant = conv.participants?.find((p: ConversationParticipant & { 
+			user?: { 
+				id: string; 
+				full_name: string; 
+				email: string; 
+				avatar_url?: string; 
+			} 
+		}) => p.user_id !== currentUserId);
 
 		// If we have participant data, use it
 		if (otherParticipant) {
@@ -94,7 +101,14 @@
 
 		// If we don't have participant data, try to find it in conversation_participants
 		if (conv.conversation_participants) {
-			const otherParticipantFromConv = conv.conversation_participants.find((p: any) => p.user_id !== currentUserId);
+			const otherParticipantFromConv = conv.conversation_participants.find((p: ConversationParticipant & { 
+				user?: { 
+					id: string; 
+					full_name: string; 
+					email: string; 
+					avatar_url?: string; 
+				} 
+			}) => p.user_id !== currentUserId);
 			if (otherParticipantFromConv) {
 				return otherParticipantFromConv?.user?.full_name || 
 					   otherParticipantFromConv?.full_name || 
@@ -116,7 +130,12 @@
 				.limit(1);
 
 			if (messages && messages.length > 0 && messages[0].sender) {
-				const sender = messages[0].sender as any;
+				const sender = messages[0].sender as { 
+					id: string; 
+					full_name: string; 
+					email: string; 
+					avatar_url?: string; 
+				};
 				return sender.full_name || sender.email || 'Unknown User';
 			}
 		} catch (error) {
@@ -135,13 +154,20 @@
 		return conv.name || 'Unknown User';
 	}
 
-	function getConversationAvatar(conv: any, currentUserId: string): string {
+ function getConversationAvatar(conv: ConversationWithDetails, currentUserId: string): string {
 		if (conv.is_group) {
 			const name = conv.name || 'Group';
 			return chatStore.getInitials(name);
 		}
 
-		const otherParticipant = conv.participants?.find((p: any) => p.user_id !== currentUserId);
+		const otherParticipant = conv.participants?.find((p: ConversationParticipant & { 
+			user?: { 
+				id: string; 
+				full_name: string; 
+				email: string; 
+				avatar_url?: string; 
+			} 
+		}) => p.user_id !== currentUserId);
 
 		// If we have participant data, use it
 		if (otherParticipant) {
@@ -154,7 +180,14 @@
 
 		// If we don't have participant data, try to find it in conversation_participants
 		if (conv.conversation_participants) {
-			const otherParticipantFromConv = conv.conversation_participants.find((p: any) => p.user_id !== currentUserId);
+			const otherParticipantFromConv = conv.conversation_participants.find((p: ConversationParticipant & { 
+				user?: { 
+					id: string; 
+					full_name: string; 
+					email: string; 
+					avatar_url?: string; 
+				} 
+			}) => p.user_id !== currentUserId);
 			if (otherParticipantFromConv) {
 				const name = otherParticipantFromConv?.user?.full_name || 
 							 otherParticipantFromConv?.full_name || 
@@ -177,7 +210,7 @@
 		return chatStore.getInitials('Direct Chat');
 	}
 
-	function getLastMessageText(conv: any, currentUserId: string): string {
+ function getLastMessageText(conv: ConversationWithDetails, currentUserId: string): string {
 		if (!conv.last_message) return 'No messages yet';
 
 		let prefix = '';
@@ -192,14 +225,28 @@
 				prefix = `${senderName}: `;
 			} else {
 				// If sender name is not available in the last message, try to get it from participants
-				const otherParticipant = conv.participants?.find((p: any) => p.user_id !== currentUserId);
+				const otherParticipant = conv.participants?.find((p: ConversationParticipant & { 
+					user?: { 
+						id: string; 
+						full_name: string; 
+						email: string; 
+						avatar_url?: string; 
+					} 
+				}) => p.user_id !== currentUserId);
 				if (otherParticipant) {
 					const participantName = otherParticipant?.user?.full_name || 
 										   otherParticipant?.full_name || 
 										   otherParticipant?.name;
 					prefix = participantName ? `${participantName}: ` : 'Chat Partner: ';
 				} else if (conv.conversation_participants) {
-					const otherParticipantFromConv = conv.conversation_participants.find((p: any) => p.user_id !== currentUserId);
+					const otherParticipantFromConv = conv.conversation_participants.find((p: ConversationParticipant & { 
+						user?: { 
+							id: string; 
+							full_name: string; 
+							email: string; 
+							avatar_url?: string; 
+						} 
+					}) => p.user_id !== currentUserId);
 					if (otherParticipantFromConv) {
 						const participantName = otherParticipantFromConv?.user?.full_name || 
 											   otherParticipantFromConv?.full_name || 
@@ -216,7 +263,7 @@
 		return prefix + conv.last_message.content;
 	}
 
-	function isConversationOnline(conv: any, currentUserId: string): boolean {
+ function isConversationOnline(conv: ConversationWithDetails, currentUserId: string): boolean {
 		// For now, return false. We can implement proper online status later
 		return false;
 	}

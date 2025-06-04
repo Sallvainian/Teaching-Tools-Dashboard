@@ -3,8 +3,6 @@
 	import ClassList from '$lib/components/ClassList.svelte';
 	import StudentRoster from '$lib/components/StudentRoster.svelte';
 	import ImportWizard from '$lib/components/ImportWizard.svelte';
-	import { onMount } from 'svelte';
-	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 	import { isAuthenticated } from '$lib/stores/auth';
 

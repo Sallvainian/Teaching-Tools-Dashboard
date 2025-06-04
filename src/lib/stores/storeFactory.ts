@@ -1,5 +1,5 @@
 // src/lib/stores/storeFactory.ts
-import { writable, derived, get, type Readable, type Writable } from 'svelte/store';
+import { writable, derived, get, type Readable, type Writable as _Writable } from 'svelte/store';
 import { storeRegistry } from './registry';
 
 /**
@@ -15,9 +15,9 @@ export interface StoreOptions<T> {
   /** Optional function to validate store updates */
   validator?: (value: T) => boolean;
   /** Optional function to transform value before storing */
-  transformer?: (value: T) => any;
+  transformer?: (value: T) => unknown;
   /** Optional function to transform value when retrieving from storage */
-  reverseTransformer?: (value: any) => T;
+  reverseTransformer?: (value: unknown) => T;
 }
 
 /**
@@ -63,61 +63,61 @@ export function createStore<T>({
 
   // Create the writable store
   const store = writable<T>(startValue);
-  
+
   // Create the enhanced store
   const enhancedStore: EnhancedStore<T> = {
     subscribe: store.subscribe,
-    
+
     set: (value: T) => {
       // Validate if validator is provided
       if (validator && !validator(value)) {
         console.warn(`Invalid value for store ${name}:`, value);
         return;
       }
-      
+
       store.set(value);
-      
+
       // Persist to localStorage if key is provided
       if (localStorageKey && typeof window !== 'undefined') {
         const valueToStore = transformer ? transformer(value) : value;
         window.localStorage.setItem(localStorageKey, JSON.stringify(valueToStore));
       }
     },
-    
+
     update: (updater: (value: T) => T) => {
       const currentValue = get(store);
       const newValue = updater(currentValue);
-      
+
       // Validate if validator is provided
       if (validator && !validator(newValue)) {
         console.warn(`Invalid value for store ${name} after update:`, newValue);
         return;
       }
-      
+
       store.set(newValue);
-      
+
       // Persist to localStorage if key is provided
       if (localStorageKey && typeof window !== 'undefined') {
         const valueToStore = transformer ? transformer(newValue) : newValue;
         window.localStorage.setItem(localStorageKey, JSON.stringify(valueToStore));
       }
     },
-    
+
     reset: () => {
       store.set(initialValue);
-      
+
       // Remove from localStorage if key is provided
       if (localStorageKey && typeof window !== 'undefined') {
         window.localStorage.removeItem(localStorageKey);
       }
     },
-    
+
     current: () => get(store)
   };
-  
+
   // Register the store
   storeRegistry.register(name, enhancedStore);
-  
+
   return enhancedStore;
 }
 
@@ -164,15 +164,15 @@ export function createStoreSlice<T, U>(
 ): EnhancedStore<U> {
   // Create a derived store for reading
   const sliceStore = derived(parentStore, $parent => selector($parent));
-  
+
   // Create the enhanced store
   const enhancedSlice: EnhancedStore<U> = {
     subscribe: sliceStore.subscribe,
-    
+
     set: (value: U) => {
       parentStore.update(state => updater(state, value));
     },
-    
+
     update: (updaterFn: (value: U) => U) => {
       parentStore.update(state => {
         const currentSlice = selector(state);
@@ -180,7 +180,7 @@ export function createStoreSlice<T, U>(
         return updater(state, newSlice);
       });
     },
-    
+
     reset: () => {
       // This is a simplified reset that assumes the parent knows how to reset this slice
       // A more sophisticated implementation might take a resetValue parameter
@@ -189,12 +189,12 @@ export function createStoreSlice<T, U>(
         return updater(state, initialSlice);
       });
     },
-    
+
     current: () => selector(get(parentStore))
   };
-  
+
   // Register the slice
   storeRegistry.register(name, enhancedSlice);
-  
+
   return enhancedSlice;
 }

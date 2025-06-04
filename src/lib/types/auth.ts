@@ -1,5 +1,5 @@
 // Authentication types with role support
-import type { User } from '@supabase/supabase-js';
+import type { User, AuthSession } from '@supabase/supabase-js';
 import type { UserRole } from './database';
 
 export interface AppUser extends User {
@@ -17,7 +17,7 @@ export interface AuthState {
     avatar_url?: string | null;
     role: UserRole | null;
   } | null;
-  session: any | null;
+  session: AuthSession | null;
   role: UserRole | null;
   isAuthenticated: boolean;
   isTeacher?: boolean;

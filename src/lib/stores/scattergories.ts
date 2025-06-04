@@ -85,12 +85,12 @@ const initialState: ScattergoriesState = {
 };
 
 function createScattergoriesStore() {
-	const { subscribe, set, update } = writable<ScattergoriesState>(initialState);
+	const { subscribe, set: _set, update } = writable<ScattergoriesState>(initialState);
 
 	let timer: ReturnType<typeof setInterval> | null = null;
 
 	const generateLetter = (): string => {
-		const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+		const _letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 		// Exclude Q, U, X, Z for better gameplay
 		const filteredLetters = 'ABCDEFGHIJKLMNOPRSTUVWY';
 		return filteredLetters[Math.floor(Math.random() * filteredLetters.length)];
@@ -103,7 +103,7 @@ function createScattergoriesStore() {
 
 	return {
 		subscribe,
-		
+
 		// Game controls
 		startGame: () => update(state => {
 			if (state.gameState === 'ready') {
@@ -112,7 +112,7 @@ function createScattergoriesStore() {
 			}
 			state.gameState = 'playing';
 			state.timeRemaining = state.timeLimit;
-			
+
 			// Start timer (only in browser)
 			if (browser) {
 				if (timer) clearInterval(timer);
@@ -127,7 +127,7 @@ function createScattergoriesStore() {
 					});
 				}, 1000);
 			}
-			
+
 			return state;
 		}),
 
@@ -178,7 +178,7 @@ function createScattergoriesStore() {
 
 		addCustomCategory: (categoryText: string) => {
 			if (!categoryText.trim()) return;
-			
+
 			update(state => {
 				const newCategory: Category = {
 					id: `custom-${Date.now()}`,

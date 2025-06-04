@@ -42,12 +42,12 @@ export function dbClassToAppClass(dbClass: DBClass, classStudents: DBClassStuden
 	};
 }
 
-export function dbAssignmentToAppAssignment(dbAssignment: DBAssignment): Assignment {
+export function dbAssignmentToAppAssignment(dbAssignment: DBAssignment, classId?: string): Assignment {
 	return {
 		id: dbAssignment.id,
 		name: dbAssignment.name,
 		maxPoints: dbAssignment.max_points,
-		classId: dbAssignment.category_id // Still maps from DB column category_id to app property classId
+		classId: classId || dbAssignment.category_id // Use provided classId or fallback to category_id
 	};
 }
 

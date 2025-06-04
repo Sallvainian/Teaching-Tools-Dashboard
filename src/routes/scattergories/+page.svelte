@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { scattergories, timeFormatted, isPlaying, canStart } from '$lib/stores/scattergories';
+	import { scattergories } from '$lib/stores/scattergories';
 	import GameTimer from './components/GameTimer.svelte';
 	import LetterDisplay from './components/LetterDisplay.svelte';
 	import CategoryList from './components/CategoryList.svelte';

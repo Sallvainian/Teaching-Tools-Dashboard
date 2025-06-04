@@ -193,7 +193,7 @@
 		}
 	}
 
-	function handleApplyTemplate(template: any) {
+	function handleApplyTemplate(template: unknown) {
 		if ($getActiveGame) {
 			applyGameTemplate($getActiveGame.id, template);
 			showTemplateModal = false;
