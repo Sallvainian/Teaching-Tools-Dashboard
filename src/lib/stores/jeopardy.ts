@@ -113,7 +113,7 @@ function createJeopardyStore() {
 				}
 
 				// Extract teams from settings (since teams table doesn't exist)
-				const gameSettings = dbGame.settings as any;
+				const gameSettings = dbGame.settings as Record<string, unknown>;
 				const teams = gameSettings?.teams ?? [];
 				const settings = gameSettings?.gameSettings ?? {
 					useTimer: true,
@@ -135,9 +135,9 @@ function createJeopardyStore() {
 			}
 
 			games.set(fullGames);
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.error('Error loading games:', err);
-			error.set(err.message ?? 'Failed to load games');
+			error.set(err instanceof Error ? err.message : 'Failed to load games');
 		} finally {
 			loading.set(false);
 		}
@@ -162,7 +162,7 @@ function createJeopardyStore() {
 				settings: {
 					gameSettings: game.settings,
 					teams: game.teams
-				} as any,
+				} as { gameSettings: GameSettings, teams: Team[] },
 				last_modified: new Date().toISOString(),
 				is_public: false,
 				owner_role: 'teacher' as const

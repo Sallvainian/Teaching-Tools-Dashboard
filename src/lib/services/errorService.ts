@@ -1,7 +1,5 @@
 // src/lib/services/errorService.ts
-import { writable, derived } from 'svelte/store';
 import { createStore, createDerivedStore } from '$lib/stores/storeFactory';
-import { storeRegistry } from '$lib/stores/registry';
 
 /**
  * Error severity levels

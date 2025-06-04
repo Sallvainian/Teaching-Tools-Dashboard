@@ -1,9 +1,9 @@
 // src/lib/stores/auth.ts
 import type { AuthSession, User } from '@supabase/supabase-js';
 import type { UserRole } from '$lib/types/database';
-import type { AppUser, AuthState } from '$lib/types/auth';
+import type { AuthState, type AppUser as _AppUser } from '$lib/types/auth';
 import { clearSupabaseAuthStorage } from '$lib/utils/authStorage';
-import { createStore, createDerivedStore, type EnhancedStore } from './storeFactory';
+import { createStore, createDerivedStore, type EnhancedStore as _EnhancedStore } from './storeFactory';
 import { storeRegistry } from './registry';
 
 interface UserProfile {
@@ -659,7 +659,7 @@ function createAuthStore() {
  const combinedStore: {
  	subscribe: (callback: (value: AuthState) => void) => () => void;
  	signIn: (email: string, password: string) => Promise<boolean>;
- 	signUp: (email: string, password: string, userData?: Record<string, any>) => Promise<boolean | { needsEmailConfirmation: boolean }>;
+ 	signUp: (email: string, password: string, userData?: Record<string, unknown>) => Promise<boolean | { needsEmailConfirmation: boolean }>;
  	signUpStudent: (data: { email: string; password: string; fullName: string; joinCode?: string }) => Promise<boolean | { needsEmailConfirmation: boolean }>;
  	signUpTeacher: (data: { email: string; password: string; fullName: string; schoolName?: string }) => Promise<boolean | { needsEmailConfirmation: boolean }>;
  	signOut: () => Promise<boolean>;
@@ -667,13 +667,13 @@ function createAuthStore() {
  	updateUserProfile: (userData: Record<string, unknown>) => Promise<boolean>;
  	initialize: () => Promise<void>;
  } = {
- 	subscribe: createDerivedStore<any, AuthState>({
+ 	subscribe: createDerivedStore<[User | null, UserProfile | null, AuthSession | null, boolean, string | null, boolean, UserRole | null, boolean], AuthState>({
 			name: 'auth.combined',
 			stores: [
 				user, profile, session, loading, error, 
 				isAuthenticated, role, isInitialized
-			] as any[],
-			deriveFn: ([$user, $profile, $session, $loading, $error, $isAuthenticated, $role, $isInitialized]: any[]) => ({
+			],
+			deriveFn: ([$user, $profile, $session, $loading, $error, $isAuthenticated, $role, $isInitialized]) => ({
 				user: $user,
 				profile: $profile,
 				session: $session,

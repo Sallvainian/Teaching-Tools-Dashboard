@@ -6,9 +6,9 @@ import { writable, derived, type Readable, type Writable } from 'svelte/store';
  * It helps standardize store patterns, improve type safety, and make debugging easier.
  */
 export class StoreRegistry {
-  private stores: Map<string, Readable<any>> = new Map();
-  private writableStores: Map<string, Writable<any>> = new Map();
-  
+  private stores: Map<string, Readable<unknown>> = new Map();
+  private writableStores: Map<string, Writable<unknown>> = new Map();
+
   /**
    * Register a store with the registry
    * @param name Unique name for the store
@@ -19,13 +19,13 @@ export class StoreRegistry {
       console.warn(`Store with name "${name}" already exists. Overwriting.`);
     }
     this.stores.set(name, store);
-    
+
     // If it's a writable store, also register it in the writableStores map
     if ('set' in store && 'update' in store) {
       this.writableStores.set(name, store as Writable<T>);
     }
   }
-  
+
   /**
    * Get a store by name
    * @param name The name of the store to retrieve
@@ -34,7 +34,7 @@ export class StoreRegistry {
   get<T>(name: string): Readable<T> | undefined {
     return this.stores.get(name) as Readable<T> | undefined;
   }
-  
+
   /**
    * Get a writable store by name
    * @param name The name of the writable store to retrieve
@@ -43,7 +43,7 @@ export class StoreRegistry {
   getWritable<T>(name: string): Writable<T> | undefined {
     return this.writableStores.get(name) as Writable<T> | undefined;
   }
-  
+
   /**
    * List all registered store names
    * @returns Array of store names
@@ -51,7 +51,7 @@ export class StoreRegistry {
   listStores(): string[] {
     return Array.from(this.stores.keys());
   }
-  
+
   /**
    * Create a derived store from multiple registered stores
    * @param dependencies Array of store names to depend on
@@ -69,10 +69,10 @@ export class StoreRegistry {
       }
       return store;
     });
-    
+
     return derived(stores, (values) => deriveFn(values as T[]));
   }
-  
+
   /**
    * Create and register a new writable store
    * @param name Unique name for the store
@@ -84,7 +84,7 @@ export class StoreRegistry {
     this.register(name, store);
     return store;
   }
-  
+
   /**
    * Create and register a new derived store
    * @param name Unique name for the store
@@ -101,21 +101,21 @@ export class StoreRegistry {
     this.register(name, derivedStore);
     return derivedStore;
   }
-  
+
   /**
    * Debug helper to log the current state of all stores
    */
   debugStores(): void {
     console.group('Store Registry Debug');
     console.log('Registered stores:', this.listStores());
-    
+
     this.stores.forEach((store, name) => {
-      let value: any;
+      let value: unknown;
       const unsubscribe = store.subscribe(v => { value = v; });
       console.log(`${name}:`, value);
       unsubscribe();
     });
-    
+
     console.groupEnd();
   }
 }

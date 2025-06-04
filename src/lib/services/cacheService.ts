@@ -88,7 +88,7 @@ export class CacheService {
         originalError: error,
         retryable: false
       });
-      
+
       // Fallback to memory cache if IndexedDB is not available
       console.warn('IndexedDB not available, falling back to memory cache');
     }
@@ -121,12 +121,12 @@ export class CacheService {
    */
   async set<T>(key: string, value: T, options: CacheOptions = {}): Promise<void> {
     const opts = { ...DEFAULT_CACHE_OPTIONS, ...options };
-    
+
     try {
       const db = await this.getDb();
-      
+
       const expiresAt = opts.ttl !== null ? Date.now() + (opts.ttl || 0) : null;
-      
+
       const entry: CacheEntry<T> = {
         key,
         value,
@@ -134,7 +134,7 @@ export class CacheService {
         expiresAt,
         tags: opts.tags || []
       };
-      
+
       await db.put(this.storeName, entry);
     } catch (error) {
       errorService.logError({
@@ -155,20 +155,20 @@ export class CacheService {
   async get<T>(key: string): Promise<T | null> {
     try {
       const db = await this.getDb();
-      
+
       const entry = await db.get(this.storeName, key) as CacheEntry<T> | undefined;
-      
+
       if (!entry) {
         return null;
       }
-      
+
       // Check if entry is expired
       if (entry.expiresAt !== null && entry.expiresAt < Date.now()) {
         // Remove expired entry
         await db.delete(this.storeName, key);
         return null;
       }
-      
+
       return entry.value;
     } catch (error) {
       errorService.logError({
@@ -178,7 +178,7 @@ export class CacheService {
         originalError: error,
         retryable: false
       });
-      
+
       return null;
     }
   }
@@ -228,23 +228,23 @@ export class CacheService {
     if (tags.length === 0) {
       return;
     }
-    
+
     try {
       const db = await this.getDb();
-      
+
       // Get all entries with matching tags
       const tx = db.transaction(this.storeName, 'readwrite');
       const store = tx.objectStore(this.storeName);
       const tagIndex = store.index('tags');
-      
+
       for (const tag of tags) {
         const keys = await tagIndex.getAllKeys(tag);
-        
+
         for (const key of keys) {
           await store.delete(key);
         }
       }
-      
+
       await tx.done;
     } catch (error) {
       errorService.logError({
@@ -263,22 +263,22 @@ export class CacheService {
   async cleanExpired(): Promise<void> {
     try {
       const db = await this.getDb();
-      
+
       const tx = db.transaction(this.storeName, 'readwrite');
       const store = tx.objectStore(this.storeName);
       const expiresAtIndex = store.index('expiresAt');
-      
+
       // Get all entries that have expired
       const now = Date.now();
       const range = IDBKeyRange.upperBound(now);
-      
+
       // Get all keys where expiresAt is not null and less than now
       const keys = await expiresAtIndex.getAllKeys(range);
-      
+
       for (const key of keys) {
         await store.delete(key);
       }
-      
+
       await tx.done;
     } catch (error) {
       errorService.logError({
@@ -299,14 +299,14 @@ export class CacheService {
   async getMetadata(key: string): Promise<Omit<CacheEntry<unknown>, 'value'> | null> {
     try {
       const db = await this.getDb();
-      
+
       const entry = await db.get(this.storeName, key) as CacheEntry<unknown> | undefined;
-      
+
       if (!entry) {
         return null;
       }
-      
-      const { value, ...metadata } = entry;
+
+      const { value: _value, ...metadata } = entry;
       return metadata;
     } catch (error) {
       errorService.logError({
@@ -316,7 +316,7 @@ export class CacheService {
         originalError: error,
         retryable: false
       });
-      
+
       return null;
     }
   }
@@ -329,18 +329,18 @@ export class CacheService {
   async has(key: string): Promise<boolean> {
     try {
       const db = await this.getDb();
-      
+
       const entry = await db.get(this.storeName, key) as CacheEntry<unknown> | undefined;
-      
+
       if (!entry) {
         return false;
       }
-      
+
       // Check if entry is expired
       if (entry.expiresAt !== null && entry.expiresAt < Date.now()) {
         return false;
       }
-      
+
       return true;
     } catch (error) {
       errorService.logError({
@@ -350,7 +350,7 @@ export class CacheService {
         originalError: error,
         retryable: false
       });
-      
+
       return false;
     }
   }
@@ -381,22 +381,22 @@ export async function fetchWithCache<T>(
   options: CacheOptions = {}
 ): Promise<T> {
   const opts = { ...DEFAULT_CACHE_OPTIONS, ...options };
-  
+
   // Check cache first unless force refresh is specified
   if (!opts.forceRefresh) {
     const cachedValue = await cacheService.get<T>(key);
-    
+
     if (cachedValue !== null) {
       return cachedValue;
     }
   }
-  
+
   // Fetch fresh data
   const value = await fetcher();
-  
+
   // Cache the result
   await cacheService.set(key, value, opts);
-  
+
   return value;
 }
 
@@ -413,10 +413,10 @@ export async function fetchWithSWR<T>(
   options: CacheOptions = {}
 ): Promise<T> {
   const opts = { ...DEFAULT_CACHE_OPTIONS, ...options };
-  
+
   // Check cache first
   const cachedValue = await cacheService.get<T>(key);
-  
+
   // If we have a cached value, use it and revalidate in the background
   if (cachedValue !== null) {
     // Revalidate in the background
@@ -429,16 +429,16 @@ export async function fetchWithSWR<T>(
         console.warn(`Background revalidation failed for ${key}:`, error);
       }
     })();
-    
+
     return cachedValue;
   }
-  
+
   // No cached value, fetch fresh data
   const value = await fetcher();
-  
+
   // Cache the result
   await cacheService.set(key, value, opts);
-  
+
   return value;
 }
 

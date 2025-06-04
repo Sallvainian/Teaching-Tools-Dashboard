@@ -352,7 +352,7 @@ async function loadConversations(): Promise<void> {
 
  	// Get last message for each conversation
  	const conversationsWithMessages = await Promise.all(
- 		(conversationsData || []).map(async (conv: any) => {
+ 		(conversationsData || []).map(async (conv: Record<string, unknown>) => {
 				// Get last message (may not exist for new conversations)
 				const { data: lastMessages } = await supabase
 					.from('messages')
@@ -369,7 +369,7 @@ async function loadConversations(): Promise<void> {
 				const lastMessage = lastMessages?.[0] || null;
 
 				// Get participants separately
-				const { data: participants, error: participantsError } = await supabase
+				const { data: participants, error: _participantsError } = await supabase
 					.from('conversation_participants')
 					.select(
 						`

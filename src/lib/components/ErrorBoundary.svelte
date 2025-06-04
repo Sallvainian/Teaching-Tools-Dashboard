@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { dev } from '$app/environment';
+	import type { Snippet } from 'svelte';
+	
 	interface Props {
 		error?: Error | null;
 		retry?: () => void;
- 	children?: () => unknown;
+ 		children?: Snippet;
 		fallback?: boolean;
 	}
 
