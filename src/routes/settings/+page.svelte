@@ -1,70 +1,8 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { gradebookStore } from '$lib/stores/gradebook';
-
-	// Settings values
-	let darkMode = $state(true);
-	let useSupabase = $state(true);
-
-	onMount(() => {
-		// Load current settings for dark mode
-		const storedDarkMode = localStorage.getItem('darkMode');
-		if (storedDarkMode !== null) {
-			darkMode = JSON.parse(storedDarkMode);
-		}
-
-		// Load current settings for data storage
-		const storedUseSupabase = localStorage.getItem('useSupabase');
-		if (storedUseSupabase !== null) {
-			useSupabase = JSON.parse(storedUseSupabase);
-		} else {
-			// Default to true if not set
-			useSupabase = true;
-		}
-	});
-
-	function handleToggleDarkMode() {
-		darkMode = !darkMode;
-		localStorage.setItem('darkMode', JSON.stringify(darkMode));
-
-		// Apply dark mode changes
-		if (darkMode) {
-			document.documentElement.classList.add('dark');
-		} else {
-			document.documentElement.classList.remove('dark');
-		}
-
-		// Set AG Grid theme mode
-		document.documentElement.setAttribute('data-ag-theme-mode', darkMode ? 'dark' : 'light');
-	}
-
-	function handleToggleDataStorage() {
-		useSupabase = !useSupabase;
-		localStorage.setItem('useSupabase', JSON.stringify(useSupabase));
-
-		// Update the gradebook store to use new setting
-		gradebookStore.setUseSupabase(useSupabase);
-
-		// Refresh to apply changes
-		if (confirm('Storage setting changed. Reload page to apply changes?')) {
-			window.location.reload();
-		}
-	}
-
-	function handleClearData() {
-		if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
-			if (useSupabase) {
-				// Clear from both Supabase and localStorage
-				gradebookStore.clearAllData();
-				// logEntriesStore doesn't exist yet
-				// jeopardyStore doesn't have clearAllData method
-			} else {
-				// Clear localStorage only
-				localStorage.clear();
-				window.location.reload();
-			}
-		}
-	}
+	import { settingsStore } from '$lib/stores/settings';
+	
+	// Get reactive settings from store
+	const { darkMode, useSupabase } = settingsStore;
 </script>
 
 <div class="max-w-4xl mx-auto">
@@ -79,8 +17,8 @@
 				<input
 					type="checkbox"
 					id="toggle-dark-mode"
-					checked={darkMode}
-					onchange={handleToggleDarkMode}
+					checked={$darkMode}
+					onchange={settingsStore.toggleDarkMode}
 					class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-card border-4 appearance-none cursor-pointer"
 				/>
 				<label
@@ -88,7 +26,7 @@
 					class="toggle-label block overflow-hidden h-6 rounded-full bg-surface cursor-pointer"
 				></label>
 			</div>
-			<span class="text-muted">{darkMode ? 'On' : 'Off'}</span>
+			<span class="text-muted">{$darkMode ? 'On' : 'Off'}</span>
 		</div>
 
 		<p class="text-dark-muted mb-6">
@@ -106,8 +44,8 @@
 				<input
 					type="checkbox"
 					id="toggle-storage"
-					checked={useSupabase}
-					onchange={handleToggleDataStorage}
+					checked={$useSupabase}
+					onchange={settingsStore.toggleDataStorage}
 					class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-card border-4 appearance-none cursor-pointer"
 				/>
 				<label
@@ -115,7 +53,7 @@
 					class="toggle-label block overflow-hidden h-6 rounded-full bg-surface cursor-pointer"
 				></label>
 			</div>
-			<span class="text-muted">{useSupabase ? 'On' : 'Off'}</span>
+			<span class="text-muted">{$useSupabase ? 'On' : 'Off'}</span>
 		</div>
 
 		<p class="text-dark-muted mb-6">
@@ -129,7 +67,7 @@
 
 		<div class="space-y-4">
 			<button
-				onclick={handleClearData}
+				onclick={settingsStore.clearAllData}
 				class="py-2 px-4 bg-error text-highlight font-medium rounded-lg hover:bg-error-hover transition focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
 			>
 				Clear All Data
@@ -152,9 +90,9 @@
 		</p>
 
 		<div class="mt-6 text-xs text-dark-muted">
-			<p>Current Storage: {useSupabase ? 'Supabase Database' : 'LocalStorage (Browser-based)'}</p>
+			<p>Current Storage: {$useSupabase ? 'Supabase Database' : 'LocalStorage (Browser-based)'}</p>
 			<p class="mt-1">
-				{#if useSupabase}
+				{#if $useSupabase}
 					Data is stored in Supabase cloud database with browser localStorage as fallback. This
 					makes your data accessible across devices when you're logged in.
 				{:else}

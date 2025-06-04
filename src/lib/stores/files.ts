@@ -4,9 +4,11 @@ import type {
 	FileFolderWithChildren,
 	FileMetadataWithFolder,
 	UserFileStats,
-	FileUploadProgress
+	FileUploadProgress,
+	FileMetadata
 } from '$lib/types/files';
 import { fileService } from '$lib/services/fileService';
+import { uiStore } from './ui';
 
 // Store state interface
 interface FileStoreState {
@@ -134,7 +136,7 @@ function formatFileSize(bytes: number): string {
 
 // =================== ACTIONS ===================
 
-export const filesActions = {
+const actions = {
 	// Ensure data is loaded
 	async ensureDataLoaded() {
 		const state = get(fileStore);
@@ -504,5 +506,138 @@ export const filesActions = {
 	}
 };
 
-// Export the main store
+// Enhanced UI Actions that integrate with uiStore
+const enhancedActions = {
+	// File preview with UI state management
+	previewFile(file: FileMetadata) {
+		uiStore.openFilePreviewModal(file);
+	},
+
+	// File sharing with UI state management
+	shareFile(file: FileMetadata) {
+		uiStore.openFileShareModal(file);
+	},
+
+	// Create folder with UI state management
+	createFolderWithModal(parentFolderId: string | null = null) {
+		uiStore.openNewFolderModal(parentFolderId);
+	},
+
+	// Delete file with confirmation modal
+	deleteFileWithConfirmation(file: FileMetadata) {
+		uiStore.openConfirmDeleteModal(file, async () => {
+			const success = await actions.deleteFile(file.id);
+			if (success) {
+				uiStore.closeConfirmDeleteModal();
+			}
+		});
+	},
+
+	// Bulk delete files with confirmation
+	async bulkDeleteFiles(fileIds: string[]) {
+		if (fileIds.length === 0) return false;
+
+		const confirmed = confirm(`Are you sure you want to delete ${fileIds.length} file(s)?`);
+		if (!confirmed) return false;
+
+		try {
+			setError(null);
+			const results = await Promise.allSettled(
+				fileIds.map(id => fileService.deleteFile(id))
+			);
+
+			const successful = results.filter(result => 
+				result.status === 'fulfilled' && result.value
+			).length;
+
+			if (successful > 0) {
+				// Remove successfully deleted files from state
+				updateStore((state) => ({
+					...state,
+					files: state.files.filter(f => !fileIds.includes(f.id))
+				}));
+
+				// Reload deleted files if in trash view
+				const currentState = get(fileStore);
+				if (currentState.showTrash) {
+					await actions.loadDeletedFiles();
+				}
+			}
+
+			if (successful < fileIds.length) {
+				setError(`${successful}/${fileIds.length} files deleted successfully`);
+			}
+
+			return successful === fileIds.length;
+		} catch (err) {
+			console.error('Error in bulk delete:', err);
+			setError(err instanceof Error ? err.message : 'Bulk delete failed');
+			return false;
+		}
+	},
+
+	// View management
+	setView(view: 'grid' | 'list') {
+		uiStore.setFileView(view);
+	},
+
+	// Search management
+	search(query: string) {
+		uiStore.setFileSearch(query);
+	},
+
+	// Sort management
+	setSort(by: string, direction: 'asc' | 'desc') {
+		uiStore.setFileSort(by, direction);
+	},
+
+	toggleSortDirection() {
+		uiStore.toggleFileSortDirection();
+	},
+
+	// Create folder from modal
+	async createFolderFromModal(name: string, parentId?: string) {
+		const newFolder = await actions.createFolder(name, parentId);
+		if (newFolder) {
+			uiStore.closeNewFolderModal();
+		}
+		return newFolder;
+	},
+
+	// Handle file upload with UI feedback
+	async uploadFileWithProgress(file: File, folderId?: string) {
+		try {
+			const result = await actions.uploadFile(file, folderId);
+			
+			// Clear upload progress after completion
+			setTimeout(() => {
+				updateStore((state) => ({
+					...state,
+					uploadProgress: state.uploadProgress.filter(item => item.file !== file)
+				}));
+			}, 2000); // Keep progress visible for 2 seconds
+
+			return result;
+		} catch (err) {
+			// Clear failed upload from progress
+			updateStore((state) => ({
+				...state,
+				uploadProgress: state.uploadProgress.filter(item => item.file !== file)
+			}));
+			throw err;
+		}
+	}
+};
+
+// Export actions separately for convenience  
+export const filesActions = { ...actions, ...enhancedActions };
+
+// Export the main store (backward compatibility)
 export { fileStore };
+
+// Export enhanced store with actions
+export const filesStore = {
+	subscribe: fileStore.subscribe,
+	...actions,
+	...enhancedActions
+};

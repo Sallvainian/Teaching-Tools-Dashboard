@@ -344,11 +344,55 @@ async function loadConversations(): Promise<void> {
 			throw new Error('User not authenticated');
 		}
 
-		// Load conversations using RPC function to avoid RLS recursion
-		const { data: conversationsData, error: conversationsError } =
-			await supabase.rpc('get_user_conversations');
+		// Load conversations using direct queries to respect RLS policies
+		// Get conversations the user created
+		const { data: ownedConversations, error: ownedError } = await supabase
+			.from('conversations')
+			.select(`
+				id,
+				name,
+				is_group,
+				avatar,
+				created_at,
+				updated_at,
+				created_by
+			`)
+			.eq('created_by', user.id);
 
-		if (conversationsError) throw conversationsError;
+		if (ownedError) throw ownedError;
+
+		// Get conversations the user participates in
+		const { data: participantConversations, error: participantError } = await supabase
+			.from('conversations')
+			.select(`
+				id,
+				name,
+				is_group,
+				avatar,
+				created_at,
+				updated_at,
+				created_by,
+				conversation_participants!inner(user_id)
+			`)
+			.eq('conversation_participants.user_id', user.id);
+
+		if (participantError) throw participantError;
+
+		// Combine and deduplicate conversations
+		const allConversations = [...(ownedConversations || [])];
+		const ownedIds = new Set(ownedConversations?.map(c => c.id) || []);
+		
+		(participantConversations || []).forEach(conv => {
+			if (!ownedIds.has(conv.id)) {
+				allConversations.push(conv);
+			}
+		});
+
+		// Sort by updated_at
+		const conversationsData = allConversations.sort((a, b) => 
+			new Date(b.updated_at || b.created_at).getTime() - 
+			new Date(a.updated_at || a.created_at).getTime()
+		);
 
  	// Get last message for each conversation
  	const conversationsWithMessages = await Promise.all(
