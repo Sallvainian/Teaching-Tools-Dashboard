@@ -29,8 +29,8 @@
 			} else if (!error) {
 				error = 'Invalid email or password';
 			}
-		} catch (err: any) {
-			error = err.message || 'An error occurred during sign in';
+		} catch (err: unknown) {
+			error = err instanceof Error ? err.message : 'An error occurred during sign in';
 		} finally {
 			loading = false;
 		}

@@ -548,6 +548,90 @@ export class FileService {
 			return [];
 		}
 	}
+
+	/**
+	 * Get deleted files (soft deleted)
+	 */
+	async getDeletedFiles(): Promise<FileMetadata[]> {
+		try {
+			const {
+				data: { user }
+			} = await supabase.auth.getUser();
+			if (!user) return [];
+
+			const { data, error } = await supabase
+				.from('file_metadata')
+				.select('*')
+				.eq('uploaded_by', user.id)
+				.eq('is_deleted', true)
+				.order('updated_at', { ascending: false });
+
+			if (error) throw error;
+			return data || [];
+		} catch (error) {
+			console.error('Error getting deleted files:', error);
+			return [];
+		}
+	}
+
+	/**
+	 * Restore a soft-deleted file
+	 */
+	async restoreFile(fileId: string): Promise<boolean> {
+		try {
+			const { error } = await supabase
+				.from('file_metadata')
+				.update({ 
+					is_deleted: false,
+					updated_at: new Date().toISOString()
+				})
+				.eq('id', fileId);
+
+			if (error) throw error;
+			return true;
+		} catch (error) {
+			console.error('Error restoring file:', error);
+			return false;
+		}
+	}
+
+	/**
+	 * Permanently delete a file
+	 */
+	async permanentlyDeleteFile(fileId: string): Promise<boolean> {
+		try {
+			// Get file metadata first
+			const { data: fileData, error: fileError } = await supabase
+				.from('file_metadata')
+				.select('storage_path')
+				.eq('id', fileId)
+				.single();
+
+			if (fileError) throw fileError;
+
+			// Delete from storage
+			const { error: storageError } = await supabase.storage
+				.from(FileService.STORAGE_BUCKET)
+				.remove([fileData.storage_path]);
+
+			if (storageError) {
+				console.warn('Error deleting from storage:', storageError);
+				// Continue with metadata deletion even if storage deletion fails
+			}
+
+			// Delete metadata permanently
+			const { error: metadataError } = await supabase
+				.from('file_metadata')
+				.delete()
+				.eq('id', fileId);
+
+			if (metadataError) throw metadataError;
+			return true;
+		} catch (error) {
+			console.error('Error permanently deleting file:', error);
+			return false;
+		}
+	}
 }
 
 // Export singleton instance

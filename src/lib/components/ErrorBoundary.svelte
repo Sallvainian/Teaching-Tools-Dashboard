@@ -4,7 +4,7 @@
 	interface Props {
 		error?: Error | null;
 		retry?: () => void;
- 	children?: () => any;
+ 	children?: () => unknown;
 		fallback?: boolean;
 	}
 
@@ -103,6 +103,5 @@
 		</div>
 	</div>
 {:else}
-	<!-- svelte-ignore a11y_missing_attribute -->
 	{@render children?.()}
 {/if}

@@ -1,7 +1,6 @@
 <script lang="ts">
 	// import { createEventDispatcher } from 'svelte'; // No longer needed in Svelte 5
 	import { chatStore } from '$lib/stores/chat';
-	import { authStore } from '$lib/stores/auth';
 
 	// Props
 	let { isOpen = $bindable(false), onClose = () => {}, onConversationCreated } = $props<{

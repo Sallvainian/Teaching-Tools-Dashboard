@@ -16,12 +16,12 @@ Sentry.init({
   tracesSampleRate: 1.0,
 });
 
-const myErrorHandler = ({ error, event }) => {
+const myErrorHandler = ({ error, event }: any) => {
   console.error("An error occurred on the server side:", error, event);
 };
 
 // Handle Chrome DevTools requests
-const handleChromeDevTools = async ({ event, resolve }) => {
+const handleChromeDevTools = async ({ event, resolve }: any) => {
   // Check if this is a Chrome DevTools request
   if (event.url.pathname.includes('/.well-known/appspecific/com.chrome.devtools.json')) {
     // Return an empty JSON response to prevent 404 errors
