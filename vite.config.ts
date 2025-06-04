@@ -57,8 +57,8 @@ export default defineConfig(({ mode }) => {
 			sourcemap: !isProduction,
 			// Enable minification in production for better optimization
 			minify: isProduction ? 'terser' : false,
-			// Set reasonable chunk size warning limit after optimization
-			chunkSizeWarningLimit: 1000,
+			// Reduce warning limit to catch large chunks
+			chunkSizeWarningLimit: 800,
 			terserOptions: isProduction
 				? {
 						compress: {
@@ -81,28 +81,9 @@ export default defineConfig(({ mode }) => {
 					sourcemapExcludeSources: isProduction,
 					// Enable manual chunking for better code splitting
 					manualChunks: isProduction
-						? (id) => {
-								// Group heavy data grid libraries
-								if (id.includes('handsontable')) {
-									return 'vendor-handsontable';
-								}
-								// Group PDF libraries
-								if (id.includes('pdfjs') || id.includes('pdf')) {
-									return 'vendor-pdf';
-								}
-								// Group utility libraries
-								if (id.includes('uuid') || id.includes('zod') || id.includes('date-fns')) {
-									return 'vendor-utils';
-								}
-								// Group UI libraries
-								if (id.includes('lucide')) {
-									return 'vendor-icons';
-								}
-								// Large node_modules chunks
-								if (id.includes('node_modules')) {
-									return 'vendor-large';
-								}
-							}
+						? {
+								'vendor-svelte': ['svelte', 'svelte/store', 'svelte/transition', 'svelte/animate']
+						  }
 						: undefined,
 					// Optimize chunk naming
 					chunkFileNames: isProduction
