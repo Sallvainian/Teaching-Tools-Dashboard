@@ -752,6 +752,43 @@ if (typeof window !== 'undefined') {
 	window.addEventListener('beforeunload', cleanupRealtimeSubscriptions);
 }
 
+async function deleteConversation(conversationId: string): Promise<boolean> {
+	try {
+		// Delete the conversation from the database
+		const { error: deleteError } = await supabase
+			.from('conversations')
+			.delete()
+			.eq('id', conversationId);
+
+		if (deleteError) throw deleteError;
+
+		// Remove from local state immediately
+		conversations.update(current => 
+			current.filter(conv => conv.id !== conversationId)
+		);
+
+		// Clear messages for this conversation
+		messages.update(current => {
+			const newMessages = { ...current };
+			delete newMessages[conversationId];
+			return newMessages;
+		});
+
+		// If this was the active conversation, clear it
+		const currentActiveId = get(activeConversationId);
+		if (currentActiveId === conversationId) {
+			activeConversationId.set(null);
+		}
+
+		console.log('Conversation deleted successfully:', conversationId);
+		return true;
+	} catch (err) {
+		console.error('Error deleting conversation:', err);
+		error.set(err instanceof Error ? err.message : 'Failed to delete conversation');
+		return false;
+	}
+}
+
 // Export store
 export const chatStore = {
 	// State
@@ -771,6 +808,7 @@ export const chatStore = {
 	createGroupConversation,
 	setActiveConversation,
 	markConversationAsRead,
+	deleteConversation,
 	setUserTyping,
 	setUserNotTyping,
 

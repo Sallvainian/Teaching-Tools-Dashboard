@@ -428,27 +428,17 @@
 			cancelText: 'Cancel',
 			confirmButtonClass: 'bg-red-500 hover:bg-red-600',
 			onConfirm: async () => {
-				try {
-					// Delete the conversation from the database
-					const { error } = await supabase
-						.from('conversations')
-						.delete()
-						.eq('id', conversationId);
-
-					if (error) throw error;
-
-					// Remove from local state
+				const success = await chatStore.deleteConversation(conversationId);
+				
+				if (success) {
+					// Update local UI state
 					conversations = conversations.filter(c => c.id !== conversationId);
-
+					
 					// If this was the active conversation, clear it
 					if (activeConversation?.id === conversationId) {
 						activeConversation = null;
-						chatStore.setActiveConversation(null);
 					}
-
-					console.log('Conversation deleted successfully');
-				} catch (error) {
-					console.error('Error deleting conversation:', error);
+				} else {
 					alert('Failed to delete conversation. Please try again.');
 				}
 			}
