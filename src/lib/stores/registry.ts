@@ -106,18 +106,8 @@ export class StoreRegistry {
    * Debug helper to log the current state of all stores
    */
   debugStores(): void {
-    console.group('Store Registry Debug');
-    console.log('Registered stores:', this.listStores());
-
-    this.stores.forEach((store, name) => {
-      let value: unknown;
-      const unsubscribe = store.subscribe(v => { value = v; });
-      console.log(`${name}:`, value);
-      unsubscribe();
-    });
-
-    console.groupEnd();
-  }
+		// Debug functionality removed for production
+	}
 }
 
 // Create and export a singleton instance

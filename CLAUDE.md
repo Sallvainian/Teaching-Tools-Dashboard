@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Backend**: Supabase (PostgreSQL + Auth)
 - **Data Tables**: AG-Grid Community, Handsontable
 - **Testing**: Vitest, Testing Library
-- **CI/CD**: GitHub Actions, Vercel
+- **CI/CD**: GitHub Actions, Netlify
 
 ## Code Style Guidelines
 

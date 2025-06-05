@@ -3,7 +3,6 @@ node_modules_backup/
 
 # Output
 .output
-.vercel
 .netlify
 .wrangler
 /.svelte-kit

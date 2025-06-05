@@ -40,8 +40,8 @@
 					time: chatStore.formatTime(conv.last_message?.created_at || conv.updated_at),
 					avatar: getConversationAvatar(conv, user.id),
 					online: isConversationOnline(conv, user.id),
-					isGroup: (conv as ConversationWithDetails).type === 'group',
-					members: (conv as ConversationWithDetails).type === 'group' ? conv.participants?.length : undefined
+					isGroup: conv.is_group || false,
+					members: conv.is_group ? conv.participants?.length : undefined
 				}))
 			);
 
@@ -76,7 +76,7 @@
 	const unsubscribeTyping = chatStore.activeTypingUsers.subscribe((users) => (typingUsers = users));
 
 	// Helper functions
- async function getConversationName(conv: ConversationWithDetails, currentUserId: string): Promise<string> {
+ async function getConversationName(conv: Conversation, currentUserId: string): Promise<string> {
 		if (conv.is_group) {
 			return conv.name || `Group Chat (${conv.participants?.length || 0})`;
 		}
@@ -92,30 +92,13 @@
 		}) => p.user_id !== currentUserId);
 
 		// If we have participant data, use it
-		if (otherParticipant) {
-			return otherParticipant?.user?.full_name || 
-				   otherParticipant?.full_name || 
-				   otherParticipant?.name || 
+		if (otherParticipant && otherParticipant.user) {
+			return otherParticipant.user.full_name || 
+				   otherParticipant.user.email || 
 				   'Unknown User';
 		}
 
-		// If we don't have participant data, try to find it in conversation_participants
-		if (conv.conversation_participants) {
-			const otherParticipantFromConv = conv.conversation_participants.find((p: ConversationParticipant & { 
-				user?: { 
-					id: string; 
-					full_name: string; 
-					email: string; 
-					avatar_url?: string; 
-				} 
-			}) => p.user_id !== currentUserId);
-			if (otherParticipantFromConv) {
-				return otherParticipantFromConv?.user?.full_name || 
-					   otherParticipantFromConv?.full_name || 
-					   otherParticipantFromConv?.name || 
-					   'Unknown User';
-			}
-		}
+		// If we don't have participant data in the expected place, skip this check
 
 		// If participant data is missing, load all messages from this conversation to find the other user
 		try {
@@ -130,12 +113,7 @@
 				.limit(1);
 
 			if (messages && messages.length > 0 && messages[0].sender) {
-				const sender = messages[0].sender as { 
-					id: string; 
-					full_name: string; 
-					email: string; 
-					avatar_url?: string; 
-				};
+				const sender = messages[0].sender;
 				return sender.full_name || sender.email || 'Unknown User';
 			}
 		} catch (error) {
@@ -154,7 +132,7 @@
 		return conv.name || 'Unknown User';
 	}
 
- function getConversationAvatar(conv: ConversationWithDetails, currentUserId: string): string {
+ function getConversationAvatar(conv: Conversation, currentUserId: string): string {
 		if (conv.is_group) {
 			const name = conv.name || 'Group';
 			return chatStore.getInitials(name);
@@ -170,37 +148,18 @@
 		}) => p.user_id !== currentUserId);
 
 		// If we have participant data, use it
-		if (otherParticipant) {
-			const name = otherParticipant?.user?.full_name || 
-						 otherParticipant?.full_name || 
-						 otherParticipant?.name || 
+		if (otherParticipant && otherParticipant.user) {
+			const name = otherParticipant.user.full_name || 
+						 otherParticipant.user.email || 
 						 'Unknown';
 			return chatStore.getInitials(name);
 		}
 
-		// If we don't have participant data, try to find it in conversation_participants
-		if (conv.conversation_participants) {
-			const otherParticipantFromConv = conv.conversation_participants.find((p: ConversationParticipant & { 
-				user?: { 
-					id: string; 
-					full_name: string; 
-					email: string; 
-					avatar_url?: string; 
-				} 
-			}) => p.user_id !== currentUserId);
-			if (otherParticipantFromConv) {
-				const name = otherParticipantFromConv?.user?.full_name || 
-							 otherParticipantFromConv?.full_name || 
-							 otherParticipantFromConv?.name || 
-							 'Unknown';
-				return chatStore.getInitials(name);
-			}
-		}
+		// If we don't have participant data in the expected place, skip this check
 
 		// Fallback: try to get name from last message
 		if (conv.last_message?.sender && conv.last_message.sender_id !== currentUserId) {
 			const name = conv.last_message.sender.full_name || 
-						 conv.last_message.sender.name || 
 						 'Unknown';
 			return chatStore.getInitials(name);
 		}
@@ -210,7 +169,7 @@
 		return chatStore.getInitials('Direct Chat');
 	}
 
- function getLastMessageText(conv: ConversationWithDetails, currentUserId: string): string {
+ function getLastMessageText(conv: Conversation, currentUserId: string): string {
 		if (!conv.last_message) return 'No messages yet';
 
 		let prefix = '';
@@ -218,8 +177,7 @@
 			prefix = 'You: ';
 		} else {
 			// Try to get the sender name from the last message
-			const senderName = conv.last_message.sender?.full_name || 
-							   conv.last_message.sender?.name;
+			const senderName = conv.last_message.sender?.full_name;
 
 			if (senderName) {
 				prefix = `${senderName}: `;
@@ -263,7 +221,7 @@
 		return prefix + conv.last_message.content;
 	}
 
- function isConversationOnline(conv: ConversationWithDetails, currentUserId: string): boolean {
+ function isConversationOnline(conv: Conversation, currentUserId: string): boolean {
 		// For now, return false. We can implement proper online status later
 		return false;
 	}
@@ -374,9 +332,9 @@
 						 user.user_metadata?.name || 
 						 (user.email ? user.email.split('@')[0] : null) || 
 						 'You';
-
+		
 		// Show typing indicator
-		chatStore.setUserTyping(activeConversation.id, userName);
+		chatStore.setUserTyping(activeConversation.id, user.id, userName);
 
 		// Clear existing timeout
 		if (typingTimeout) {
@@ -395,13 +353,7 @@
 		const user = $authStore.user;
 		if (!user) return;
 
-		// Get the user's display name with better fallbacks (same as in handleTyping)
-		const userName = user.user_metadata?.full_name || 
-						 user.user_metadata?.name || 
-						 (user.email ? user.email.split('@')[0] : null) || 
-						 'You';
-
-		chatStore.setUserNotTyping(activeConversation.id, userName);
+		chatStore.setUserNotTyping(activeConversation.id, user.id);
 
 		if (typingTimeout) {
 			clearTimeout(typingTimeout);

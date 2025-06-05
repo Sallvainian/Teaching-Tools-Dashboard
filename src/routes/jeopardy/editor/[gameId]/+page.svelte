@@ -62,10 +62,8 @@
 
 	$effect(() => {
 		const loadData = async () => {
-			console.log('🎮 Loading jeopardy data for game:', gameId);
 			await jeopardyStore.ensureDataLoaded();
 			setActiveGame(gameId);
-			console.log('🎮 Active game set, loading complete');
 			isLoading = false;
 		};
 		loadData();
@@ -73,13 +71,9 @@
 
 	function handleAddCategory(e: Event) {
 		e.preventDefault();
-		console.log('🎮 Adding category:', newCategoryName, 'to game:', $getActiveGame?.id);
 		if (newCategoryName.trim() && $getActiveGame) {
 			addCategory($getActiveGame.id, newCategoryName.trim());
-			console.log('🎮 Category added successfully');
 			newCategoryName = '';
-		} else {
-			console.log('🎮 Category add failed - missing name or game');
 		}
 	}
 

@@ -34,7 +34,9 @@
 				? new Date(Date.now() + expiresIn * 24 * 60 * 60 * 1000).toISOString()
 				: null;
 
-			await filesActions.shareFile(file.id, email, permission, expiresAt);
+			// Use the fileService directly for the actual sharing operation
+		const { fileService } = await import('$lib/services/fileService');
+		await fileService.shareFile(file.id, email, permission, expiresAt);
 
 			successMessage = `File shared with ${email}`;
 			email = '';

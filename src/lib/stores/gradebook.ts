@@ -132,12 +132,8 @@ function createGradebookStore() {
 			const transformedGrades = gradesData.map(dbGradeToAppGrade);
 
 			// Debug logging for data transformation
-			console.log('🔧 Gradebook Data Loading Debug:', {
-				studentsLoaded: transformedStudents.length,
-				classesLoaded: transformedClasses.length,
-				classStudentsRelations: classStudentsData.length,
-				studentsData: transformedStudents.map((s) => ({ id: s.id, name: s.name })),
-				classesWithStudentCounts: transformedClasses.map((c) => ({
+			console.log('Transformed data:', {
+				classes: transformedClasses.map(c => ({
 					id: c.id,
 					name: c.name,
 					studentIds: c.studentIds,
@@ -382,7 +378,6 @@ function createGradebookStore() {
 		if (!trimmed || maxPoints <= 0) return;
 
 		try {
-			console.log('🔧 Creating assignment with classId:', classId);
 			
 			// Verify the class exists first
 			const classData = await gradebookService.getItems('classes', {
@@ -393,7 +388,7 @@ function createGradebookStore() {
 				throw new Error(`Class with ID ${classId} not found`);
 			}
 			
-			console.log('🔧 Class found:', classData[0]);
+
 
 			// First, ensure a category exists for this class (assignments by default)
 			const existingCategoryEntries = await gradebookService.getItems('categories', {
@@ -402,7 +397,6 @@ function createGradebookStore() {
 
 			let categoryId;
 			if (!existingCategoryEntries || existingCategoryEntries.length === 0) {
-				console.log('🔧 Creating category "Assignments" for class:', classData[0].name);
 				// Create category entry (class_id points to classes table)
 				const newCategoryEntry = await gradebookService.insertItem('categories', {
 					class_id: classId,
@@ -414,11 +408,9 @@ function createGradebookStore() {
 				
 				if (newCategoryEntry) {
 					categoryId = newCategoryEntry.id;
-					console.log('🔧 Category created:', newCategoryEntry);
 				}
 			} else {
 				categoryId = existingCategoryEntries[0].id;
-				console.log('🔧 Using existing category:', existingCategoryEntries[0]);
 			}
 
 			// Now check if gradebook_category exists for this category
@@ -426,22 +418,20 @@ function createGradebookStore() {
 				filters: { category_id: categoryId }
 			});
 
-			let gradebookCategoryId;
+			let gradebookCategoryId: string;
 			if (!existingGradebookCategories || existingGradebookCategories.length === 0) {
-				console.log('🔧 Creating gradebook_category for category:', categoryId);
 				// Create gradebook_category entry (category_id points to categories table)
 				const newGradebookCategory = await gradebookService.insertItem('gradebook_categories', {
 					name: 'Assignments',
 					category_id: categoryId
 				});
 				
-				if (newGradebookCategory) {
-					gradebookCategoryId = newGradebookCategory.id;
-					console.log('🔧 Gradebook category created:', newGradebookCategory);
+				if (!newGradebookCategory) {
+					throw new Error('Failed to create gradebook category');
 				}
+				gradebookCategoryId = newGradebookCategory.id;
 			} else {
 				gradebookCategoryId = existingGradebookCategories[0].id;
-				console.log('🔧 Using existing gradebook category:', existingGradebookCategories[0]);
 			}
 
 			// Insert assignment referencing the gradebook category
@@ -453,14 +443,66 @@ function createGradebookStore() {
 
 			if (!result) throw new Error('Failed to add assignment');
 
-			console.log('🔧 Assignment created successfully:', result);
-
 			// Update local store with correct class ID
 			const newAssignment = dbAssignmentToAppAssignment(result, classId);
 			assignments.update((arr: Assignment[]) => [...arr, newAssignment]);
 		} catch (err: unknown) {
 			console.error('🔧 Error adding assignment:', err);
 			error.set(err instanceof Error ? err.message : 'Failed to add assignment');
+		}
+	}
+
+	// Update assignment
+	async function updateAssignment(assignmentId: string, name: string, maxPoints: number): Promise<void> {
+		try {
+			// Update in database
+			const updatedAssignment = await gradebookService.updateItem('assignments', assignmentId, {
+				name,
+				max_points: maxPoints
+			});
+
+			if (updatedAssignment) {
+				// Update local store
+				assignments.update((arr: Assignment[]) => 
+					arr.map(a => a.id === assignmentId ? {
+						...a,
+						name,
+						maxPoints
+					} : a)
+				);
+			}
+		} catch (err: unknown) {
+			console.error('🔧 Error updating assignment:', err);
+			error.set(err instanceof Error ? err.message : 'Failed to update assignment');
+		}
+	}
+
+	// Delete assignment
+	async function deleteAssignment(assignmentId: string): Promise<void> {
+		try {
+			// Delete from database
+			await gradebookService.deleteItem('assignments', assignmentId);
+
+			// Delete all grades for this assignment
+			const gradesToDelete = await gradebookService.getItems('grades', {
+				filters: { assignment_id: assignmentId }
+			});
+
+			for (const grade of gradesToDelete) {
+				await gradebookService.deleteItem('grades', grade.id);
+			}
+
+			// Update local stores
+			assignments.update((arr: Assignment[]) => 
+				arr.filter(a => a.id !== assignmentId)
+			);
+			
+			grades.update((arr: Grade[]) => 
+				arr.filter(g => g.assignmentId !== assignmentId)
+			);
+		} catch (err: unknown) {
+			console.error('Error deleting assignment:', err);
+			error.set(err instanceof Error ? err.message : 'Failed to delete assignment');
 		}
 	}
 
@@ -630,6 +672,8 @@ function createGradebookStore() {
 		assignStudentToClass,
 		removeStudentFromClass,
 		addAssignmentToClass,
+		updateAssignment,
+		deleteAssignment,
 		recordGrade,
 		clearAllData,
 		setUseSupabase,

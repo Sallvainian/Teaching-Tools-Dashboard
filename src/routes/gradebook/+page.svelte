@@ -14,6 +14,12 @@
 	let showStudentModal = $state(false);
 	let showImportModal = $state(false);
 	
+	// Edit assignment state
+	let showEditAssignmentModal = $state(false);
+	let editingAssignmentId = $state<string | null>(null);
+	let editAssignmentName = $state('');
+	let editMaxPoints = $state(100);
+	
 	// PowerTeacher Pro features
 	let selectedCells = $state(new Set<string>());
 	let bulkGradeValue = $state('');
@@ -81,6 +87,46 @@
 				showNewAssignmentModal = false;
 			} catch (error) {
 				console.error('Failed to add assignment:', error);
+			}
+		}
+	}
+
+	function startEditAssignment(assignment: any) {
+		editingAssignmentId = assignment.id;
+		editAssignmentName = assignment.name;
+		editMaxPoints = assignment.maxPoints;
+		showEditAssignmentModal = true;
+	}
+
+	function cancelEditAssignment() {
+		editingAssignmentId = null;
+		editAssignmentName = '';
+		editMaxPoints = 100;
+		showEditAssignmentModal = false;
+	}
+
+	async function saveEditAssignment() {
+		
+		if (editingAssignmentId && editAssignmentName.trim()) {
+			try {
+				await gradebookStore.updateAssignment(
+					editingAssignmentId,
+					editAssignmentName.trim(),
+					editMaxPoints
+				);
+				cancelEditAssignment();
+			} catch (error) {
+				console.error('Failed to update assignment:', error);
+			}
+		}
+	}
+
+	async function deleteAssignmentConfirm(assignmentId: string, assignmentName: string) {
+		if (confirm(`Are you sure you want to delete "${assignmentName}"? This will also delete all grades for this assignment.`)) {
+			try {
+				await gradebookStore.deleteAssignment(assignmentId);
+			} catch (error) {
+				console.error('Failed to delete assignment:', error);
 			}
 		}
 	}
@@ -217,7 +263,6 @@
 		}
 		
 		// You could show this in a toast or alert if you want
-		console.log(message);
 
 		clearSelection();
 		bulkGradeValue = '';
@@ -242,7 +287,6 @@
 		}
 
 		if (gradesToDelete.length === 0) {
-			console.log('No grades to delete in selection');
 			return;
 		}
 
@@ -268,8 +312,6 @@
 		if (failed > 0) {
 			message += `, ${failed} failed`;
 		}
-		
-		console.log(message);
 
 		clearSelection();
 		showBulkActions = false;
@@ -520,38 +562,54 @@
 							<table class="w-full">
 								<thead class="bg-card-dark">
 									<tr class="border-b-2 border-purple-500">
-										<th class="bg-card-dark p-3 text-left border-r border-border">
-											<div class="font-semibold text-highlight">Student</div>
+										<th class="bg-card-dark p-1 text-left border-r border-border" style="width: {Math.max(56, (Math.max(...classStudents.map(s => s.name.length)) * 8 + 80) * 0.4)}px; max-width: {Math.max(56, (Math.max(...classStudents.map(s => s.name.length)) * 8 + 80) * 0.4)}px;">
+											<div class="font-medium text-highlight">Student</div>
 											<div class="text-xs text-muted mt-1">{classStudents.length} total</div>
 										</th>
 										{#each classAssignments as assignment, index}
-											<th class="p-3 text-center min-w-[120px] border-r border-border">
-												<div class="flex flex-col items-center gap-1">
-													<div class="font-semibold text-text-base">{assignment.name}</div>
-													<div class="text-xs text-muted">Max: {assignment.maxPoints}</div>
-													<button
-														onclick={() => selectColumn(assignment.id)}
-														class="text-xs text-blue-400 hover:text-blue-300 underline"
-													>
-														Select Column
-													</button>
-												</div>
-											</th>
+											<th class="p-1 text-center w-[100px] border-r border-border">
+									<div class="flex flex-col items-center gap-1">
+										<div class="font-medium text-sm text-text-base whitespace-nowrap overflow-hidden text-ellipsis" title="{assignment.name}">{assignment.name}</div>
+										<div class="text-xs text-muted">Max: {assignment.maxPoints}</div>
+										<div class="flex flex-wrap gap-1 justify-center">
+											<button
+												onclick={() => selectColumn(assignment.id)}
+												class="text-xs text-blue-400 hover:text-blue-300 underline"
+											>
+												Select
+											</button>
+											<button
+												onclick={() => startEditAssignment(assignment)}
+												class="text-xs text-yellow-400 hover:text-yellow-300 underline"
+												title="Edit assignment"
+											>
+												Edit
+											</button>
+											<button
+												onclick={() => deleteAssignmentConfirm(assignment.id, assignment.name)}
+												class="text-xs text-red-400 hover:text-red-300 underline"
+												title="Delete assignment"
+											>
+												Delete
+											</button>
+										</div>
+									</div>
+								</th>
 										{/each}
-										<th class="p-3 text-center min-w-[100px] bg-purple-900/50">
-											<div class="font-semibold text-purple-400">Average</div>
-											<div class="text-xs text-purple-300">Overall</div>
-										</th>
+												<th class="p-1 text-center w-[90px] bg-purple-900/50">
+													<div class="font-medium text-purple-400">Average</div>
+													<div class="text-xs text-purple-300">Overall</div>
+												</th>
 									</tr>
 								</thead>
 								<tbody>
 									{#each classStudents as student, studentIndex}
 										<tr class="border-b border-border hover:bg-purple-bg/20 transition-colors">
-											<td class="bg-card-dark p-3 border-r border-border">
+											<td class="bg-card-dark p-2 border-r border-border" style="width: {Math.max(56, (Math.max(...classStudents.map(s => s.name.length)) * 8 + 80) * 0.4)}px; max-width: {Math.max(56, (Math.max(...classStudents.map(s => s.name.length)) * 8 + 80) * 0.4)}px;">
 												<div class="flex items-center justify-between">
-													<div>
-														<div class="font-medium text-highlight">{student.name}</div>
-														<div class="text-xs text-muted">Student #{studentIndex + 1}</div>
+													<div class="flex items-center gap-2">
+														<span class="text-xs text-muted bg-muted/20 px-1.5 py-0.5 rounded">#{studentIndex + 1}</span>
+														<span class="font-medium text-highlight">{student.name}</span>
 													</div>
 													<button
 														onclick={() => selectRow(student.id)}
@@ -565,8 +623,8 @@
 												{@const grade = $gradebookStore.grades.find(g => g.studentId === student.id && g.assignmentId === assignment.id)}
 												{@const cellId = getCellId(student.id, assignment.id)}
 												{@const selected = isSelected(student.id, assignment.id)}
-												<td class="p-1 text-center border-r border-border">
-													<div class="relative">
+												<td class="p-0.5 text-center border-r border-border">
+													<div class="relative h-full">
 														<input
 															type="number"
 															value={grade?.points || ''}
@@ -574,20 +632,20 @@
 															min="0"
 															max={assignment.maxPoints}
 															step="0.1"
-															class="w-full px-2 py-2 text-center bg-transparent border rounded text-text-base transition-all focus:ring-2 focus:ring-purple-500 focus:border-purple-500 {selected ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-border'} {colorMode && grade ? getGradeColor(grade.points, assignment.maxPoints) : ''}"
+															class="w-full h-full px-1 py-1.5 text-center text-sm bg-transparent border-0 rounded-none text-text-base transition-all focus:ring-1 focus:ring-purple-500 focus:bg-purple-50 dark:focus:bg-purple-900/20 {selected ? 'bg-blue-50 dark:bg-blue-900/20 ring-1 ring-blue-500' : ''} {colorMode && grade ? getGradeColor(grade.points, assignment.maxPoints) : 'hover:bg-muted/10'}"
 															onchange={(e) => handleGradeChange(student.id, assignment.id, assignment.maxPoints, e.target.value)}
 															onkeydown={(e) => handleGradeKeydown(e, student.id, assignment.id)}
 															onclick={() => toggleCellSelection(student.id, assignment.id)}
 														/>
 														{#if grade && grade.points > 0}
-															<div class="absolute -top-1 -right-1 text-xs text-muted bg-card px-1 rounded">
+															<div class="absolute top-0 right-0 text-xs text-muted bg-card/80 px-1 rounded-bl text-[10px] leading-tight">
 																{Math.round((grade.points / assignment.maxPoints) * 100)}%
 															</div>
 														{/if}
 													</div>
 												</td>
 											{/each}
-											<td class="p-3 text-center bg-purple-bg/30">
+											<td class="p-2 text-center bg-purple-bg/30">
 												{#snippet averageCalculation()}
 													{@const studentGrades = classAssignments.map(assignment => {
 														const grade = $gradebookStore.grades.find(g => g.studentId === student.id && g.assignmentId === assignment.id);
@@ -670,7 +728,7 @@
 					</div>
 				{/if}
 
-			{:else if !$gradebookStore.selectedClassId}
+		{:else if !$gradebookStore.selectedClassId}
 				<!-- Empty State -->
 				<div class="card-dark p-8 text-center">
 					<div class="flex flex-col items-center justify-center py-12">
@@ -782,6 +840,40 @@
 					class="btn btn-primary"
 				>
 					Add
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
+
+{#if showEditAssignmentModal}
+	<div class="fixed inset-0 bg-bg-base/80 backdrop-blur-sm flex items-center justify-center z-50">
+		<div class="bg-card border border-border rounded-lg p-6 w-full max-w-md">
+			<h3 class="text-xl font-bold text-highlight mb-4">Edit Assignment</h3>
+			<input
+				bind:value={editAssignmentName}
+				placeholder="Assignment name"
+				class="input w-full mb-4"
+			/>
+			<input
+				bind:value={editMaxPoints}
+				type="number"
+				min="1"
+				placeholder="Max points"
+				class="input w-full mb-4"
+			/>
+			<div class="flex justify-end gap-2">
+				<button
+					onclick={cancelEditAssignment}
+					class="btn btn-outline"
+				>
+					Cancel
+				</button>
+				<button
+					onclick={saveEditAssignment}
+					class="btn btn-primary"
+				>
+					Save Changes
 				</button>
 			</div>
 		</div>

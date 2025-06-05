@@ -117,7 +117,6 @@
  	const {
  		data: { user }
  	} = await supabase.auth.getUser();
- 	console.log('Current user:', user);
 
  	// Only load files if user is authenticated
  	if (user) {
@@ -161,14 +160,12 @@
 	async function createNewFolder() {
 		if (!newFolderName.trim()) return;
 
-		console.log('Creating folder:', newFolderName.trim(), 'in parent:', $currentFolderId);
 		const result = await filesActions.createFolder(
 			newFolderName.trim(),
 			$currentFolderId || undefined
 		);
 
 		if (result) {
-			console.log('Folder created successfully:', result);
 			newFolderName = '';
 			showNewFolderModal = false;
 		} else {
@@ -182,11 +179,8 @@
 			const confirmed = confirm(`Are you sure you want to delete "${file.name}"?\n\nThis action cannot be undone.`);
 			
 			if (!confirmed) {
-				console.log('Delete cancelled by user');
 				return;
 			}
-			
-			console.log('Deleting file:', file.name);
 			await filesActions.deleteFile(file.id);
 		} catch (error) {
 			console.error('Error deleting file:', error);

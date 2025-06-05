@@ -20,15 +20,7 @@
 
 	// Debug logging for class data
 	$effect(() => {
-		console.log('🏫 ClassList Debug:', {
-			totalClasses: classes.length,
-			classesData: classes.map((c: ClassItem) => ({
-				id: c.id,
-				name: c.name,
-				studentCount: c.studentIds.length,
-				studentIds: c.studentIds
-			}))
-		});
+		// console.log('ClassList data:', classes);
 	});
 
 	async function deleteClass(classId: string, className: string, event: Event) {

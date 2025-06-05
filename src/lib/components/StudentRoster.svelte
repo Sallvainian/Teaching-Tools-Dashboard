@@ -31,14 +31,7 @@
 	const students = derived(gradebookStore, ($gradebookStore) => {
 		const allStudents = $gradebookStore.students || [];
 
-		// Debug logging to track data mismatch
-		console.log('🔍 StudentRoster Debug:', {
-			selectedClassId: selectedClass.id,
-			selectedClassName: selectedClass.name,
-			studentIdsInClass: selectedClass.studentIds,
-			totalStudentsAvailable: allStudents.length,
-			allStudentIds: allStudents.map((s) => s.id)
-		});
+		// Debug logging to track data mismatch removed or commented out
 
 		const foundStudents = selectedClass.studentIds
 			.map((id: string) => {
@@ -51,10 +44,6 @@
 				return student;
 			})
 			.filter(Boolean) as Student[];
-
-		console.log(
-			`📊 Found ${foundStudents.length} of ${selectedClass.studentIds.length} students for class ${selectedClass.name}`
-		);
 
 		return foundStudents;
 	});

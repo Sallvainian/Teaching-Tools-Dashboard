@@ -125,8 +125,6 @@
 				}`;
 			}
 
-			console.log(message);
-
 			// Reset form
 			className = '';
 			jsonInput = '';

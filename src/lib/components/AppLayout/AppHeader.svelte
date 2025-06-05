@@ -2,6 +2,7 @@
  import { goto } from '$app/navigation';
  import { page as _page } from '$app/stores';
 	import ThemeToggle from '$components/ThemeToggle.svelte';
+	import NotificationDropdown from '$components/NotificationDropdown.svelte';
 	import { authStore, isAuthenticated, profile } from '$stores/auth';
 	import { gradebookStore } from '$stores/gradebook';
 	import { debounce } from '$utils/performanceOptimized';
@@ -21,7 +22,7 @@
 	let { userMenuOpen = $bindable(false), classesDropdownOpen = $bindable(false), gamesDropdownOpen = $bindable(false) } = $props();
 
 	// Debounced handlers
-	const debouncedClassSelect = debounce(async (categoryId: string) => {
+	const debouncedClassSelect = debounce(async (categoryId: any) => {
 		await gradebookStore.selectClass(categoryId);
 		await goto('/gradebook');
 	}, 150);
@@ -31,9 +32,7 @@
 	}
 
 	function toggleClassesDropdown() {
-		console.log('🔍 Toggle classes dropdown - before:', classesDropdownOpen);
 		classesDropdownOpen = !classesDropdownOpen;
-		console.log('🔍 Toggle classes dropdown - after:', classesDropdownOpen);
 	}
 
 	function toggleGamesDropdown() {
@@ -263,6 +262,11 @@
 
 			<!-- Right side actions -->
 			<div class="flex items-center gap-4">
+				<!-- Notifications - only show if authenticated -->
+				{#if $isAuthenticated}
+					<NotificationDropdown />
+				{/if}
+				
 				<ThemeToggle />
 
 				<!-- User menu - only show if authenticated -->
@@ -383,7 +387,7 @@
 	}
 
 	.menu-item {
-		@apply block px-4 py-2 text-text-hover hover:bg-accent hover:text-highlight transition-all duration-200 flex items-center gap-2;
+		@apply px-4 py-2 text-text-hover hover:bg-accent hover:text-highlight transition-all duration-200 flex items-center gap-2;
 	}
 
 	.menu-item.danger {

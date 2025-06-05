@@ -2,6 +2,7 @@ import { writable, derived, get } from 'svelte/store';
 import { supabase } from '$lib/supabaseClient';
 import { authStore } from './auth';
 import { typedAuthStore, getUser } from '$lib/utils/storeHelpers';
+import { addPrivateMessageNotification } from './notifications';
 import type { Database } from '$lib/types/database';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -39,15 +40,16 @@ const activeConversationId = writable<string | null>(null);
 const messages = writable<Record<string, Message[]>>({});
 const loading = writable(false);
 const error = writable<string | null>(null);
-const typingUsers = writable<Record<string, string[]>>({});
+const typingUsers = writable<Record<string, { userId: string; userName: string }[]>>({});
 
 // Realtime subscriptions
 let conversationsChannel: RealtimeChannel | null = null;
 let messagesChannel: RealtimeChannel | null = null;
+let typingChannel: RealtimeChannel | null = null;
 let subscriptionsActive = false;
 
 // Polling fallback
-let pollingInterval: number | null = null;
+const _pollingInterval: number | null = null;
 let lastMessageCheck: Date = new Date();
 
 // Derived stores
@@ -55,7 +57,7 @@ const activeConversation = derived(
 	[conversations, activeConversationId],
 	([$conversations, $activeConversationId]) => {
 		if (!$activeConversationId) return null;
-		return $conversations.find((c) => c.id === $activeConversationId) || null;
+		return $conversations.find((c) => c.id === $activeConversationId) ?? null;
 	}
 );
 
@@ -63,15 +65,29 @@ const activeMessages = derived(
 	[messages, activeConversationId],
 	([$messages, $activeConversationId]) => {
 		if (!$activeConversationId) return [];
-		return $messages[$activeConversationId] || [];
+		return $messages[$activeConversationId] ?? [];
 	}
 );
 
 const activeTypingUsers = derived(
-	[typingUsers, activeConversationId],
-	([$typingUsers, $activeConversationId]) => {
+	[typingUsers, activeConversationId, authStore],
+	([$typingUsers, $activeConversationId, $authStore]) => {
 		if (!$activeConversationId) return [];
-		return $typingUsers[$activeConversationId] || [];
+		
+		const conversationTyping = $typingUsers[$activeConversationId] ?? [];
+		
+		// Filter out current user so they don't see their own typing indicator
+		if ($authStore.user) {
+			const currentUserId = $authStore.user.id;
+			
+			const filtered = conversationTyping
+				.filter(typing => typing.userId !== currentUserId)
+				.map(typing => typing.userName);
+				
+			return filtered;
+		}
+		
+		return conversationTyping.map(typing => typing.userName);
 	}
 );
 
@@ -85,220 +101,58 @@ function getInitials(name: string): string {
 		.slice(0, 2);
 }
 
-// Auto-response system for test users
-async function handleAutoResponse(conversationId: string, userMessage: string): Promise<void> {
-	try {
-		const currentUser = getUser(get(authStore));
-		if (!currentUser) return;
-
-		// Get conversation participants to find the other user
-		const { data: participants } = await supabase
-			.from('conversation_participants')
-			.select('user_id, user:app_users(id, full_name, email)')
-			.eq('conversation_id', conversationId);
-
-		// Type the participants properly
-		type ParticipantWithUser = {
-			user_id: string;
-			user: {
-				id: string;
-				full_name: string;
-				email: string;
-			};
-		};
-
-  const otherUser = (participants as ParticipantWithUser[] | null)?.find((p) => p.user_id !== currentUser.id);
-		if (!otherUser?.user) return;
-
-		// Check if this is a test user (not the real user)
-		const testUserEmails = [
-			'alice.johnson@school.edu',
-			'bob.smith@student.edu',
-			'carol.davis@school.edu',
-			'david.wilson@student.edu'
-		];
-
-		if (!testUserEmails.includes(otherUser.user.email)) return;
-
-		// Generate response based on user personality and message
-		const response = generateBotResponse(
-			otherUser.user.full_name,
-			otherUser.user.email,
-			userMessage
-		);
-
-		// Show typing indicator
-		setUserTyping(conversationId, otherUser.user.full_name);
-
-		// Wait a bit to simulate typing
-		await new Promise((resolve) => setTimeout(resolve, Math.random() * 2000 + 1000));
-
-		// Remove typing indicator
-		setUserNotTyping(conversationId, otherUser.user.full_name);
-
-		// Send the bot response using the server function
-		const { data: botMessageData, error: botError } = await supabase.rpc('send_bot_message', {
-			p_conversation_id: conversationId,
-			p_sender_id: otherUser.user_id,
-			p_content: response
-		});
-
-		if (botError) throw botError;
-
-		// Format the response to match expected structure
-		const botMessage = botMessageData?.[0]
-			? {
-					id: botMessageData[0].id,
-					conversation_id: botMessageData[0].conversation_id,
-					sender_id: botMessageData[0].sender_id,
-					content: botMessageData[0].content,
-					message_type: botMessageData[0].message_type,
-					created_at: botMessageData[0].created_at,
-					edited_at: null,
-					is_deleted: false,
-					metadata: {},
-					sender: {
-						id: botMessageData[0].sender_id,
-						full_name: botMessageData[0].sender_full_name,
-						email: botMessageData[0].sender_email,
-						avatar_url: undefined
-					}
-				} as Message
-			: null;
-
-		if (!botMessage) throw new Error('Failed to create bot message');
-
-		// Add bot message to local state
-		messages.update((current) => ({
-			...current,
-			[conversationId]: [...(current[conversationId] || []), botMessage as Message]
-		}));
-
-		// Update conversation's last message
-		conversations.update((current) =>
-			current.map((conv) =>
-				conv.id === conversationId
-					? { ...conv, last_message: botMessage as Message, updated_at: botMessage.created_at }
-					: conv
-			)
-		);
-	} catch (err) {
-		console.error('Error generating auto-response:', err);
-	}
-}
-
-function generateBotResponse(name: string, email: string, userMessage: string): string {
-	const message = userMessage.toLowerCase();
-
-	// Alice Johnson - Helpful Teacher Bot
-	if (email === 'alice.johnson@school.edu') {
-		if (message.includes('hello') || message.includes('hi')) {
-			return "Hello! I'm Alice, your virtual teaching assistant. How can I help you with your educational needs today?";
-		}
-		if (message.includes('help') || message.includes('assist')) {
-			return "Of course! I'd be happy to help. What specific topic or challenge are you working on?";
-		}
-		if (message.includes('grade') || message.includes('assignment')) {
-			return 'Great question about grading! I always recommend clear rubrics and timely feedback. What type of assignment are you working with?';
-		}
-		if (message.includes('student') || message.includes('class')) {
-			return 'Student engagement is so important! Have you tried incorporating interactive activities or group work?';
-		}
-		if (message.includes('thank')) {
-			return "You're very welcome! Teaching is all about supporting each other. Feel free to reach out anytime!";
-		}
-		return "That's an interesting point! In my experience as an educator, I've found that every situation is unique. What are your thoughts on this?";
-	}
-
-	// Bob Smith - Curious Student Bot
-	if (email === 'bob.smith@student.edu') {
-		if (message.includes('hello') || message.includes('hi')) {
-			return "Hey there! I'm Bob, a student here. What's up? Are you working on something cool?";
-		}
-		if (message.includes('homework') || message.includes('assignment')) {
-			return "Oh man, homework! 😅 I'm always looking for study tips. Do you have any good strategies?";
-		}
-		if (message.includes('test') || message.includes('exam')) {
-			return "Tests make me nervous! But I've been trying new study methods. What subjects are you working on?";
-		}
-		if (message.includes('help')) {
-			return 'I could use some help too! Maybe we can figure it out together? What are you stuck on?';
-		}
-		if (message.includes('game') || message.includes('fun')) {
-			return "Games are awesome for learning! Have you tried any of the educational games here? They're pretty cool!";
-		}
-		return "That's really interesting! I'm always curious to learn new things. Can you tell me more about that?";
-	}
-
-	// Carol Davis - Professional Teacher Bot
-	if (email === 'carol.davis@school.edu') {
-		if (message.includes('hello') || message.includes('hi')) {
-			return "Good day! I'm Carol Davis. How may I assist you with your educational objectives today?";
-		}
-		if (message.includes('curriculum') || message.includes('lesson')) {
-			return 'Excellent topic! Curriculum design requires careful consideration of learning outcomes and assessment strategies. What grade level are you planning for?';
-		}
-		if (message.includes('data') || message.includes('analytics')) {
-			return 'Data-driven instruction is crucial for student success. Are you looking at performance metrics or engagement analytics?';
-		}
-		if (message.includes('standard') || message.includes('requirement')) {
-			return 'Meeting educational standards while maintaining engaging instruction is key. Which standards are you focusing on?';
-		}
-		if (message.includes('professional') || message.includes('development')) {
-			return 'Continuous professional development is essential in education. What areas are you looking to strengthen?';
-		}
-		return "I appreciate your inquiry. Based on current educational best practices, I'd recommend taking a systematic approach to this matter.";
-	}
-
-	// David Wilson - Friendly Student Bot
-	if (email === 'david.wilson@student.edu') {
-		if (message.includes('hello') || message.includes('hi')) {
-			return "Hi! I'm David! Nice to meet you! 😊 How's your day going?";
-		}
-		if (message.includes('study') || message.includes('learn')) {
-			return 'I love learning new things! What are you studying? Maybe we can study together sometime!';
-		}
-		if (message.includes('friend') || message.includes('buddy')) {
-			return "Awesome! I'm always looking to make new friends. School is way more fun with good friends!";
-		}
-		if (message.includes('project') || message.includes('group')) {
-			return 'Group projects can be really fun! I like working with others - we always come up with better ideas together!';
-		}
-		if (message.includes('music') || message.includes('art') || message.includes('creative')) {
-			return 'Oh cool! I love creative stuff! Are you into music, art, or other creative activities?';
-		}
-		if (message.includes('sport') || message.includes('game')) {
-			return "Sports and games are great! I think they help with learning too. What's your favorite activity?";
-		}
-		return "That sounds really cool! I'm always excited to hear about new ideas. Tell me more! 🌟";
-	}
-
-	// Default response
-	return "Thanks for your message! I'm still learning how to respond better. What would you like to talk about?";
-}
 
 // Typing indicator functions
-function setUserTyping(conversationId: string, userName: string): void {
+function setUserTyping(conversationId: string, userId: string, userName: string): void {
+	// Update local state
 	typingUsers.update((current) => {
-		const conversationTyping = current[conversationId] || [];
-		if (!conversationTyping.includes(userName)) {
+		const conversationTyping = current[conversationId] ?? [];
+		if (!conversationTyping.some(typing => typing.userId === userId)) {
 			return {
 				...current,
-				[conversationId]: [...conversationTyping, userName]
+				[conversationId]: [...conversationTyping, { userId, userName }]
 			};
 		}
 		return current;
 	});
+
+	// Broadcast typing status to other users
+	if (typingChannel) {
+		typingChannel.send({
+			type: 'broadcast',
+			event: 'typing',
+			payload: {
+				conversationId,
+				userId,
+				userName,
+				isTyping: true
+			}
+		});
+	}
 }
 
-function setUserNotTyping(conversationId: string, userName: string): void {
+function setUserNotTyping(conversationId: string, userId: string): void {
+	// Update local state
 	typingUsers.update((current) => {
-		const conversationTyping = current[conversationId] || [];
+		const conversationTyping = current[conversationId] ?? [];
 		return {
 			...current,
-			[conversationId]: conversationTyping.filter((name) => name !== userName)
+			[conversationId]: conversationTyping.filter((typing) => typing.userId !== userId)
 		};
 	});
+
+	// Broadcast stop typing status to other users
+	if (typingChannel) {
+		typingChannel.send({
+			type: 'broadcast',
+			event: 'typing',
+			payload: {
+				conversationId,
+				userId,
+				isTyping: false
+			}
+		});
+	}
 }
 
 function formatTime(date: string | null | undefined): string {
@@ -310,18 +164,15 @@ function formatTime(date: string | null | undefined): string {
 	const now = new Date();
 	const diffInHours = (now.getTime() - messageDate.getTime()) / (1000 * 60 * 60);
 
-	if (diffInHours < 1) {
-		return messageDate.toLocaleTimeString('en-US', {
-			hour: 'numeric',
-			minute: '2-digit',
-			hour12: true
-		});
-	} else if (diffInHours < 24) {
-		return messageDate.toLocaleTimeString('en-US', {
-			hour: 'numeric',
-			minute: '2-digit',
-			hour12: true
-		});
+	// Format time for messages less than 24 hours old
+	const timeFormat = messageDate.toLocaleTimeString('en-US', {
+		hour: 'numeric',
+		minute: '2-digit',
+		hour12: true
+	});
+
+	if (diffInHours < 1 || diffInHours < 24) {
+		return timeFormat;
 	} else if (diffInHours < 168) {
 		// Less than a week
 		return messageDate.toLocaleDateString('en-US', { weekday: 'long' });
@@ -379,24 +230,25 @@ async function loadConversations(): Promise<void> {
 		if (participantError) throw participantError;
 
 		// Combine and deduplicate conversations
-		const allConversations = [...(ownedConversations || [])];
-		const ownedIds = new Set(ownedConversations?.map(c => c.id) || []);
+		const allConversations = [...(ownedConversations ?? [])];
+		const ownedIds = new Set(ownedConversations?.map(c => c.id) ?? []);
 		
-		(participantConversations || []).forEach(conv => {
+		(participantConversations ?? []).forEach(conv => {
 			if (!ownedIds.has(conv.id)) {
 				allConversations.push(conv);
 			}
 		});
 
 		// Sort by updated_at
-		const conversationsData = allConversations.sort((a, b) => 
-			new Date(b.updated_at || b.created_at).getTime() - 
-			new Date(a.updated_at || a.created_at).getTime()
+		const sortedConversations = [...(allConversations ?? [])];
+		sortedConversations.sort((a, b) => 
+			new Date(b.updated_at ?? b.created_at).getTime() - 
+			new Date(a.updated_at ?? a.created_at).getTime()
 		);
 
- 	// Get last message for each conversation
- 	const conversationsWithMessages = await Promise.all(
- 		(conversationsData || []).map(async (conv: Record<string, unknown>) => {
+	 // Get last message for each conversation
+	 const conversationsWithMessages = await Promise.all(
+		(sortedConversations ?? []).map(async (conv: Record<string, unknown>) => {
 				// Get last message (may not exist for new conversations)
 				const { data: lastMessages } = await supabase
 					.from('messages')
@@ -410,7 +262,7 @@ async function loadConversations(): Promise<void> {
 					.order('created_at', { ascending: false })
 					.limit(1);
 
-				const lastMessage = lastMessages?.[0] || null;
+				const lastMessage = lastMessages?.[0] ?? null;
 
 				// Get participants separately
 				const { data: participants, error: _participantsError } = await supabase
@@ -433,22 +285,22 @@ async function loadConversations(): Promise<void> {
 						.from('messages')
 						.select('*', { count: 'exact', head: true })
 						.eq('conversation_id', conv.id)
-						.gt('created_at', userParticipant.last_read_at || '1970-01-01');
+						.gt('created_at', userParticipant.last_read_at ?? '1970-01-01');
 
-					unreadCount = count || 0;
+					unreadCount = count ?? 0;
 				}
 
 				return {
 					...conv,
-					participants: participants || [],
-					conversation_participants: participants || [],
+					participants: participants ?? [],
+					conversation_participants: participants ?? [],
 					last_message: lastMessage,
 					unread_count: unreadCount
 				};
 			})
 		);
 
-		conversations.set(conversationsWithMessages);
+		conversations.set(conversationsWithMessages as unknown as Conversation[]);
 	} catch (err) {
 		console.error('Error loading conversations:', err);
 		error.set(err instanceof Error ? err.message : 'Failed to load conversations');
@@ -475,7 +327,7 @@ async function loadMessages(conversationId: string): Promise<void> {
 
 		messages.update((current) => ({
 			...current,
-			[conversationId]: messagesData || []
+			[conversationId]: messagesData ?? []
 		}));
 
 		// Mark messages as read
@@ -512,7 +364,7 @@ async function sendMessage(conversationId: string, content: string): Promise<voi
 		// Add message to local state
 		messages.update((current) => ({
 			...current,
-			[conversationId]: [...(current[conversationId] || []), message]
+			[conversationId]: [...(current[conversationId] ?? []), message]
 		}));
 
 		// Update conversation's last message
@@ -523,9 +375,6 @@ async function sendMessage(conversationId: string, content: string): Promise<voi
 					: conv
 			)
 		);
-
-		// Trigger auto-response from test users
-		await handleAutoResponse(conversationId, content.trim());
 	} catch (err) {
 		console.error('Error sending message:', err);
 		error.set(err instanceof Error ? err.message : 'Failed to send message');
@@ -548,16 +397,16 @@ async function getAvailableChatUsers(): Promise<
 		const { data: users, error: usersError } = await supabase
 			.from('app_users')
 			.select('id, full_name, email, role, avatar_url')
-			.neq('id', getUser(get(authStore))?.id || '');
+			.neq('id', getUser(get(authStore))?.id ?? '');
 
 		if (usersError) throw usersError;
 
-		return (users || []).map((user) => ({
+		return (users ?? []).map((user) => ({
 			user_id: user.id,
 			full_name: user.full_name,
 			email: user.email,
-			role: user.role || 'student',
-			avatar_url: user.avatar_url || undefined,
+			role: user.role ?? 'student',
+			avatar_url: user.avatar_url ?? undefined,
 			relationship_type: 'all_users',
 			class_names: []
 		}));
@@ -569,17 +418,48 @@ async function getAvailableChatUsers(): Promise<
 
 async function createDirectConversation(otherUserId: string): Promise<string | null> {
 	try {
-		// Use the working get_or_create_direct_conversation function
-		const { data, error } = await supabase.rpc('get_or_create_direct_conversation', {
-			other_user_id: otherUserId
-		});
+		const user = getUser(get(authStore));
+		if (!user) throw new Error('User not authenticated');
 
-		if (error) throw error;
+		// Simple approach: create conversation directly
+		const { data: conversation, error: convError } = await supabase
+			.from('conversations')
+			.insert({
+				is_group: false,
+				created_by: user.id
+			})
+			.select('id')
+			.single();
+
+		if (convError) throw convError;
+
+		// Add participants (handle self-conversation by allowing duplicate)
+		const participants = [
+			{ conversation_id: conversation.id, user_id: user.id },
+			{ conversation_id: conversation.id, user_id: otherUserId }
+		];
+
+		const { error: participantsError } = await supabase
+			.from('conversation_participants')
+			.insert(participants);
+
+		if (participantsError) {
+			// If duplicate key error (self-conversation), just add one participant
+			if (participantsError.code === '23505' && user.id === otherUserId) {
+				const { error: singleParticipantError } = await supabase
+					.from('conversation_participants')
+					.insert({ conversation_id: conversation.id, user_id: user.id });
+				
+				if (singleParticipantError) throw singleParticipantError;
+			} else {
+				throw participantsError;
+			}
+		}
 
 		// Reload conversations to include the new one
 		await loadConversations();
 
-		return data;
+		return conversation.id;
 	} catch (err) {
 		console.error('Error creating conversation:', err);
 		error.set(err instanceof Error ? err.message : 'Failed to create conversation');
@@ -637,18 +517,14 @@ function setActiveConversation(conversationId: string | null): void {
 	}
 }
 
-// Real-time subscriptions
+// Real-time subscriptions  
 function setupRealtimeSubscriptions(): void {
 	const user = getUser(get(authStore));
 	if (!user || subscriptionsActive) return;
 
-	console.log('🔄 Setting up real-time subscriptions for user:', user.id);
 	subscriptionsActive = true;
 
-	// Start polling as reliable fallback
-	startMessagePolling();
-
-	// Subscribe to conversations changes (using official documentation pattern)
+	// Subscribe to conversations changes
 	conversationsChannel = supabase
 		.channel('public:conversations')
 		.on(
@@ -658,22 +534,13 @@ function setupRealtimeSubscriptions(): void {
 				schema: 'public',
 				table: 'conversations'
 			},
-			(payload) => {
-				console.log('🔄 Conversation change detected:', payload);
+			(_payload) => {
 				loadConversations();
 			}
 		)
-		.subscribe((status) => {
-			if (status === 'SUBSCRIBED') {
-				console.log('✅ Conversations subscription active');
-			} else if (status === 'CLOSED') {
-				console.log('❌ Conversations subscription closed');
-			} else if (status === 'CHANNEL_ERROR') {
-				console.error('❌ Conversations subscription failed');
-			}
-		});
+		.subscribe();
 
-	// Subscribe to messages (using official documentation pattern)
+	// Subscribe to messages
 	messagesChannel = supabase
 		.channel('public:messages')
 		.on(
@@ -685,7 +552,6 @@ function setupRealtimeSubscriptions(): void {
 			},
 			async (payload) => {
 				const newMessage = payload.new as Message;
-				console.log('📨 Received new message:', newMessage.id, 'in conversation:', newMessage.conversation_id);
 
 				// Check if user is part of this conversation
 				const { data: participation } = await supabase
@@ -695,35 +561,40 @@ function setupRealtimeSubscriptions(): void {
 					.eq('user_id', user.id)
 					.single();
 
-				if (!participation) return; // User not in this conversation
+				if (!participation) return;
 
 				// Load full message with sender info
 				const { data: fullMessage } = await supabase
 					.from('messages')
-					.select(
-						`
-						*,
-						sender:app_users (id, full_name, email, avatar_url)
-					`
-					)
+					.select(`*, sender:app_users (id, full_name, email, avatar_url)`)
 					.eq('id', newMessage.id)
 					.single();
 
 				if (fullMessage) {
-					console.log('✅ Adding message to UI:', fullMessage.content);
+					// Create notification for new messages from other users
+					if (fullMessage.sender_id !== user.id) {
+						const senderName = fullMessage.sender?.full_name ?? fullMessage.sender?.email ?? 'Someone';
+						addPrivateMessageNotification(
+							senderName,
+							fullMessage.content,
+							fullMessage.conversation_id,
+							fullMessage.id
+						);
+					}
+					
 					// Add to messages if we have this conversation loaded
 					messages.update((current) => {
 						if (current[fullMessage.conversation_id]) {
-							console.log('📁 Conversation loaded, adding message to chat');
-							return {
-								...current,
-								[fullMessage.conversation_id]: [
-									...current[fullMessage.conversation_id],
-									fullMessage
-								]
-							};
+							const existingMessages = current[fullMessage.conversation_id];
+							const isDuplicate = existingMessages.some(msg => msg.id === fullMessage.id);
+							
+							if (!isDuplicate) {
+								return {
+									...current,
+									[fullMessage.conversation_id]: [...current[fullMessage.conversation_id], fullMessage]
+								};
+							}
 						}
-						console.log('⚠️ Conversation not loaded, message not displayed');
 						return current;
 					});
 
@@ -735,7 +606,7 @@ function setupRealtimeSubscriptions(): void {
 									...conv, 
 									last_message: fullMessage, 
 									updated_at: fullMessage.created_at,
-									unread_count: fullMessage.sender_id !== user.id ? (conv.unread_count || 0) + 1 : conv.unread_count
+									unread_count: fullMessage.sender_id !== user.id ? (conv.unread_count ?? 0) + 1 : conv.unread_count
 								}
 								: conv
 						)
@@ -743,34 +614,55 @@ function setupRealtimeSubscriptions(): void {
 				}
 			}
 		)
-		.subscribe((status) => {
-			if (status === 'SUBSCRIBED') {
-				console.log('✅ Messages subscription active');
-			} else if (status === 'CLOSED') {
-				console.log('❌ Messages subscription closed');
-			} else if (status === 'CHANNEL_ERROR') {
-				console.error('❌ Messages subscription failed');
+		.subscribe();
+
+	// Subscribe to typing indicators
+	typingChannel = supabase
+		.channel('typing-indicators')
+		.on('broadcast', { event: 'typing' }, (_payload) => {
+			const { conversationId, userId, userName, isTyping } = _payload.payload;
+			
+			// Don't update for current user's own typing
+			if (userId === user.id) return;
+			
+			if (isTyping) {
+				typingUsers.update((current) => {
+					const conversationTyping = current[conversationId] ?? [];
+					if (!conversationTyping.some(typing => typing.userId === userId)) {
+						return {
+							...current,
+							[conversationId]: [...conversationTyping, { userId, userName }]
+						};
+					}
+					return current;
+				});
+			} else {
+				typingUsers.update((current) => {
+					const conversationTyping = current[conversationId] ?? [];
+					return {
+						...current,
+						[conversationId]: conversationTyping.filter((typing) => typing.userId !== userId)
+					};
+				});
 			}
-		});
+		})
+		.subscribe();
 }
 
 function cleanupRealtimeSubscriptions(): void {
-	console.log('🧹 Cleaning up real-time subscriptions and polling');
 	subscriptionsActive = false;
 
-	// Stop polling
-	if (pollingInterval) {
-		clearInterval(pollingInterval);
-		pollingInterval = null;
-	}
-
 	if (conversationsChannel) {
-		supabase.removeChannel(conversationsChannel);
+		conversationsChannel.unsubscribe();
 		conversationsChannel = null;
 	}
 	if (messagesChannel) {
-		supabase.removeChannel(messagesChannel);
+		messagesChannel.unsubscribe();
 		messagesChannel = null;
+	}
+	if (typingChannel) {
+		typingChannel.unsubscribe();
+		typingChannel = null;
 	}
 }
 
@@ -787,6 +679,7 @@ authStore.subscribe(async (auth) => {
 		conversations.set([]);
 		messages.set({});
 		activeConversationId.set(null);
+		typingUsers.set({});
 		cleanupRealtimeSubscriptions();
 	}
 });
@@ -824,7 +717,6 @@ async function deleteConversation(conversationId: string): Promise<boolean> {
 			activeConversationId.set(null);
 		}
 
-		console.log('Conversation deleted successfully:', conversationId);
 		return true;
 	} catch (err) {
 		console.error('Error deleting conversation:', err);
@@ -862,7 +754,8 @@ export const chatStore = {
 };
 
 // Polling function for reliable message updates
-async function pollForNewMessages(): Promise<void> {
+// This function is kept for future reference but not currently used
+async function _pollForNewMessages(): Promise<void> {
 	try {
 		const user = getUser(get(authStore));
 		const currentActiveConversationId = get(activeConversationId);
@@ -881,13 +774,25 @@ async function pollForNewMessages(): Promise<void> {
 			.order('created_at', { ascending: true });
 
 		if (newMessages && newMessages.length > 0) {
-			console.log('📨 Polling found', newMessages.length, 'new messages');
+
+			// Create notifications for new messages from other users
+			newMessages.forEach(message => {
+				if (message.sender_id !== user.id) {
+					const senderName = message.sender?.full_name ?? message.sender?.email ?? 'Someone';
+					addPrivateMessageNotification(
+						senderName,
+						message.content,
+						message.conversation_id,
+						message.id
+					);
+				}
+			});
 
 			// Add new messages to the store
 			messages.update((current) => ({
 				...current,
 				[currentActiveConversationId]: [
-					...(current[currentActiveConversationId] || []),
+					...(current[currentActiveConversationId] ?? []),
 					...newMessages
 				]
 			}));
@@ -901,7 +806,7 @@ async function pollForNewMessages(): Promise<void> {
 							...conv, 
 							last_message: latestMessage, 
 							updated_at: latestMessage.created_at,
-							unread_count: latestMessage.sender_id !== user.id ? (conv.unread_count || 0) + newMessages.filter(m => m.sender_id !== user.id).length : conv.unread_count
+							unread_count: latestMessage.sender_id !== user.id ? (conv.unread_count ?? 0) + newMessages.filter(m => m.sender_id !== user.id).length : conv.unread_count
 						}
 						: conv
 				)
@@ -913,13 +818,4 @@ async function pollForNewMessages(): Promise<void> {
 	} catch (error) {
 		console.error('❌ Polling error:', error);
 	}
-}
-
-// Start polling for messages
-function startMessagePolling(): void {
-	console.log('🔄 Starting message polling (3s interval)');
-	lastMessageCheck = new Date();
-
-	// Poll every 3 seconds
-	pollingInterval = window.setInterval(pollForNewMessages, 3000);
 }

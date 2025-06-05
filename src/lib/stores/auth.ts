@@ -1,10 +1,12 @@
 // src/lib/stores/auth.ts
+// Fix the import statement by removing the duplicate 'type' keyword
 import type { AuthSession, User } from '@supabase/supabase-js';
 import type { UserRole } from '$lib/types/database';
-import type { AuthState, type AppUser as _AppUser } from '$lib/types/auth';
+import type { AuthState } from '$lib/types/auth';
 import { clearSupabaseAuthStorage } from '$lib/utils/authStorage';
-import { createStore, createDerivedStore, type EnhancedStore as _EnhancedStore } from './storeFactory';
+import { createStore, createDerivedStore } from './storeFactory';
 import { storeRegistry } from './registry';
+import { derived } from 'svelte/store';
 
 interface UserProfile {
 	id: string;
@@ -163,7 +165,7 @@ function createAuthStore() {
 				data: { user },
 				error: userError
 			} = await supabase.auth.getUser();
-			if (userError || !user) {
+			if (userError ?? !user) {
 				console.error('Could not get user details:', userError);
 				return;
 			}
@@ -174,7 +176,7 @@ function createAuthStore() {
 				.insert({
 					id: userId,
 					email: user.email,
-					full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+					full_name: user.user_metadata?.full_name ?? user.email?.split('@')[0] ?? 'User',
 					role: 'teacher' // Default to teacher role
 				})
 				.select('role')
@@ -194,13 +196,12 @@ function createAuthStore() {
 					role: 'teacher'
 				}));
 			} else {
-				console.log('Created app_users record with role:', data.role);
 				// Also set the profile data
 				const userProfile: UserProfile = {
 					id: userId,
-					email: user.email || '',
-					full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-					avatar_url: user.user_metadata?.avatar_url || null,
+					email: user.email ?? '',
+					full_name: user.user_metadata?.full_name ?? user.email?.split('@')[0] ?? 'User',
+					avatar_url: user.user_metadata?.avatar_url ?? null,
 					role: data.role as UserRole
 				};
 				authStore.update(state => ({
@@ -400,7 +401,7 @@ function createAuthStore() {
 				authStore.update(state => ({
 					...state,
 					session: data.session,
-					user: data.session?.user || null
+					user: data.session?.user ?? null
 				}));
 				return true;
 			}
@@ -421,7 +422,6 @@ function createAuthStore() {
 	}
 
 	async function signOut() {
-		console.log('Auth store signOut called');
 		try {
 			// First clear local state immediately
 			authStore.update(state => ({
@@ -436,16 +436,14 @@ function createAuthStore() {
 			clearSupabaseAuthStorage();
 
 			// Now call Supabase signOut
-			const { supabase } = await import('$lib/supabaseClient');
-			console.log('Calling supabase.auth.signOut()');
+		const { supabase } = await import('$lib/supabaseClient');
 			const { error: signOutError } = await supabase.auth.signOut();
 
 			if (signOutError) {
 				console.error('Supabase signOut error:', signOutError);
 				// Even if there's an error, we've already cleared local state
-				// so the user appears signed out
-			}
-			console.log('Supabase signOut completed');
+			// so the user appears signed out
+		}
 
 			// Force a clean navigation to login page using our navigation utility
 			if (typeof window !== 'undefined') {
@@ -667,23 +665,23 @@ function createAuthStore() {
  	updateUserProfile: (userData: Record<string, unknown>) => Promise<boolean>;
  	initialize: () => Promise<void>;
  } = {
- 	subscribe: createDerivedStore<[User | null, UserProfile | null, AuthSession | null, boolean, string | null, boolean, UserRole | null, boolean], AuthState>({
-			name: 'auth.combined',
-			stores: [
-				user, profile, session, loading, error, 
-				isAuthenticated, role, isInitialized
-			],
-			deriveFn: ([$user, $profile, $session, $loading, $error, $isAuthenticated, $role, $isInitialized]) => ({
-				user: $user,
-				profile: $profile,
-				session: $session,
-				loading: $loading,
-				error: $error,
-				isAuthenticated: $isAuthenticated,
-				role: $role,
-				isInitialized: $isInitialized
-			})
-		}).subscribe,
+ 	subscribe: (() => {
+			const combinedDerived = derived(
+				[user, profile, session, loading, error, isAuthenticated, role, isInitialized],
+				([$user, $profile, $session, $loading, $error, $isAuthenticated, $role, $isInitialized]) => ({
+					user: $user,
+					profile: $profile,
+					session: $session,
+					loading: $loading,
+					error: $error,
+					isAuthenticated: $isAuthenticated,
+					role: $role,
+					isInitialized: $isInitialized
+				})
+			);
+			storeRegistry.register('auth.combined', combinedDerived);
+			return combinedDerived.subscribe;
+		})(),
 		signIn,
 		signUp,
 		signUpStudent,

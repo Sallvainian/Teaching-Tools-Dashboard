@@ -65,7 +65,6 @@
 			throw new Error('Sentry test error from Teacher Dashboard');
 		} catch (error) {
 			Sentry.captureException(error);
-			console.log('Test error sent to Sentry');
 		}
 	}
 

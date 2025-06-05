@@ -145,9 +145,8 @@ export function createStreamingSSR() {
      * Flush the current chunk to the client
      */
     flush: () => {
-      // This would be implemented by the framework
-      console.log('Flushing SSR chunk');
-    },
+			// This would be implemented by the framework
+		},
 
     /**
      * Add content to a specific chunk
@@ -155,9 +154,8 @@ export function createStreamingSSR() {
      * @param content Chunk content
      */
     chunk: (_id: string, _content: string) => {
-      // This would be implemented by the framework
-      console.log(`Adding content to chunk ${id}`);
-    }
+			// This would be implemented by the framework
+		}
   };
 }
 

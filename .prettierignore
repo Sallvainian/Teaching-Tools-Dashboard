@@ -9,7 +9,6 @@ bun.lockb
 .svelte-kit
 build
 dist
-.vercel
 .output
 
 # Dependencies

@@ -1028,14 +1028,12 @@ export type Database = {
 							p_points_earned: number;
 							p_feedback?: string;
 					  }
-					| { p_student_id: string; p_assignment_id: string; p_points: number }
 					| { p_student_id: string; p_assignment_id: string; p_points: number };
 				Returns: string;
 			};
 			save_grade_json: {
 				Args:
 					| { grades_data: Json }
-					| { p_student_id: string; p_assignment_id: string; p_points: number }
 					| { p_student_id: string; p_assignment_id: string; p_points: number };
 				Returns: Json;
 			};

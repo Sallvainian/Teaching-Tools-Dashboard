@@ -168,8 +168,6 @@ function createJeopardyStore() {
 				owner_role: 'teacher' as const
 			};
 
-			console.log('🔍 Saving game data:', JSON.stringify(gameData, null, 2));
-
 			let savedGame;
 
 			// Check if game exists in database first
