@@ -1,0 +1,11 @@
+# Modern browsers only - no legacy IE/Edge support
+defaults
+not IE 11
+not IE_Mob 11
+not op_mini all
+last 2 versions
+> 1%
+not dead
+
+# Specifically exclude old Edge versions that needed -ms- prefixes
+not Edge < 79

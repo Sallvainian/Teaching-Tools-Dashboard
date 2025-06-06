@@ -6,6 +6,14 @@
 	"engines": {
 		"node": ">=18.x"
 	},
+	"browserslist": [
+		"defaults",
+		"not IE 11",
+		"not IE_Mob 11",
+		"not op_mini all",
+		"last 2 versions",
+		"> 1%"
+	],
 	"scripts": {
 		"dev": "npx vite dev",
 		"build": "vite build",

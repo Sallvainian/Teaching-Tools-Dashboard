@@ -7,9 +7,44 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-/* Cache bust - v3 - Modern CSS Features */
+/* Cache bust - v4 - Modern CSS Features with Accessibility */
 
 @layer base {
+	/* ===== MODERN ACCESSIBILITY & CONTRAST SUPPORT ===== */
+	/* Replace deprecated -ms-high-contrast with modern prefers-contrast */
+	@media (prefers-contrast: high) {
+		:root {
+			/* Enhanced contrast colors for accessibility */
+			--text-base: #000000;
+			--text-hover: #000000;
+			--highlight: #000000;
+			--border: #000000;
+			--bg-base: #ffffff;
+			--card: #ffffff;
+			--surface: #f5f5f5;
+			--purple: #4c1d95; /* Darker purple for better contrast */
+		}
+
+		.dark {
+			--text-base: #ffffff;
+			--text-hover: #ffffff;
+			--highlight: #ffffff;
+			--border: #ffffff;
+			--bg-base: #000000;
+			--card: #111111;
+			--surface: #222222;
+			--purple: #a78bfa; /* Lighter purple for dark high contrast */
+		}
+	}
+
+	/* Respect user's motion preferences */
+	@media (prefers-reduced-motion: reduce) {
+		*, *::before, *::after {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+		}
+	}
 	/* Define CSS variables for themes */
 	:root {
 		/* ===== MODERN CSS COLORS WITH COLOR-MIX ===== */

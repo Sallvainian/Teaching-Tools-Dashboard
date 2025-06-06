@@ -74,6 +74,14 @@ const config: Config = {
 		logs: false,
 		rtl: false,
 		prefix: 'd-'
+	},
+	future: {
+		// Enable future features for better CSS output
+		hoverOnlyWhenSupported: true
+	},
+	experimental: {
+		// Optimize for modern browsers
+		optimizeUniversalDefaults: true
 	}
 };
 
