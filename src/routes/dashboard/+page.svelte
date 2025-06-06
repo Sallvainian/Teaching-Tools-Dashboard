@@ -136,7 +136,7 @@ const data = $props();
 				<!-- Stats Row -->
 				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
 					<!-- Students -->
-					<a href="/student/dashboard" class="card-dark hover:bg-surface transition-colors block">
+					<a href="/classes" class="card-dark hover:bg-surface transition-colors block">
 						<div class="flex items-center gap-3 mb-2">
 							<div
 								class="w-10 h-10 rounded-lg bg-purple-bg flex items-center justify-center text-purple"
