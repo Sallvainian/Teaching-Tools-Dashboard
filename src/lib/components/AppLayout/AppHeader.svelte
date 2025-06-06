@@ -374,27 +374,52 @@
 
 <style lang="postcss">
 	.nav-button {
-		@apply text-sm text-text-hover hover:text-highlight transition-colors duration-200 relative;
+		font-size: 0.875rem;
+		color: var(--text-hover);
+		transition: color 0.2s ease-in-out;
+		position: relative;
+	}
+
+	.nav-button:hover {
+		color: var(--highlight);
 	}
 
 	.nav-button::after {
-		@apply absolute -bottom-1 left-0 w-0 h-0.5 bg-purple transition-all duration-200;
+		position: absolute;
+		bottom: -0.25rem;
+		left: 0;
+		width: 0;
+		height: 0.125rem;
+		background-color: var(--purple);
+		transition: all 0.2s ease-in-out;
 		content: '';
 	}
 
 	.nav-button:hover::after {
-		@apply w-full;
+		width: 100%;
 	}
 
 	.menu-item {
-		@apply px-4 py-2 text-text-hover hover:bg-accent hover:text-highlight transition-all duration-200 flex items-center gap-2;
+		padding: 0.5rem 1rem;
+		color: var(--text-hover);
+		transition: all 0.2s ease-in-out;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
 	}
 
-	.menu-item.danger {
-		@apply hover:bg-red-500/20 hover:text-red-500;
+	.menu-item:hover {
+		background-color: var(--accent);
+		color: var(--highlight);
+	}
+
+	.menu-item.danger:hover {
+		background-color: rgba(239, 68, 68, 0.2);
+		color: rgb(239, 68, 68);
 	}
 
 	.separator {
-		@apply h-px bg-border;
+		height: 1px;
+		background-color: var(--border);
 	}
 </style>

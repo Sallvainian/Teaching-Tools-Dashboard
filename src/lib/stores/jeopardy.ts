@@ -114,7 +114,7 @@ function createJeopardyStore() {
 
 				// Extract teams from settings (since teams table doesn't exist)
 				const gameSettings = dbGame.settings as Record<string, unknown>;
-				const teams = gameSettings?.teams ?? [];
+				const teams = (gameSettings?.teams ?? []) as Team[];
 				const settings = gameSettings?.gameSettings ?? {
 					useTimer: true,
 					timerSize: 'large' as const,
@@ -159,10 +159,10 @@ function createJeopardyStore() {
 			// Save or update the main game record
 			const gameData = {
 				name: game.name,
-				settings: {
+				settings: JSON.parse(JSON.stringify({
 					gameSettings: game.settings,
 					teams: game.teams
-				} as { gameSettings: GameSettings, teams: Team[] },
+				})),
 				last_modified: new Date().toISOString(),
 				is_public: false,
 				owner_role: 'teacher' as const

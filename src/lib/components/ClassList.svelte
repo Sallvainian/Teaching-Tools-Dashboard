@@ -18,11 +18,6 @@
 		onSelectClass: (classId: string | null) => void;
 	}>();
 
-	// Debug logging for class data
-	$effect(() => {
-		// console.log('ClassList data:', classes);
-	});
-
 	async function deleteClass(classId: string, className: string, event: Event) {
 		event.stopPropagation(); // Prevent class selection
 

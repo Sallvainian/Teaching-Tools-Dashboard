@@ -1,7 +1,6 @@
 import tailwindcss from 'tailwindcss';
+import autoprefixer from 'autoprefixer';
 
-// Simplified configuration that doesn't use autoprefixer
-// This avoids the caniuse-lite dependency issues
 export default {
-	plugins: [tailwindcss]
+	plugins: [tailwindcss, autoprefixer]
 };

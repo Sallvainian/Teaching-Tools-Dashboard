@@ -6,8 +6,15 @@
 	import { supabase } from '$lib/supabaseClient';
 	import UserSelectModal from '$lib/components/UserSelectModal.svelte';
 	import TypingIndicator from '$lib/components/TypingIndicator.svelte';
- import type { ChatUIConversation, ChatUIMessage, ConversationWithDetails, ConversationParticipant } from '$lib/types/chat';
+	import GifPicker from '$lib/components/GifPicker.svelte';
+	import type { ChatUIConversation, ChatUIMessage, ConversationWithDetails, ConversationParticipant } from '$lib/types/chat';
 	import { getUser } from '$lib/utils/storeHelpers';
+	import { goto } from '$app/navigation';
+	import { fade, slide } from 'svelte/transition';
+	import { flip } from 'svelte/animate';
+	import { clickOutside } from '$lib/utils/clickOutside';
+	import { formatDistanceToNow } from 'date-fns';
+	import { Plus, Search, MoreVertical, Send, Paperclip, Smile, Phone, Video, Info } from 'lucide-svelte';
 
 	// Chat state from stores
 	let conversations = $state<ChatUIConversation[]>([]);
@@ -23,50 +30,76 @@
 	let showEmojiPicker = $state(false);
 	let showAttachMenu = $state(false);
 	let showUserSelectModal = $state(false);
+	let showGifPicker = $state(false);
 	let messagesContainer: HTMLDivElement;
 	let typingTimeout: number | null = null;
+	let fileInput: HTMLInputElement;
+	
+	// Format time ago for conversation list
+	function formatTimeAgo(timestamp: string | null): string {
+		if (!timestamp) return '';
+		
+		const now = new Date();
+		const messageTime = new Date(timestamp);
+		const diffMs = now.getTime() - messageTime.getTime();
+		const diffMinutes = Math.floor(diffMs / 60000);
+		const diffHours = Math.floor(diffMs / 3600000);
+		
+		if (diffMinutes < 1) {
+			return 'Now';
+		} else if (diffMinutes < 60) {
+			return `${diffMinutes} Minute${diffMinutes > 1 ? 's' : ''} Ago`;
+		} else if (diffHours < 24) {
+			return `${diffHours} Hour${diffHours > 1 ? 's' : ''} Ago`;
+		} else {
+			// For older messages, use the existing formatTime function from chatStore
+			return chatStore.formatTime(timestamp);
+		}
+	}
 
 	// Subscribe to store changes
-	const unsubscribeConversations = chatStore.conversations.subscribe(async (convs) => {
+	const unsubscribeConversations = chatStore.conversations.subscribe((convs) => {
 		const user = getUser($authStore);
 		if (user && convs.length > 0) {
-			// Process conversations with async name resolution
-			const processedConversations = await Promise.all(
-				convs.map(async (conv) => ({
-					id: conv.id,
-					name: await getConversationName(conv, user.id),
-					unread: conv.unread_count || 0,
-					lastMessage: getLastMessageText(conv, user.id),
-					time: chatStore.formatTime(conv.last_message?.created_at || conv.updated_at),
-					avatar: getConversationAvatar(conv, user.id),
-					online: isConversationOnline(conv, user.id),
-					isGroup: conv.is_group || false,
-					members: conv.is_group ? conv.participants?.length : undefined
-				}))
-			);
+			// Process conversations
+			const processedConversations = convs.map((conv) => ({
+				id: conv.id,
+				name: conv.name ?? getConversationDisplayName(conv),
+				displayName: getConversationDisplayName(conv),
+				avatar: conv.avatar,
+				displayAvatar: getConversationDisplayAvatar(conv, user.id),
+				is_group: conv.is_group ?? false,
+				last_message_text: getLastMessageText(conv),
+				last_message_time: formatTimeAgo(conv.last_message?.created_at ?? null),
+				unread_count: conv.unread_count ?? 0,
+				is_online: isConversationOnline(conv, user.id),
+				created_at: conv.created_at ?? new Date().toISOString(),
+				updated_at: conv.updated_at ?? new Date().toISOString()
+			}));
 
-			conversations = processedConversations;
+			conversations = processedConversations.map(conv => ({
+				...conv,
+				displayAvatar: conv.displayAvatar ?? '' // Ensure displayAvatar is always a string
+			}));
 
 			// Set active conversation to first one if none selected
 			if (!activeConversation && conversations.length > 0) {
-				selectConversation(conversations[0]);
+				activeConversation = conversations[0];
 			}
 		}
 	});
 
 	const unsubscribeMessages = chatStore.activeMessages.subscribe((msgs) => {
-		const user = $authStore.user;
+		const user = getUser($authStore);
 		if (user) {
 			messages = msgs.map((msg) => ({
 				id: msg.id,
-				sender: msg.sender_id === user.id ? 'me' : 'other',
-				senderName: msg.sender_id === user.id ? 'You' : (msg.sender?.full_name || 'Chat Partner'),
-				text: msg.content,
-				time: new Date(msg.created_at || '').toLocaleTimeString('en-US', {
-					hour: 'numeric',
-					minute: '2-digit',
-					hour12: true
-				})
+				content: msg.content,
+				sender_name: msg.sender?.full_name ?? msg.sender?.email ?? 'Unknown',
+				sender_avatar: msg.sender?.avatar_url ?? '',
+				created_at: msg.created_at ?? new Date().toISOString(),
+				is_own_message: msg.sender_id === user.id,
+				attachments: msg.attachments ?? []
 			}));
 		}
 	});
@@ -76,25 +109,65 @@
 	const unsubscribeTyping = chatStore.activeTypingUsers.subscribe((users) => (typingUsers = users));
 
 	// Helper functions
- async function getConversationName(conv: Conversation, currentUserId: string): Promise<string> {
+	function getConversationDisplayName(conversation: ConversationWithDetails): string {
+		if (conversation.name) {
+			return conversation.name;
+		}
+
+		if (conversation.is_group) {
+			return 'Group Chat';
+		}
+
+		// For direct messages, show the other participant's name
+		const user = getUser($authStore);
+		const otherParticipant = conversation.participants?.find(
+			(p: ConversationParticipant) => p.user_id !== user?.id
+		);
+
+		return otherParticipant?.user?.full_name ?? 'Unknown User';
+	}
+
+	function getConversationDisplayAvatar(conversation: ConversationWithDetails, userId: string): string | null {
+		if (conversation.avatar) {
+			return conversation.avatar;
+		}
+
+		if (!conversation.is_group) {
+			// For direct messages, show the other participant's avatar
+			const otherParticipant = conversation.participants?.find(
+				(p: ConversationParticipant) => p.user_id !== userId
+			);
+			return otherParticipant?.user?.avatar_url ?? null;
+		}
+
+		return null;
+	}
+
+	function isConversationOnline(conversation: ConversationWithDetails, userId: string): boolean {
+		if (conversation.is_group) {
+			return false; // Groups don't have online status
+		}
+
+		// For direct messages, check if the other participant is online
+		const otherParticipant = conversation.participants?.find(
+			(p: ConversationParticipant) => p.user_id !== userId
+		);
+
+		return otherParticipant?.user?.is_online ?? false;
+	}
+
+ async function getConversationName(conv: ConversationWithDetails, currentUserId: string): Promise<string> {
 		if (conv.is_group) {
-			return conv.name || `Group Chat (${conv.participants?.length || 0})`;
+			return conv.name ?? `Group Chat (${conv.participants?.length ?? 0})`;
 		}
 
 		// Direct conversation - find other participant
-		const otherParticipant = conv.participants?.find((p: ConversationParticipant & { 
-			user?: { 
-				id: string; 
-				full_name: string; 
-				email: string; 
-				avatar_url?: string; 
-			} 
-		}) => p.user_id !== currentUserId);
+		const otherParticipant = conv.participants?.find((p: ConversationParticipant) => p.user_id !== currentUserId);
 
 		// If we have participant data, use it
 		if (otherParticipant && otherParticipant.user) {
-			return otherParticipant.user.full_name || 
-				   otherParticipant.user.email || 
+			return otherParticipant.user.full_name ?? 
+				   otherParticipant.user.email ?? 
 				   'Unknown User';
 		}
 
@@ -113,8 +186,8 @@
 				.limit(1);
 
 			if (messages && messages.length > 0 && messages[0].sender) {
-				const sender = messages[0].sender;
-				return sender.full_name || sender.email || 'Unknown User';
+				const sender = messages[0].sender as any;
+				return sender.full_name ?? sender.email ?? 'Unknown User';
 			}
 		} catch (error) {
 			console.error('Error fetching conversation participant:', error);
@@ -122,35 +195,28 @@
 
 		// Fallback: try to get name from last message (any sender, not just others)
 		if (conv.last_message?.sender && conv.last_message.sender_id !== currentUserId) {
-			const senderName = conv.last_message.sender.full_name || 
-							   conv.last_message.sender.name || 
+			const senderName = conv.last_message.sender.full_name ?? 
+							   conv.last_message.sender.email ?? 
 							   'Unknown User';
 			return senderName;
 		}
 
 		// Last resort: use conversation name or a more friendly generic name
-		return conv.name || 'Unknown User';
+		return conv.name ?? 'Unknown User';
 	}
 
- function getConversationAvatar(conv: Conversation, currentUserId: string): string {
+ function getConversationAvatar(conv: ConversationWithDetails, currentUserId: string): string {
 		if (conv.is_group) {
-			const name = conv.name || 'Group';
+			const name = conv.name ?? 'Group';
 			return chatStore.getInitials(name);
 		}
 
-		const otherParticipant = conv.participants?.find((p: ConversationParticipant & { 
-			user?: { 
-				id: string; 
-				full_name: string; 
-				email: string; 
-				avatar_url?: string; 
-			} 
-		}) => p.user_id !== currentUserId);
+		const otherParticipant = conv.participants?.find((p: ConversationParticipant) => p.user_id !== currentUserId);
 
 		// If we have participant data, use it
 		if (otherParticipant && otherParticipant.user) {
-			const name = otherParticipant.user.full_name || 
-						 otherParticipant.user.email || 
+			const name = otherParticipant.user.full_name ?? 
+						 otherParticipant.user.email ?? 
 						 'Unknown';
 			return chatStore.getInitials(name);
 		}
@@ -159,7 +225,7 @@
 
 		// Fallback: try to get name from last message
 		if (conv.last_message?.sender && conv.last_message.sender_id !== currentUserId) {
-			const name = conv.last_message.sender.full_name || 
+			const name = conv.last_message.sender.full_name ?? 
 						 'Unknown';
 			return chatStore.getInitials(name);
 		}
@@ -169,9 +235,12 @@
 		return chatStore.getInitials('Direct Chat');
 	}
 
- function getLastMessageText(conv: Conversation, currentUserId: string): string {
+ function getLastMessageText(conv: ConversationWithDetails): string {
 		if (!conv.last_message) return 'No messages yet';
 
+		const user = getUser($authStore);
+		const currentUserId = user?.id;
+		
 		let prefix = '';
 		if (conv.last_message.sender_id === currentUserId) {
 			prefix = 'You: ';
@@ -183,55 +252,48 @@
 				prefix = `${senderName}: `;
 			} else {
 				// If sender name is not available in the last message, try to get it from participants
-				const otherParticipant = conv.participants?.find((p: ConversationParticipant & { 
-					user?: { 
-						id: string; 
-						full_name: string; 
-						email: string; 
-						avatar_url?: string; 
-					} 
-				}) => p.user_id !== currentUserId);
+				const otherParticipant = conv.participants?.find((p: ConversationParticipant) => p.user_id !== currentUserId);
 				if (otherParticipant) {
-					const participantName = otherParticipant?.user?.full_name || 
-										   otherParticipant?.full_name || 
-										   otherParticipant?.name;
+					const participantName = otherParticipant?.user?.full_name ?? 
+										   otherParticipant?.user?.email ?? 
+										   'Chat Partner';
 					prefix = participantName ? `${participantName}: ` : 'Chat Partner: ';
-				} else if (conv.conversation_participants) {
-					const otherParticipantFromConv = conv.conversation_participants.find((p: ConversationParticipant & { 
-						user?: { 
-							id: string; 
-							full_name: string; 
-							email: string; 
-							avatar_url?: string; 
-						} 
-					}) => p.user_id !== currentUserId);
+				} else {
+					// Try to get name from participants array
+					const otherParticipantFromConv = conv.participants?.find((p: ConversationParticipant) => p.user_id !== currentUserId);
 					if (otherParticipantFromConv) {
-						const participantName = otherParticipantFromConv?.user?.full_name || 
-											   otherParticipantFromConv?.full_name || 
-											   otherParticipantFromConv?.name;
+						const participantName = otherParticipantFromConv?.user?.full_name ?? 
+											   otherParticipantFromConv?.user?.email ?? 
+											   'Chat Partner';
 						prefix = participantName ? `${participantName}: ` : 'Chat Partner: ';
 					} else {
 						prefix = 'Chat Partner: ';
 					}
-				} else {
-					prefix = 'Chat Partner: ';
 				}
 			}
 		}
+		
+		// Check if it's a GIF message
+		if (conv.last_message.content.startsWith('[GIF]')) {
+			return prefix + '🎬 GIF';
+		}
+		
+		// Check if it's an image message
+		if (conv.last_message.content.startsWith('[IMAGE]')) {
+			return prefix + '🖼️ Image';
+		}
+		
 		return prefix + conv.last_message.content;
-	}
-
- function isConversationOnline(conv: Conversation, currentUserId: string): boolean {
-		// For now, return false. We can implement proper online status later
-		return false;
 	}
 
 	// Filtered conversations
 	let filteredConversations = $derived(
 		searchQuery
-			? conversations.filter((c) => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+			? conversations.filter((c) => c.name?.toLowerCase().includes(searchQuery.toLowerCase()))
 			: conversations
 	);
+
+	// Note: messages is already a state variable, no need for activeMessages
 
 	onMount(async () => {
 		// Load conversations when component mounts
@@ -281,6 +343,18 @@
 		}
 	}
 
+	async function sendGif(gifUrl: string) {
+		if (!activeConversation) return;
+
+		try {
+			// Send GIF as a message with special formatting
+			const gifMessage = `[GIF]${gifUrl}`;
+			await chatStore.sendMessage(activeConversation.id, gifMessage);
+		} catch (err) {
+			console.error('Error sending GIF:', err);
+		}
+	}
+
 	function selectConversation(conversation: ChatUIConversation) {
 		activeConversation = conversation;
 		chatStore.setActiveConversation(conversation.id);
@@ -288,6 +362,7 @@
 		// Reset UI states
 		showEmojiPicker = false;
 		showAttachMenu = false;
+		showGifPicker = false;
 	}
 
 	function addEmoji(emoji: string) {
@@ -328,9 +403,9 @@
 		if (!user) return;
 
 		// Get the user's display name with better fallbacks
-		const userName = user.user_metadata?.full_name || 
-						 user.user_metadata?.name || 
-						 (user.email ? user.email.split('@')[0] : null) || 
+		const userName = user.user_metadata?.full_name ?? 
+						 user.user_metadata?.name ?? 
+						 (user.email ? user.email.split('@')[0] : null) ?? 
 						 'You';
 		
 		// Show typing indicator
@@ -395,6 +470,56 @@
 				}
 			}
 		});
+	}
+
+	// Handle file attachment
+	function handleFileAttachment(type: 'image' | 'document' | 'video') {
+		if (!fileInput) return;
+		
+		// Set accepted file types based on attachment type
+		switch (type) {
+			case 'image':
+				fileInput.accept = 'image/*';
+				break;
+			case 'document':
+				fileInput.accept = '.pdf,.doc,.docx,.txt,.rtf';
+				break;
+			case 'video':
+				fileInput.accept = 'video/*';
+				break;
+		}
+		
+		fileInput.click();
+		showAttachMenu = false;
+	}
+	
+	async function handleFileSelected(event: Event) {
+		const target = event.target as HTMLInputElement;
+		const file = target.files?.[0];
+		
+		if (!file || !activeConversation) return;
+		
+		try {
+			// Check if the file is an image
+			const isImage = file.type.startsWith('image/');
+			
+			if (isImage) {
+				// Create a temporary URL for the image
+				const imageUrl = URL.createObjectURL(file);
+				// Send image as a special message format
+				const imageMessage = `[IMAGE]${imageUrl}|${file.name}|${file.size}`;
+				await chatStore.sendMessage(activeConversation.id, imageMessage);
+			} else {
+				// For non-image files, send as before
+				const fileMessage = `📎 ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+				await chatStore.sendMessage(activeConversation.id, fileMessage);
+			}
+			
+			// Reset the file input
+			target.value = '';
+		} catch (err) {
+			console.error('Error sending file:', err);
+		}
 	}
 </script>
 
@@ -467,7 +592,7 @@
 											>
 												{conversation.avatar}
 											</div>
-											{#if conversation.online}
+											{#if conversation.is_online}
 												<div
 													class="absolute bottom-0 right-0 w-3 h-3 bg-purple rounded-full border-2 border-card"
 												></div>
@@ -478,19 +603,19 @@
 											<div class="flex justify-between items-center mb-1">
 												<div class="font-medium text-highlight truncate">
 													{conversation.name}
-													{#if conversation.isGroup}
-														<span class="text-xs text-text-base ml-1">({conversation.members})</span>
+													{#if conversation.is_group}
+														<span class="text-xs text-text-base ml-1">(Group)</span>
 													{/if}
 												</div>
-												<div class="text-xs text-text-base">{conversation.time}</div>
+												<div class="text-xs text-text-base">{conversation.last_message_time}</div>
 											</div>
 											<div class="flex justify-between items-center">
-												<div class="text-sm text-text-base truncate max-w-[180px]">{conversation.lastMessage}</div>
-												{#if conversation.unread > 0}
+												<div class="text-sm text-text-base truncate max-w-[180px]">{conversation.last_message_text}</div>
+												{#if conversation.unread_count > 0}
 													<div
 														class="bg-purple text-highlight text-xs rounded-full w-5 h-5 flex items-center justify-center"
 													>
-														{conversation.unread}
+														{conversation.unread_count}
 													</div>
 												{/if}
 											</div>
@@ -561,9 +686,9 @@
 									<div
 										class="w-10 h-10 rounded-full bg-purple-bg text-purple flex items-center justify-center font-medium"
 									>
-										{activeConversation?.avatar || '?'}
+										{activeConversation?.avatar ?? '?'}
 									</div>
-									{#if activeConversation?.online}
+									{#if activeConversation?.is_online}
 										<div
 											class="absolute bottom-0 right-0 w-3 h-3 bg-purple rounded-full border-2 border-card"
 										></div>
@@ -572,14 +697,14 @@
 
 								<div>
 									<div class="font-medium text-highlight">
-										{activeConversation?.name || 'Select a conversation'}
-										{#if activeConversation?.isGroup}
+										{activeConversation?.name ?? 'Select a conversation'}
+										{#if activeConversation?.is_group}
 											<span class="text-xs text-text-base ml-1"
-												>({activeConversation.members} members)</span
+												>(Group chat)</span
 											>
 										{/if}
 									</div>
-									{#if activeConversation?.online && !activeConversation?.isGroup}
+									{#if activeConversation?.is_online && !activeConversation?.is_group}
 										<div class="text-xs text-purple">Online</div>
 									{/if}
 								</div>
@@ -643,16 +768,58 @@
 
 					<!-- Messages -->
 					<div class="flex-1 overflow-y-auto p-4 space-y-4" bind:this={messagesContainer}>
-						{#each messages as message (message.id)}
-							<div class={`flex ${message.sender === 'me' ? 'justify-end' : 'justify-start'}`}>
-								<div
-									class={`max-w-[70%] ${message.sender === 'me' ? 'bg-purple text-highlight' : 'bg-surface text-text-hover'} rounded-lg px-4 py-2 shadow-sm`}
+						{#each messages as message, index (message.id)}
+							<div class={`flex ${message.is_own_message ? 'justify-end' : 'justify-start'}`}>
+								<div class={`flex flex-col gap-1 max-w-[70%]`}>
+									<div
+										class={`${message.is_own_message ? 'bg-purple text-highlight' : 'bg-surface text-text-hover'} rounded-lg px-4 py-2 shadow-sm`}
+									>
+										{#if !message.is_own_message}
+							<div class="text-xs font-medium text-purple mb-1">{message.sender_name}</div>
+						{/if}
+						{#if message.content.startsWith('[GIF]')}
+							<img 
+								src={message.content.slice(5)} 
+								alt="GIF" 
+								class="rounded-lg max-w-full max-h-64 object-contain"
+							/>
+						{:else if message.content.startsWith('[IMAGE]')}
+							{@const parts = message.content.slice(7).split('|')}
+							{@const imageUrl = parts[0]}
+							{@const fileName = parts[1] || 'Image'}
+							{@const fileSize = parts[2] ? parseInt(parts[2]) : 0}
+							<div class="space-y-2">
+								<button 
+									type="button"
+									class="block rounded-lg max-w-full hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-blue-500"
+									onclick={() => window.open(imageUrl, '_blank')}
+									onkeydown={(e) => e.key === 'Enter' && window.open(imageUrl, '_blank')}
 								>
-									{#if message.sender !== 'me'}
-											<div class="text-xs font-medium text-purple mb-1">{message.senderName}</div>
-										{/if}
-										<div class="text-sm mb-1">{message.text}</div>
-									<div class="text-xs opacity-70 text-right">{message.time}</div>
+									<img 
+										src={imageUrl} 
+										alt={fileName} 
+										class="rounded-lg max-w-full max-h-64 object-contain"
+									/>
+								</button>
+								<div class="text-xs opacity-75 flex items-center gap-1">
+									<svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+										<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+									</svg>
+									{fileName}
+									{#if fileSize > 0}
+										({(fileSize / 1024 / 1024).toFixed(2)} MB)
+									{/if}
+								</div>
+							</div>
+						{:else}
+							<div class="text-sm">{message.content}</div>
+						{/if}
+									</div>
+									{#if index === messages.length - 1}
+										<div class={`text-xs opacity-50 ${message.is_own_message ? 'text-right' : 'text-left'}`}>
+											{formatTimeAgo(message.created_at)}
+										</div>
+									{/if}
 								</div>
 							</div>
 						{/each}
@@ -713,6 +880,24 @@
 									{/if}
 								</div>
 
+								<!-- GIF Button -->
+								<button
+									class="p-2 text-text-base hover:text-text-hover rounded-full hover:bg-surface transition-colors"
+									onclick={() => (showGifPicker = true)}
+									aria-label="Open GIF picker"
+								>
+									<svg
+										class="w-5 h-5"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+									>
+										<rect x="2" y="2" width="20" height="20" rx="2" />
+										<text x="6" y="16" font-size="10" font-weight="bold" fill="currentColor">GIF</text>
+									</svg>
+								</button>
+
 								<div class="relative attach-menu-container">
 									<button
 										class="p-2 text-text-base hover:text-text-hover rounded-full hover:bg-surface transition-colors"
@@ -740,6 +925,7 @@
 												<button
 													class="flex items-center gap-2 px-4 py-2 hover:bg-surface w-full text-left"
 													aria-label="Attach image"
+													onclick={() => handleFileAttachment('image')}
 												>
 													<svg
 														class="w-5 h-5 text-purple"
@@ -757,6 +943,7 @@
 												<button
 													class="flex items-center gap-2 px-4 py-2 hover:bg-surface w-full text-left"
 													aria-label="Attach document"
+													onclick={() => handleFileAttachment('document')}
 												>
 													<svg
 														class="w-5 h-5 text-purple"
@@ -774,6 +961,7 @@
 												<button
 													class="flex items-center gap-2 px-4 py-2 hover:bg-surface w-full text-left"
 													aria-label="Attach video"
+													onclick={() => handleFileAttachment('video')}
 												>
 													<svg
 														class="w-5 h-5 text-purple"
@@ -817,9 +1005,23 @@
 		</div>
 	</div>
 
+	<!-- Hidden file input -->
+	<input
+		type="file"
+		bind:this={fileInput}
+		class="hidden"
+		onchange={handleFileSelected}
+	/>
+
 	<!-- User Selection Modal -->
 	<UserSelectModal
 		bind:isOpen={showUserSelectModal}
 		onConversationCreated={handleConversationCreated}
+	/>
+
+	<!-- GIF Picker Modal -->
+	<GifPicker
+		bind:isOpen={showGifPicker}
+		onSelectGif={sendGif}
 	/>
 </div>

@@ -189,7 +189,7 @@
 
 	function handleApplyTemplate(template: unknown) {
 		if ($getActiveGame) {
-			applyGameTemplate($getActiveGame.id, template);
+			applyGameTemplate($getActiveGame.id, template as any); // Type assertion to handle unknown template type
 			showTemplateModal = false;
 		}
 	}

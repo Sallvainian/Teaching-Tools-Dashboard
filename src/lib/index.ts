@@ -6,4 +6,4 @@ export { default as RandomLoader } from './components/RandomLoader.svelte';
 export { authStore } from './stores/auth';
 export { fileStore } from './stores/files';
 export { loadingStore } from './stores/loading';
-export { goto } from './utils/navigation';
+export { goto } from '$app/navigation';

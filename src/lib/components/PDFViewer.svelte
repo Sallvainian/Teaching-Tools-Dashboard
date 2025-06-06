@@ -397,7 +397,20 @@
 
 <style lang="postcss">
 	.btn-icon {
-		@apply p-2 text-text-base hover:text-text-hover rounded-lg hover:bg-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+		padding: 0.5rem;
+		color: var(--text-base);
+		border-radius: 0.5rem;
+		transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out;
+	}
+
+	.btn-icon:hover {
+		color: var(--text-hover);
+		background-color: var(--surface);
+	}
+
+	.btn-icon:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
 	}
 
 	.pdf-canvas-container {

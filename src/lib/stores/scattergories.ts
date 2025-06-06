@@ -85,12 +85,11 @@ const initialState: ScattergoriesState = {
 };
 
 function createScattergoriesStore() {
-	const { subscribe, set: _set, update } = writable<ScattergoriesState>(initialState);
+	const { subscribe, update } = writable<ScattergoriesState>(initialState);
 
 	let timer: ReturnType<typeof setInterval> | null = null;
 
 	const generateLetter = (): string => {
-		const _letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 		// Exclude Q, U, X, Z for better gameplay
 		const filteredLetters = 'ABCDEFGHIJKLMNOPRSTUVWY';
 		return filteredLetters[Math.floor(Math.random() * filteredLetters.length)];

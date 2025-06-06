@@ -34,7 +34,7 @@ describe('Performance Utilities', () => {
 				return n * 2;
 			};
 
-			const memoized = memoize(expensiveFn);
+			const memoized = memoize(expensiveFn as (...args: unknown[]) => unknown) as (n: number) => number;
 
 			expect(memoized(5)).toBe(10);
 			expect(memoized(5)).toBe(10);

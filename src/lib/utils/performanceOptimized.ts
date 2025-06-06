@@ -48,10 +48,10 @@ export function memoize<T extends (...args: unknown[]) => unknown>(
 		const key = getKey ? getKey(...args) : JSON.stringify(args);
 
 		if (cache.has(key)) {
-			return cache.get(key)!;
+			return cache.get(key) as ReturnType<T>;
 		}
 
-		const result = fn(...args);
+		const result = fn(...args) as ReturnType<T>;
 		cache.set(key, result);
 
 		return result;

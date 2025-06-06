@@ -288,7 +288,7 @@ function createAuthStore() {
 
 			// Only set up auth listener once
 			if (!authListenerSetup) {
-				const { data: _authListener } = supabase.auth.onAuthStateChange(
+				supabase.auth.onAuthStateChange(
 					async (event, newSession) => {
 						authStore.update(state => ({
 							...state,
@@ -309,6 +309,7 @@ function createAuthStore() {
 				authListenerSetup = true;
 			}
 		} catch (err) {
+			console.error('Auth initialization error:', err);
 			authStore.update(state => ({
 				...state,
 				error: err instanceof Error ? err.message : 'Auth check failed'

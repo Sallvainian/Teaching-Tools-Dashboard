@@ -1,57 +1,42 @@
+/// <reference types="@sveltejs/kit" />
+/// <reference no-default-lib="true"/>
+/// <reference lib="esnext" />
+/// <reference lib="webworker" />
+
+const sw = self as unknown as ServiceWorkerGlobalScope;
 const CACHE_NAME = 'teacher-dashboard-v1';
 const urlsToCache = ['/', '/static/js/bundle.js', '/static/css/main.css'];
 
-self.addEventListener('install', (event: ExtendableEvent) => {
+// Install event - cache resources
+sw.addEventListener('install', (event) => {
 	event.waitUntil(
 		caches.open(CACHE_NAME).then((cache) => cache.addAll(urlsToCache))
 	);
 });
 
-self.addEventListener('activate', (event: ExtendableEvent) => {
+// Activate event - clean up old caches
+sw.addEventListener('activate', (event) => {
 	event.waitUntil(
 		caches.keys().then((names) =>
 			Promise.all(
-				names
-					.filter((name) => name !== CACHE_NAME)
-					.map((name) => caches.delete(name))
+				names.map((name) => {
+					if (name !== CACHE_NAME) {
+						return caches.delete(name);
+					}
+				})
 			)
 		)
 	);
 });
 
-self.addEventListener('fetch', (event: FetchEvent) => {
+// Fetch event - serve from cache or network
+sw.addEventListener('fetch', (event) => {
+	// Only handle GET requests
 	if (event.request.method !== 'GET') return;
 
-	const url = new URL(event.request.url);
-
-	if (url.pathname.startsWith('/api')) {
-		event.respondWith(
-			fetch(event.request).catch(() =>
-				new Response('{}', {
-					status: 503,
-					headers: { 'Content-Type': 'application/json' }
-				})
-			)
-		);
-		return;
-	}
-
 	event.respondWith(
-		caches.match(event.request).then((cached) => {
-			if (cached) return cached;
-			return fetch(event.request)
-				.then((response) => {
-					if (response.status === 200) {
-						const responseClone = response.clone();
-						caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
-					}
-					return response;
-				})
-				.catch(() =>
-					event.request.mode === 'navigate'
-						? caches.match('/')
-						: new Response('Network error', { status: 503 })
-				);
+		caches.match(event.request).then((response) => {
+			return response || fetch(event.request);
 		})
 	);
 });

@@ -149,7 +149,7 @@
 		const files = target.files;
 		if (!files || files.length === 0) return;
 
-		for (const file of files) {
+		for (const file of Array.from(files)) {
 			await filesActions.uploadFile(file, $currentFolderId || undefined);
 		}
 

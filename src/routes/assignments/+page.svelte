@@ -19,10 +19,10 @@
 	let sortBy = $state<'dueDate' | 'priority' | 'title'>('dueDate');
 
 	// Get unique subjects for filter
-	$: subjects = [...new Set($assignments.map(a => a.subject))];
+	let subjects = $derived([...new Set($assignments.map(a => a.subject))]);
 
 	// Filter and sort assignments
-	$: filteredAssignments = $assignments
+	let filteredAssignments = $derived($assignments
 		.filter(assignment => {
 			if (statusFilter !== 'all' && assignment.status !== statusFilter) return false;
 			if (subjectFilter !== 'all' && assignment.subject !== subjectFilter) return false;
@@ -32,15 +32,16 @@
 			switch (sortBy) {
 				case 'dueDate':
 					return a.dueDate.getTime() - b.dueDate.getTime();
-				case 'priority':
+				case 'priority': {
 					const priorityOrder = { high: 3, medium: 2, low: 1 };
 					return priorityOrder[b.priority] - priorityOrder[a.priority];
+				}
 				case 'title':
 					return a.title.localeCompare(b.title);
 				default:
 					return 0;
 			}
-		});
+		}));
 
 	function openAddAssignmentModal() {
 		// Set default due date to tomorrow
@@ -269,8 +270,8 @@
 	<div class="bg-card border border-border rounded-lg p-4 mb-6">
 		<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
 			<div>
-				<label class="block text-sm font-medium text-muted mb-2">Status</label>
-				<select bind:value={statusFilter} class="w-full px-3 py-2 bg-bg-base border border-border rounded-md text-text-base">
+				<label for="status-filter" class="block text-sm font-medium text-muted mb-2">Status</label>
+				<select id="status-filter" bind:value={statusFilter} class="w-full px-3 py-2 bg-bg-base border border-border rounded-md text-text-base">
 					<option value="all">All Status</option>
 					<option value="pending">Pending</option>
 					<option value="submitted">Submitted</option>
@@ -279,8 +280,8 @@
 			</div>
 			
 			<div>
-				<label class="block text-sm font-medium text-muted mb-2">Subject</label>
-				<select bind:value={subjectFilter} class="w-full px-3 py-2 bg-bg-base border border-border rounded-md text-text-base">
+				<label for="subject-filter" class="block text-sm font-medium text-muted mb-2">Subject</label>
+				<select id="subject-filter" bind:value={subjectFilter} class="w-full px-3 py-2 bg-bg-base border border-border rounded-md text-text-base">
 					<option value="all">All Subjects</option>
 					{#each subjects as subject}
 						<option value={subject}>{subject}</option>
@@ -289,8 +290,8 @@
 			</div>
 			
 			<div>
-				<label class="block text-sm font-medium text-muted mb-2">Sort By</label>
-				<select bind:value={sortBy} class="w-full px-3 py-2 bg-bg-base border border-border rounded-md text-text-base">
+				<label for="sort-by-filter" class="block text-sm font-medium text-muted mb-2">Sort By</label>
+				<select id="sort-by-filter" bind:value={sortBy} class="w-full px-3 py-2 bg-bg-base border border-border rounded-md text-text-base">
 					<option value="dueDate">Due Date</option>
 					<option value="priority">Priority</option>
 					<option value="title">Title</option>
@@ -359,8 +360,8 @@
 									
 									<!-- Status Dropdown -->
 									<select 
-										value={assignment.status}
-										onchange={(e) => handleStatusChange(assignment.id, e.target.value as Assignment['status'])}
+										bind:value={assignment.status}
+										onchange={(e) => handleStatusChange(assignment.id, (e.target as HTMLSelectElement)?.value as Assignment['status'])}
 										class="px-3 py-1 text-xs font-medium rounded-full border {getStatusColor(assignment.status)} bg-transparent"
 									>
 										<option value="pending">Pending</option>
@@ -386,8 +387,9 @@
 
 				<div class="space-y-4">
 					<div>
-						<label class="block text-sm font-medium text-muted mb-1">Title</label>
+						<label for="assignment-title" class="block text-sm font-medium text-muted mb-1">Title</label>
 						<input
+							id="assignment-title"
 							bind:value={newAssignmentTitle}
 							type="text"
 							placeholder="Assignment title"
@@ -396,8 +398,9 @@
 					</div>
 
 					<div>
-						<label class="block text-sm font-medium text-muted mb-1">Subject</label>
+						<label for="assignment-subject" class="block text-sm font-medium text-muted mb-1">Subject</label>
 						<input
+							id="assignment-subject"
 							bind:value={newAssignmentSubject}
 							type="text"
 							placeholder="Subject"
@@ -406,8 +409,9 @@
 					</div>
 
 					<div>
-						<label class="block text-sm font-medium text-muted mb-1">Description (Optional)</label>
+						<label for="assignment-description" class="block text-sm font-medium text-muted mb-1">Description (Optional)</label>
 						<textarea
+							id="assignment-description"
 							bind:value={newAssignmentDescription}
 							placeholder="Assignment description"
 							rows="3"
@@ -417,17 +421,19 @@
 
 					<div class="grid grid-cols-2 gap-4">
 						<div>
-							<label class="block text-sm font-medium text-muted mb-1">Due Date</label>
+							<label for="assignment-due-date" class="block text-sm font-medium text-muted mb-1">Due Date</label>
 							<input
-								bind:value={newAssignmentDueDate}
+								id="assignment-due-date"
+							bind:value={newAssignmentDueDate}
 								type="date"
 								class="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-bg-base text-text-base"
 							/>
 						</div>
 						<div>
-							<label class="block text-sm font-medium text-muted mb-1">Due Time</label>
+							<label for="assignment-due-time" class="block text-sm font-medium text-muted mb-1">Due Time</label>
 							<input
-								bind:value={newAssignmentDueTime}
+								id="assignment-due-time"
+							bind:value={newAssignmentDueTime}
 								type="time"
 								class="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-bg-base text-text-base"
 							/>
@@ -435,8 +441,9 @@
 					</div>
 
 					<div>
-						<label class="block text-sm font-medium text-muted mb-1">Priority</label>
+						<label for="assignment-priority" class="block text-sm font-medium text-muted mb-1">Priority</label>
 						<select
+							id="assignment-priority"
 							bind:value={newAssignmentPriority}
 							class="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-bg-base text-text-base"
 						>

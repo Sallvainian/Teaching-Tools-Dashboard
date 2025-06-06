@@ -34,10 +34,19 @@
 	let selectedClass = $derived($gradebookStore.classes.find(c => c.id === $gradebookStore.selectedClassId));
 	let classStudents = $derived($gradebookStore.students.filter(s => selectedClass?.studentIds.includes(s.id)));
 	let classAssignments = $derived($gradebookStore.assignments.filter(a => a.classId === $gradebookStore.selectedClassId));
+	
+	// Handle null selectedClassId for binding
+	let selectedClassIdForBinding = $state($gradebookStore.selectedClassId || '');
+	
+	$effect(() => {
+		selectedClassIdForBinding = $gradebookStore.selectedClassId || '';
+	});
 
 	async function handleClassChange(event: Event) {
 		const target = event.target as HTMLSelectElement;
 		const classId = target.value;
+		
+		selectedClassIdForBinding = classId;
 		
 		if (classId) {
 			await gradebookStore.selectClass(classId);
@@ -373,7 +382,7 @@
 					<select
 						id="class-select"
 						onchange={handleClassChange}
-						value={$gradebookStore.selectedClassId ?? ''}
+						bind:value={selectedClassIdForBinding}
 						class="input w-full"
 					>
 						<option value="">Choose a class...</option>
@@ -475,8 +484,9 @@
 						<h3 class="font-semibold text-highlight mb-3">Bulk Actions</h3>
 						<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
 							<div>
-								<label class="block text-sm font-medium text-text-base mb-1">Grade Value</label>
+								<label for="bulk-grade-value" class="block text-sm font-medium text-text-base mb-1">Grade Value</label>
 								<input
+									id="bulk-grade-value"
 									bind:value={bulkGradeValue}
 									type="text"
 									placeholder="Enter grade"
@@ -484,8 +494,8 @@
 								/>
 							</div>
 							<div>
-								<label class="block text-sm font-medium text-text-base mb-1">Grade Type</label>
-								<select bind:value={bulkGradeType} class="input w-full">
+								<label for="bulk-grade-type" class="block text-sm font-medium text-text-base mb-1">Grade Type</label>
+								<select id="bulk-grade-type" bind:value={bulkGradeType} class="input w-full">
 									<option value="points">Points</option>
 									<option value="percentage">Percentage</option>
 									<option value="letter">Letter Grade</option>
@@ -633,7 +643,7 @@
 															max={assignment.maxPoints}
 															step="0.1"
 															class="w-full h-full px-1 py-1.5 text-center text-sm bg-transparent border-0 rounded-none text-text-base transition-all focus:ring-1 focus:ring-purple-500 focus:bg-purple-50 dark:focus:bg-purple-900/20 {selected ? 'bg-blue-50 dark:bg-blue-900/20 ring-1 ring-blue-500' : ''} {colorMode && grade ? getGradeColor(grade.points, assignment.maxPoints) : 'hover:bg-muted/10'}"
-															onchange={(e) => handleGradeChange(student.id, assignment.id, assignment.maxPoints, e.target.value)}
+															onchange={(e) => handleGradeChange(student.id, assignment.id, assignment.maxPoints, (e.target as HTMLInputElement)?.value)}
 															onkeydown={(e) => handleGradeKeydown(e, student.id, assignment.id)}
 															onclick={() => toggleCellSelection(student.id, assignment.id)}
 														/>
@@ -651,8 +661,8 @@
 														const grade = $gradebookStore.grades.find(g => g.studentId === student.id && g.assignmentId === assignment.id);
 														return grade ? grade.points : null;
 													}).filter(g => g !== null && g > 0)}
-													{@const totalPossible = classAssignments.reduce((sum, assignment) => sum + assignment.maxPoints, 0)}
-													{@const totalEarned = studentGrades.reduce((sum, g) => sum + (g || 0), 0)}
+													{@const totalPossible = classAssignments.reduce((sum, assignment) => (sum || 0) + assignment.maxPoints, 0)}
+													{@const totalEarned = studentGrades.reduce((sum, g) => (sum ?? 0) + (g ?? 0), 0) as number}
 													{@const average = studentGrades.length > 0 ? Math.round((totalEarned / (studentGrades.length * (totalPossible / classAssignments.length))) * 100) : 0}
 													<div class="font-bold text-purple-400">
 														{average || '—'}%

@@ -645,7 +645,8 @@
 										ondragover={handleDragOver}
 										ondrop={(e) => handleDrop(e, selectedDate)}
 										role="gridcell"
-									>	tabindex={0}
+										tabindex={0}
+									>
 
 										{#each getEventsForHour(selectedDate, slot.hour) as event}
 											<button
@@ -738,7 +739,9 @@
 
 				<div class="space-y-4">
 					<div>
+						<label for="edit-event-title" class="sr-only">Event Title</label>
 						<input
+							id="edit-event-title"
 							bind:value={newEventTitle}
 							type="text"
 							placeholder="Add title"
@@ -757,8 +760,9 @@
 							/>
 						</div>
 						<div>
-							<label class="block text-sm font-medium text-muted mb-1">Category</label>
+							<label for="event-category" class="block text-sm font-medium text-muted mb-1">Category</label>
 							<select
+								id="event-category"
 								bind:value={newEventCategory}
 								class="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-bg-base text-text-base"
 							>
@@ -783,16 +787,18 @@
 					{#if !newEventIsAllDay}
 						<div class="grid grid-cols-2 gap-4">
 							<div>
-								<label class="block text-sm font-medium text-muted mb-1">Start time</label>
+								<label for="event-start-time" class="block text-sm font-medium text-muted mb-1">Start time</label>
 								<input
+									id="event-start-time"
 									bind:value={newEventStartTime}
 									type="time"
 									class="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-bg-base text-text-base"
 								/>
 							</div>
 							<div>
-								<label class="block text-sm font-medium text-muted mb-1">End time</label>
+								<label for="event-end-time" class="block text-sm font-medium text-muted mb-1">End time</label>
 								<input
+									id="event-end-time"
 									bind:value={newEventEndTime}
 									type="time"
 									class="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-bg-base text-text-base"
@@ -802,8 +808,9 @@
 					{/if}
 
 					<div>
-						<label class="block text-sm font-medium text-muted mb-1">Location</label>
+						<label for="event-location" class="block text-sm font-medium text-muted mb-1">Location</label>
 						<input
+							id="event-location"
 							bind:value={newEventLocation}
 							type="text"
 							placeholder="Add location"
@@ -812,8 +819,9 @@
 					</div>
 
 					<div>
-						<label class="block text-sm font-medium text-muted mb-1">Description</label>
+						<label for="event-description" class="block text-sm font-medium text-muted mb-1">Description</label>
 						<textarea
+							id="event-description"
 							bind:value={newEventDescription}
 							placeholder="Add description"
 							rows="3"
@@ -822,8 +830,9 @@
 					</div>
 
 					<div>
-						<label class="block text-sm font-medium text-muted mb-1">Repeat</label>
+						<label for="edit-event-repeat" class="block text-sm font-medium text-muted mb-1">Repeat</label>
 						<select
+							id="edit-event-repeat"
 							bind:value={newEventRecurring}
 							class="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-bg-base text-text-base"
 						>
@@ -952,17 +961,19 @@
 						</div>
 
 						<div class="grid grid-cols-2 gap-4">
-							<div>
-								<label class="block text-sm font-medium text-muted mb-1">Date</label>
+tHIN							<div>
+								<label for="new-event-date" class="block text-sm font-medium text-muted mb-1">Date</label>
 								<input
+									id="new-event-date"
 									bind:value={newEventDate}
 									type="date"
 									class="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-bg-base text-text-base"
 								/>
 							</div>
 							<div>
-								<label class="block text-sm font-medium text-muted mb-1">Category</label>
+								<label for="new-event-category" class="block text-sm font-medium text-muted mb-1">Category</label>
 								<select
+									id="new-event-category"
 									bind:value={newEventCategory}
 									class="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-bg-base text-text-base"
 								>
@@ -987,16 +998,18 @@
 						{#if !newEventIsAllDay}
 							<div class="grid grid-cols-2 gap-4">
 								<div>
-									<label class="block text-sm font-medium text-muted mb-1">Start time</label>
+									<label for="new-event-start-time" class="block text-sm font-medium text-muted mb-1">Start time</label>
 									<input
+										id="new-event-start-time"
 										bind:value={newEventStartTime}
 										type="time"
 										class="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-bg-base text-text-base"
 									/>
 								</div>
 								<div>
-									<label class="block text-sm font-medium text-muted mb-1">End time</label>
+									<label for="new-event-end-time" class="block text-sm font-medium text-muted mb-1">End time</label>
 									<input
+										id="new-event-end-time"
 										bind:value={newEventEndTime}
 										type="time"
 										class="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-bg-base text-text-base"
@@ -1006,8 +1019,9 @@
 						{/if}
 
 						<div>
-							<label class="block text-sm font-medium text-muted mb-1">Location</label>
+							<label for="new-event-location" class="block text-sm font-medium text-muted mb-1">Location</label>
 							<input
+								id="new-event-location"
 								bind:value={newEventLocation}
 								type="text"
 								placeholder="Add location"
@@ -1016,8 +1030,9 @@
 						</div>
 
 						<div>
-							<label class="block text-sm font-medium text-muted mb-1">Description</label>
+							<label for="new-event-description" class="block text-sm font-medium text-muted mb-1">Description</label>
 							<textarea
+								id="new-event-description"
 								bind:value={newEventDescription}
 								placeholder="Add description"
 								rows="3"
@@ -1026,8 +1041,9 @@
 						</div>
 
 						<div>
-							<label class="block text-sm font-medium text-muted mb-1">Repeat</label>
+							<label for="new-event-repeat" class="block text-sm font-medium text-muted mb-1">Repeat</label>
 							<select
+								id="new-event-repeat"
 								bind:value={newEventRecurring}
 								class="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 bg-bg-base text-text-base"
 							>

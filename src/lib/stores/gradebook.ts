@@ -131,17 +131,6 @@ function createGradebookStore() {
 
 			const transformedGrades = gradesData.map(dbGradeToAppGrade);
 
-			// Debug logging for data transformation
-			console.log('Transformed data:', {
-				classes: transformedClasses.map(c => ({
-					id: c.id,
-					name: c.name,
-					studentIds: c.studentIds,
-					studentCount: c.studentIds.length
-				})),
-				classStudentsRaw: classStudentsData
-			});
-
 			// Update stores
 			students.set(transformedStudents);
 			classes.set(transformedClasses);
@@ -642,7 +631,7 @@ function createGradebookStore() {
 			const { supabase } = await import('$lib/supabaseClient');
 
 			// Check authentication state
-			const { data: _authData } = await supabase.auth.getSession();
+			await supabase.auth.getSession();
 			// const isAuthenticated = !!authData?.session?.user; // Removed unused variable
 
 			// Log auth state and proceed with loading

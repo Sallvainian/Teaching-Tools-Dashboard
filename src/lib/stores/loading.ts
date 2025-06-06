@@ -12,7 +12,7 @@ function getRandomAnimation(): LoadingState['animation'] {
 }
 
 function createLoadingStore() {
-	const { subscribe, set: _set, update } = writable<LoadingState>({
+	const { subscribe, update } = writable<LoadingState>({
 		isLoading: false,
 		animation: getRandomAnimation()
 	});
