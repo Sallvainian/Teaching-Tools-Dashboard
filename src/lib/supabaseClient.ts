@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+import { browser } from '$app/environment';
 
 // Create the Supabase client with SvelteKit environment variables
 export const supabaseUrl = PUBLIC_SUPABASE_URL;
@@ -13,7 +14,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
 	);
 }
 
-// Create and export the Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Create and export the Supabase client with proper SvelteKit configuration
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+	auth: {
+		autoRefreshToken: browser,
+		persistSession: browser,
+		detectSessionInUrl: browser
+	}
+});
 
 export default supabase;

@@ -9,6 +9,7 @@
 	import AppLayout from '$lib/components/AppLayout/AppLayout.svelte';
 	import GlobalLoader from '$lib/components/GlobalLoader.svelte';
 	import ConfirmationModalProvider from '$lib/components/ConfirmationModalProvider.svelte';
+	import ToastContainer from '$lib/components/ToastContainer.svelte';
 
 	// Get children prop for Svelte 5
 	let { children } = $props();
@@ -23,3 +24,6 @@
 
 <!-- Global confirmation modal -->
 <ConfirmationModalProvider />
+
+<!-- Toast notifications -->
+<ToastContainer />

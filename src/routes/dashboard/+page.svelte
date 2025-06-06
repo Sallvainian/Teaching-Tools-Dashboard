@@ -5,6 +5,10 @@
 	import SkeletonLoader from '$lib/components/SkeletonLoader.svelte';
 	import { useKeyboardShortcuts } from '$lib/utils/keyboard';
 	import * as Sentry from '@sentry/sveltekit';
+	import { showSuccessToast, showErrorToast, showWarningToast, showInfoToast } from '$lib/stores/notifications';
+
+	// Get data from the server
+const data = $props();
 
 	// Current date
 	const today = new Date();
@@ -15,26 +19,26 @@
 		day: 'numeric'
 	});
 
-	// Dashboard stats
-	let totalStudents = $state(25);
-	let totalClasses = $state(4);
-	let totalLessons = $state(32);
-	let totalFiles = $state(128);
+	// Dashboard stats from server
+	let totalStudents = $state(data?.dashboardData?.totalStudents || 0);
+	let totalClasses = $state(data?.dashboardData?.totalClasses || 0);
+	let totalLessons = $state(data?.dashboardData?.totalLessons || 0);
+	let totalFiles = $state(data?.dashboardData?.totalFiles || 0);
 
-	let recentUploads = $state([
+	let recentUploads = $state(data?.dashboardData?.recentUploads || [
 		{ name: 'Lesson Plan - Week 12.pdf', size: '1.2 MB', date: '2 hours ago' },
 		{ name: 'Math Quiz - Fractions.docx', size: '450 KB', date: '5 hours ago' },
 		{ name: 'Science Project Guidelines.pdf', size: '2.8 MB', date: 'Yesterday' },
 		{ name: 'Student Progress Report.xlsx', size: '1.5 MB', date: 'Yesterday' }
 	]);
 
-	let recentMessages = $state([
+	let recentMessages = $state(data?.dashboardData?.recentMessages || [
 		{ from: 'Emily Johnson', message: 'When is the science project due?', time: '10:45 AM' },
 		{ from: 'Michael Smith', message: 'I submitted my math homework', time: '9:30 AM' },
 		{ from: 'Sarah Williams', message: 'Can we review the test questions?', time: 'Yesterday' }
 	]);
 
-	let upcomingLessons = $state([
+	let upcomingLessons = $state(data?.dashboardData?.upcomingLessons || [
 		{ title: 'Algebra Fundamentals', class: 'Math 101', time: 'Today, 2:00 PM' },
 		{ title: 'Cell Structure & Function', class: 'Biology', time: 'Tomorrow, 10:30 AM' },
 		{ title: 'Essay Writing Workshop', class: 'English', time: 'Wed, 1:15 PM' }
@@ -101,7 +105,7 @@
 						</div>
 						<div>
 							<h1 class="text-3xl font-bold text-highlight">Dashboard</h1>
-							<p class="text-text-base">Today, {formattedDate}</p>
+							<p class="text-text-base">{formattedDate}</p>
 						</div>
 					</div>
 					<button onclick={testSentry} class="btn btn-sm btn-outline">
@@ -379,20 +383,27 @@
 						<div class="flex flex-col items-center justify-center h-[calc(100%-2rem)]">
 							<div class="relative w-32 h-32 mb-4">
 								<svg class="w-full h-full" viewBox="0 0 36 36">
-									<path
-										d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+									<!-- Background Circle -->
+									<circle
+										cx="18"
+										cy="18"
+										r="16"
 										fill="none"
-										stroke="#374151"
+										class="stroke-current text-gray-200 dark:text-gray-700"
 										stroke-width="3"
-										stroke-dasharray="100, 100"
 									/>
-									<path
-										d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+									<!-- Progress Circle -->
+									<circle
+										cx="18"
+										cy="18"
+										r="16"
 										fill="none"
 										stroke="url(#gradient-storage)"
 										stroke-width="3"
-										stroke-dasharray="65, 100"
-										class="animate-pulse-subtle"
+										stroke-linecap="round"
+										stroke-dasharray="100"
+										stroke-dashoffset="{100 - (data?.dashboardData?.storagePercentage || 0)}"
+										transform="rotate(-90 18 18)"
 									/>
 									<defs>
 										<linearGradient id="gradient-storage" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -402,13 +413,13 @@
 									</defs>
 								</svg>
 								<div class="absolute inset-0 flex items-center justify-center flex-col">
-									<span class="text-2xl font-bold text-highlight">65%</span>
-									<span class="text-xs text-text-base">Used</span>
-								</div>
+								<span class="text-2xl font-bold text-highlight">{data?.dashboardData?.storagePercentage || 0}%</span>
+								<span class="text-xs text-text-base">Used</span>
+							</div>
 							</div>
 
 							<div class="text-center">
-								<p class="text-text-base mb-1">6.5 GB of 10 GB used</p>
+								<p class="text-text-base mb-1">{data?.dashboardData?.storageUsed || '0 B of 10 GB used'}</p>
 								<button
 									onclick={() => goto('/settings')}
 									class="text-sm text-purple hover:text-purple-hover transition-colors"
@@ -417,6 +428,37 @@
 								</button>
 							</div>
 						</div>
+					</div>
+				</div>
+
+				<!-- Toast Testing Section (for demonstration) -->
+				<div class="mt-6 card-dark">
+					<h2 class="text-xl font-bold text-highlight mb-4">Toast Notifications Demo</h2>
+					<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+						<button
+							class="btn bg-green-500 hover:bg-green-600 text-white"
+							onclick={() => showSuccessToast('Operation completed successfully!', 'Success')}
+						>
+							Success Toast
+						</button>
+						<button
+							class="btn bg-red-500 hover:bg-red-600 text-white"
+							onclick={() => showErrorToast('Something went wrong. Please try again.', 'Error')}
+						>
+							Error Toast
+						</button>
+						<button
+							class="btn bg-yellow-500 hover:bg-yellow-600 text-white"
+							onclick={() => showWarningToast('This action cannot be undone.', 'Warning')}
+						>
+							Warning Toast
+						</button>
+						<button
+							class="btn bg-blue-500 hover:bg-blue-600 text-white"
+							onclick={() => showInfoToast('New feature available! Check it out.', 'Info')}
+						>
+							Info Toast
+						</button>
 					</div>
 				</div>
 			{/if}

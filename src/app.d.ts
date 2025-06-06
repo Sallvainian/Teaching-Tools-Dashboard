@@ -1,8 +1,15 @@
 // See https://kit.svelte.dev/docs/types#app
 // for information about these interfaces
+import type { AuthSession } from '@supabase/supabase-js';
+
 declare global {
 	namespace App {
-		// Interfaces can be added here as needed
+		// interface Error {}
+		interface Locals {
+			session: AuthSession | null;
+		}
+		// interface PageData {}
+		// interface Platform {}
 	}
 }
 

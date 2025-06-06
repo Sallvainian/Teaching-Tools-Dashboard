@@ -7,6 +7,7 @@
 	import UserSelectModal from '$lib/components/UserSelectModal.svelte';
 	import TypingIndicator from '$lib/components/TypingIndicator.svelte';
 	import GifPicker from '$lib/components/GifPicker.svelte';
+	import ImagePreviewModal from '$lib/components/ImagePreviewModal.svelte';
 	import type { ChatUIConversation, ChatUIMessage, ConversationWithDetails, ConversationParticipant } from '$lib/types/chat';
 	import { getUser } from '$lib/utils/storeHelpers';
 	import { goto } from '$app/navigation';
@@ -31,6 +32,8 @@
 	let showAttachMenu = $state(false);
 	let showUserSelectModal = $state(false);
 	let showGifPicker = $state(false);
+	let showImagePreview = $state(false);
+	let previewImageUrl = $state<string | null>(null);
 	let messagesContainer: HTMLDivElement;
 	let typingTimeout: number | null = null;
 	let fileInput: HTMLInputElement;
@@ -64,15 +67,15 @@
 			// Process conversations
 			const processedConversations = convs.map((conv) => ({
 				id: conv.id,
-				name: conv.name ?? getConversationDisplayName(conv),
-				displayName: getConversationDisplayName(conv),
+				name: conv.name ?? getConversationDisplayName(conv as ConversationWithDetails),
+				displayName: getConversationDisplayName(conv as ConversationWithDetails),
 				avatar: conv.avatar,
-				displayAvatar: getConversationDisplayAvatar(conv, user.id),
+				displayAvatar: getConversationDisplayAvatar(conv as ConversationWithDetails, user.id),
 				is_group: conv.is_group ?? false,
-				last_message_text: getLastMessageText(conv),
+				last_message_text: getLastMessageText(conv as ConversationWithDetails),
 				last_message_time: formatTimeAgo(conv.last_message?.created_at ?? null),
 				unread_count: conv.unread_count ?? 0,
-				is_online: isConversationOnline(conv, user.id),
+				is_online: isConversationOnline(conv as ConversationWithDetails, user.id),
 				created_at: conv.created_at ?? new Date().toISOString(),
 				updated_at: conv.updated_at ?? new Date().toISOString()
 			}));
@@ -153,7 +156,7 @@
 			(p: ConversationParticipant) => p.user_id !== userId
 		);
 
-		return otherParticipant?.user?.is_online ?? false;
+		return otherParticipant?.is_online ?? false;
 	}
 
  async function getConversationName(conv: ConversationWithDetails, currentUserId: string): Promise<string> {
@@ -444,6 +447,16 @@
 		}
 	}
 
+	function openImagePreview(url: string) {
+		previewImageUrl = url;
+		showImagePreview = true;
+	}
+
+	function closeImagePreview() {
+		showImagePreview = false;
+		previewImageUrl = null;
+	}
+
 	async function deleteConversation(conversationId: string, event: Event) {
 		event.stopPropagation(); // Prevent selecting the conversation
 
@@ -474,7 +487,14 @@
 
 	// Handle file attachment
 	function handleFileAttachment(type: 'image' | 'document' | 'video') {
-		if (!fileInput) return;
+		// Initialize fileInput if not already done
+		if (!fileInput) {
+			fileInput = document.createElement('input');
+			fileInput.type = 'file';
+			fileInput.style.display = 'none';
+			fileInput.addEventListener('change', handleFileSelected);
+			document.body.appendChild(fileInput);
+		}
 		
 		// Set accepted file types based on attachment type
 		switch (type) {
@@ -499,20 +519,40 @@
 		
 		if (!file || !activeConversation) return;
 		
+		// Store the conversation ID to avoid null check issues in async callbacks
+		const conversationId = activeConversation.id;
+		
 		try {
-			// Check if the file is an image
+			// Check if the file is an image or video
 			const isImage = file.type.startsWith('image/');
+			const isVideo = file.type.startsWith('video/');
 			
 			if (isImage) {
-				// Create a temporary URL for the image
-				const imageUrl = URL.createObjectURL(file);
-				// Send image as a special message format
-				const imageMessage = `[IMAGE]${imageUrl}|${file.name}|${file.size}`;
-				await chatStore.sendMessage(activeConversation.id, imageMessage);
+				// Convert image to base64 data URL
+				const reader = new FileReader();
+				reader.onload = async (e) => {
+					const dataUrl = e.target?.result as string;
+					
+					// Send image as a special message format with base64 data URL
+					const imageMessage = `[IMAGE]${dataUrl}|${file.name}|${file.size}`;
+					await chatStore.sendMessage(conversationId, imageMessage);
+				};
+				reader.readAsDataURL(file);
+			} else if (isVideo) {
+				// Convert video to base64 data URL
+				const reader = new FileReader();
+				reader.onload = async (e) => {
+					const dataUrl = e.target?.result as string;
+					
+					// Send video as a special message format with base64 data URL
+					const videoMessage = `[VIDEO]${dataUrl}|${file.name}|${file.size}`;
+					await chatStore.sendMessage(conversationId, videoMessage);
+				};
+				reader.readAsDataURL(file);
 			} else {
-				// For non-image files, send as before
+				// For non-image/video files, send as before
 				const fileMessage = `📎 ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
-				await chatStore.sendMessage(activeConversation.id, fileMessage);
+				await chatStore.sendMessage(conversationId, fileMessage);
 			}
 			
 			// Reset the file input
@@ -778,11 +818,17 @@
 							<div class="text-xs font-medium text-purple mb-1">{message.sender_name}</div>
 						{/if}
 						{#if message.content.startsWith('[GIF]')}
-							<img 
-								src={message.content.slice(5)} 
-								alt="GIF" 
-								class="rounded-lg max-w-full max-h-64 object-contain"
-							/>
+							<button
+								type="button"
+								class="block rounded-lg max-w-full hover:opacity-90 transition-opacity cursor-pointer"
+								onclick={() => openImagePreview(message.content.slice(5))}
+							>
+								<img 
+									src={message.content.slice(5)} 
+									alt="GIF" 
+									class="rounded-lg max-w-full max-h-64 object-contain"
+								/>
+							</button>
 						{:else if message.content.startsWith('[IMAGE]')}
 							{@const parts = message.content.slice(7).split('|')}
 							{@const imageUrl = parts[0]}
@@ -791,9 +837,8 @@
 							<div class="space-y-2">
 								<button 
 									type="button"
-									class="block rounded-lg max-w-full hover:opacity-90 transition-opacity focus:outline-none focus:ring-2 focus:ring-blue-500"
-									onclick={() => window.open(imageUrl, '_blank')}
-									onkeydown={(e) => e.key === 'Enter' && window.open(imageUrl, '_blank')}
+									class="block rounded-lg max-w-full hover:opacity-90 transition-opacity cursor-pointer"
+									onclick={() => openImagePreview(imageUrl)}
 								>
 									<img 
 										src={imageUrl} 
@@ -804,6 +849,31 @@
 								<div class="text-xs opacity-75 flex items-center gap-1">
 									<svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 										<path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+									</svg>
+									{fileName}
+									{#if fileSize > 0}
+										({(fileSize / 1024 / 1024).toFixed(2)} MB)
+									{/if}
+								</div>
+							</div>
+						{:else if message.content.startsWith('[VIDEO]')}
+							{@const parts = message.content.slice(7).split('|')}
+							{@const videoUrl = parts[0]}
+							{@const fileName = parts[1] || 'Video'}
+							{@const fileSize = parts[2] ? parseInt(parts[2]) : 0}
+							<div class="space-y-2">
+								<video 
+									src={videoUrl}
+									controls
+									preload="metadata"
+									class="rounded-lg max-w-full max-h-96 object-contain bg-surface"
+								>
+									<track kind="captions" />
+									Your browser does not support the video tag.
+								</video>
+								<div class="text-xs opacity-75 flex items-center gap-1">
+									<svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+										<polygon points="5 3 19 12 5 21 5 3"></polygon>
 									</svg>
 									{fileName}
 									{#if fileSize > 0}
@@ -982,7 +1052,7 @@
 
 								<button
 									class="p-2 text-text-base hover:text-purple rounded-full hover:bg-surface transition-colors"
-									onclick={sendMessage}
+									onclick={() => sendMessage()}
 									disabled={!newMessage.trim()}
 									aria-label="Send message"
 								>
@@ -1005,14 +1075,6 @@
 		</div>
 	</div>
 
-	<!-- Hidden file input -->
-	<input
-		type="file"
-		bind:this={fileInput}
-		class="hidden"
-		onchange={handleFileSelected}
-	/>
-
 	<!-- User Selection Modal -->
 	<UserSelectModal
 		bind:isOpen={showUserSelectModal}
@@ -1023,5 +1085,12 @@
 	<GifPicker
 		bind:isOpen={showGifPicker}
 		onSelectGif={sendGif}
+	/>
+
+	<!-- Image Preview Modal -->
+	<ImagePreviewModal
+		bind:isOpen={showImagePreview}
+		imageUrl={previewImageUrl}
+		onClose={closeImagePreview}
 	/>
 </div>

@@ -1,5 +1,6 @@
 export type NotificationType = 'assignment' | 'calendar' | 'message' | 'system';
 export type NotificationPriority = 'low' | 'medium' | 'high' | 'urgent';
+export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
 export interface Notification {
 	id: string;
@@ -42,4 +43,13 @@ export interface PrivateMessage {
 	timestamp: Date;
 	read: boolean;
 	priority: NotificationPriority;
+}
+
+export interface Toast {
+	id: string;
+	type: ToastType;
+	title?: string;
+	message: string;
+	duration?: number; // milliseconds, 0 means no auto-dismiss
+	timestamp: Date;
 }

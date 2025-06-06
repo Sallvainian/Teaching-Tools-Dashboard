@@ -6,6 +6,7 @@ export { filesStore, fileStore, filesActions } from './files';
 export { gradebookStore } from './gradebook';
 export { jeopardyStore } from './jeopardy';
 export { loadingStore } from './loading';
+export * from './notifications';
 export { scattergories } from './scattergories';
 export { settingsStore } from './settings';
 export { uiStore } from './ui';

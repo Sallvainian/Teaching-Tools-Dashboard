@@ -5,7 +5,7 @@ import { authStore } from '$lib/stores/auth';
 import { ensureAuthInitialized } from '$lib/utils/authInit';
 import { getIsAuthenticated } from '$lib/utils/storeHelpers';
 
-export const load: PageLoad = async () => {
+export const load: PageLoad = async ({ data }) => {
 	// Ensure auth is initialized first
 	await ensureAuthInitialized();
 
@@ -17,5 +17,8 @@ export const load: PageLoad = async () => {
 		throw redirect(307, '/auth/login');
 	}
 
-	return {};
+	// Return the data from the server
+	return {
+		data: data
+	};
 };

@@ -561,7 +561,7 @@ export class FileService {
 			const { data, error } = await supabase
 				.from('file_metadata')
 				.select('*')
-				.eq('uploaded_by', user.id)
+				.eq('user_id', user.id)
 				.eq('is_deleted', true)
 				.order('updated_at', { ascending: false });
 

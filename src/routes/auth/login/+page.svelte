@@ -44,16 +44,5 @@
 				<a href="/auth/reset-password" class="text-purple hover:underline"> Forgot password? </a>
 			</p>
 		</div>
-
-		<!-- Development mode warning -->
-		{#if import.meta.env.DEV}
-			<div class="mt-8 p-4 bg-surface border border-border/50 rounded-lg">
-				<p class="text-error text-sm">
-					<strong>Development Mode:</strong> If Supabase is not configured, you can use the app in
-					offline mode. Go to <a href="/settings" class="underline">Settings</a> to toggle data storage
-					mode.
-				</p>
-			</div>
-		{/if}
 	</div>
 </div>

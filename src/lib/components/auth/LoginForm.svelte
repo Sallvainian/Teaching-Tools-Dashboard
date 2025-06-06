@@ -48,60 +48,43 @@
 		<h2 class="text-3xl font-bold mb-8 text-center text-highlight">Sign In</h2>
 
 		{#if error}
-			<div class="bg-error/20 text-error px-4 py-3 rounded mb-4" role="alert">
-				<p>{error}</p>
+			<div class="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg">
+				<p class="text-sm text-red-400">{error}</p>
 			</div>
 		{/if}
 
-		<div class="mb-6">
-			<label class="block text-sm font-medium mb-2 text-text-base" for="email"> Email </label>
-			<input
-				bind:value={email}
-				class="input input-bordered w-full bg-surface border border-border py-3 px-4 text-base text-text-hover"
-				style="color: var(--text-hover);"
-				id="email"
-				type="email"
-				placeholder="Email"
-				required
-			/>
+		<div class="space-y-6">
+			<div>
+				<label for="email" class="block text-sm font-medium text-muted mb-2">Email</label>
+				<input
+					type="email"
+					id="email"
+					bind:value={email}
+					required
+					class="w-full px-4 py-3 bg-surface border-2 border-border rounded-lg focus:outline-none focus:border-purple transition-colors text-text placeholder-muted"
+					placeholder="teacher@example.com"
+				/>
+			</div>
+
+			<div>
+				<label for="password" class="block text-sm font-medium text-muted mb-2">Password</label>
+				<input
+					type="password"
+					id="password"
+					bind:value={password}
+					required
+					class="w-full px-4 py-3 bg-surface border-2 border-border rounded-lg focus:outline-none focus:border-purple transition-colors text-text placeholder-muted"
+					placeholder="••••••••"
+				/>
+			</div>
 		</div>
 
-		<div class="mb-8">
-			<label class="block text-sm font-medium mb-2 text-text-base" for="password"> Password </label>
-			<input
-				bind:value={password}
-				class="input input-bordered w-full bg-surface border border-border py-3 px-4 text-base text-text-hover"
-				style="color: var(--text-hover);"
-				id="password"
-				type="password"
-				placeholder="Password"
-				required
-			/>
-		</div>
-
-		<div class="mt-6">
-			<button
-				class="btn btn-primary w-full py-3 text-lg font-semibold"
-				type="submit"
-				disabled={loading}
-			>
-				{#if loading}
-					<span class="loading loading-spinner loading-md"></span>
-				{:else}
-					Sign In
-				{/if}
-			</button>
-		</div>
+		<button
+			type="submit"
+			disabled={loading}
+			class="w-full mt-8 px-6 py-3 bg-purple text-white font-semibold rounded-lg hover:bg-purple-hover focus:outline-none focus:ring-2 focus:ring-purple/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+		>
+			{loading ? 'Signing in...' : 'Sign In'}
+		</button>
 	</form>
 </div>
-
-<style>
-	input::placeholder {
-		color: #cbd5e1 !important;
-		opacity: 1 !important;
-	}
-
-	:global(.dark) input::placeholder {
-		color: #94a3b8 !important;
-	}
-</style>

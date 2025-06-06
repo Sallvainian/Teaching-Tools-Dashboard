@@ -74,6 +74,7 @@
 		"@giphy/svelte-components": "^1.1.0",
 		"@jridgewell/sourcemap-codec": "^1.5.0",
 		"@sentry/sveltekit": "^9.24.0",
+		"@supabase/ssr": "^0.6.1",
 		"@supabase/supabase-js": "^2.49.4",
 		"caniuse-lite": "1.0.30001720",
 		"cookie": "^1.0.2",

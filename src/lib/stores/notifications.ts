@@ -1,5 +1,5 @@
 import { writable, derived, get } from 'svelte/store';
-import type { Notification, Assignment, PrivateMessage, NotificationType, NotificationPriority } from '$lib/types/notifications';
+import type { Notification, Assignment, PrivateMessage, NotificationType, NotificationPriority, Toast, ToastType } from '$lib/types/notifications';
 
 // Core notification store
 export const notifications = writable<Notification[]>([]);
@@ -9,6 +9,9 @@ export const assignments = writable<Assignment[]>([]);
 
 // Private messages store
 export const privateMessages = writable<PrivateMessage[]>([]);
+
+// Toast notifications store
+export const toasts = writable<Toast[]>([]);
 
 // Derived stores
 export const unreadNotifications = derived(notifications, ($notifications) =>
@@ -269,6 +272,59 @@ export function checkDueDatesAndEvents() {
 			}
 		}
 	});
+}
+
+// Toast functions
+export function showToast(
+	type: ToastType,
+	message: string,
+	title?: string,
+	duration: number = 4000
+): string {
+	const toast: Toast = {
+		id: crypto.randomUUID(),
+		type,
+		title,
+		message,
+		duration,
+		timestamp: new Date()
+	};
+	
+	toasts.update(current => [toast, ...current]);
+	
+	// Auto-dismiss after duration (if duration > 0)
+	if (duration > 0) {
+		setTimeout(() => {
+			dismissToast(toast.id);
+		}, duration);
+	}
+	
+	return toast.id;
+}
+
+export function dismissToast(toastId: string) {
+	toasts.update(current => current.filter(toast => toast.id !== toastId));
+}
+
+export function dismissAllToasts() {
+	toasts.set([]);
+}
+
+// Convenience functions for different toast types
+export function showSuccessToast(message: string, title?: string, duration?: number): string {
+	return showToast('success', message, title, duration);
+}
+
+export function showErrorToast(message: string, title?: string, duration?: number): string {
+	return showToast('error', message, title, duration);
+}
+
+export function showWarningToast(message: string, title?: string, duration?: number): string {
+	return showToast('warning', message, title, duration);
+}
+
+export function showInfoToast(message: string, title?: string, duration?: number): string {
+	return showToast('info', message, title, duration);
 }
 
 // Storage functions
