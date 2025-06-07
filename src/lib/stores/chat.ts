@@ -2,7 +2,7 @@ import { writable, derived, get } from 'svelte/store';
 import { supabase } from '$lib/supabaseClient';
 import { authStore } from './auth';
 import { typedAuthStore, getUser } from '$lib/utils/storeHelpers';
-import { addPrivateMessageNotification } from './notifications';
+import { addPrivateMessageNotification, showInfoToast } from './notifications';
 import type { Database } from '$lib/types/database';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -195,6 +195,7 @@ async function loadConversations(): Promise<void> {
 			throw new Error('User not authenticated');
 		}
 
+
 		// Load conversations using direct queries to respect RLS policies
 		// Get conversations the user created
 		const { data: ownedConversations, error: ownedError } = await supabase
@@ -264,8 +265,8 @@ async function loadConversations(): Promise<void> {
 
 				const lastMessage = lastMessages?.[0] ?? null;
 
-				// Get participants separately
-				const { data: participants, error: _participantsError } = await supabase
+				// Get participants separately with better error handling
+				const { data: participants, error: participantsError } = await supabase
 					.from('conversation_participants')
 					.select(
 						`
@@ -273,7 +274,12 @@ async function loadConversations(): Promise<void> {
 						user:app_users (id, full_name, email, avatar_url)
 					`
 					)
-					.eq('conversation_id', conv.id);
+					.eq('conversation_id', conv.id)
+					.eq('is_active', true);  // Only get active participants
+
+				if (participantsError) {
+					console.error('Error loading participants for conversation', conv.id, participantsError);
+				}
 
 
 				// Calculate unread count
@@ -517,16 +523,24 @@ function setActiveConversation(conversationId: string | null): void {
 	}
 }
 
-// Real-time subscriptions  
+// Real-time subscriptions
+let setupInProgress = false;
+
 function setupRealtimeSubscriptions(): void {
 	const user = getUser(get(authStore));
-	if (!user || subscriptionsActive) return;
+	if (!user || subscriptionsActive || setupInProgress) return;
+
+	// Prevent multiple simultaneous setup calls
+	setupInProgress = true;
+
+	// Clean up any existing subscriptions first
+	cleanupRealtimeSubscriptions();
 
 	subscriptionsActive = true;
 
-	// Subscribe to conversations changes
+	// Subscribe to conversations changes with unique channel name
 	conversationsChannel = supabase
-		.channel('public:conversations')
+		.channel(`conversations-${user.id}`)
 		.on(
 			'postgres_changes',
 			{
@@ -540,9 +554,9 @@ function setupRealtimeSubscriptions(): void {
 		)
 		.subscribe();
 
-	// Subscribe to messages
+	// Subscribe to messages with unique channel name
 	messagesChannel = supabase
-		.channel('public:messages')
+		.channel(`messages-${user.id}`)
 		.on(
 			'postgres_changes',
 			{
@@ -580,6 +594,17 @@ function setupRealtimeSubscriptions(): void {
 							fullMessage.conversation_id,
 							fullMessage.id
 						);
+						
+						// Show toast notification for new messages
+						console.log('📱 Showing toast for new message:', { sender: senderName, messageId: fullMessage.id });
+						const messagePreview = fullMessage.content.length > 50 
+							? fullMessage.content.substring(0, 50) + '...' 
+							: fullMessage.content;
+						showInfoToast(
+							`${messagePreview}`,
+							`New message from ${senderName}`,
+							5000
+						);
 					}
 					
 					// Add to messages if we have this conversation loaded
@@ -616,9 +641,9 @@ function setupRealtimeSubscriptions(): void {
 		)
 		.subscribe();
 
-	// Subscribe to typing indicators
+	// Subscribe to typing indicators with shared channel name for all users
 	typingChannel = supabase
-		.channel('typing-indicators')
+		.channel('typing-global')
 		.on('broadcast', { event: 'typing' }, (_payload) => {
 			const { conversationId, userId, userName, isTyping } = _payload.payload;
 			
@@ -647,46 +672,98 @@ function setupRealtimeSubscriptions(): void {
 			}
 		})
 		.subscribe();
+
+	// Reset setup flag after all subscriptions are complete
+	setupInProgress = false;
 }
 
 function cleanupRealtimeSubscriptions(): void {
 	subscriptionsActive = false;
+	setupInProgress = false;
 
 	if (conversationsChannel) {
-		conversationsChannel.unsubscribe();
+		supabase.removeChannel(conversationsChannel);
 		conversationsChannel = null;
 	}
 	if (messagesChannel) {
-		messagesChannel.unsubscribe();
+		supabase.removeChannel(messagesChannel);
 		messagesChannel = null;
 	}
 	if (typingChannel) {
-		typingChannel.unsubscribe();
+		supabase.removeChannel(typingChannel);
 		typingChannel = null;
 	}
 }
 
 // Initialize store when auth state changes
-authStore.subscribe(async (auth) => {
-	const typedAuth = typedAuthStore(auth);
-	if (typedAuth.user) {
-		if (!subscriptionsActive) {
-			await loadConversations();
-			setupRealtimeSubscriptions();
-		}
-	} else {
-		// Clear state when user logs out
-		conversations.set([]);
-		messages.set({});
-		activeConversationId.set(null);
-		typingUsers.set({});
-		cleanupRealtimeSubscriptions();
-	}
-});
+let authUnsubscribe: (() => void) | null = null;
+let reconnectTimeout: number | null = null;
 
-// Cleanup on page unload
+function initializeAuthSubscription() {
+	// Clean up any existing subscription first
+	if (authUnsubscribe) {
+		authUnsubscribe();
+	}
+	
+	authUnsubscribe = authStore.subscribe(async (auth) => {
+		const typedAuth = typedAuthStore(auth);
+		
+		// Clear any pending reconnect
+		if (reconnectTimeout) {
+			clearTimeout(reconnectTimeout);
+			reconnectTimeout = null;
+		}
+		
+		if (typedAuth.user && typedAuth.isInitialized) {
+			// Only reconnect if we don't already have conversations loaded
+			const currentConversations = get(conversations);
+			if (currentConversations.length === 0) {
+				// Quick debounce to prevent rapid reconnects
+				reconnectTimeout = window.setTimeout(async () => {
+					// Always cleanup before setting up new subscriptions
+					cleanupRealtimeSubscriptions();
+					await loadConversations();
+					setupRealtimeSubscriptions();
+				}, 100); // Wait 100ms before reconnecting
+			} else {
+				// Just ensure subscriptions are active without reloading
+				if (!subscriptionsActive) {
+					setupRealtimeSubscriptions();
+				} else {
+					// Subscriptions already active, no action needed
+					return;
+				}
+					setupRealtimeSubscriptions();
+				}
+			}
+		} else {
+			// Clear state when user logs out
+			conversations.set([]);
+			messages.set({});
+			activeConversationId.set(null);
+			typingUsers.set({});
+			cleanupRealtimeSubscriptions();
+		}
+	});
+}
+
+// Initialize once
+initializeAuthSubscription();
+
+// Cleanup on page unload and handle visibility changes
 if (typeof window !== 'undefined') {
-	window.addEventListener('beforeunload', cleanupRealtimeSubscriptions);
+	window.addEventListener('beforeunload', () => {
+		if (reconnectTimeout) {
+			clearTimeout(reconnectTimeout);
+		}
+		cleanupRealtimeSubscriptions();
+		if (authUnsubscribe) {
+			authUnsubscribe();
+		}
+	});
+
+	// Minimal visibility handling - only cleanup on unload
+	// Removed aggressive focus/blur handling that caused loading issues
 }
 
 async function deleteConversation(conversationId: string): Promise<boolean> {

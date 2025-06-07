@@ -88,7 +88,7 @@
 
 			// Remove from local state
 			ownGames = ownGames.filter((g) => g.id !== gameId);
-		} catch (err) {
+		} catch (_err) {
 			alert('Failed to delete game');
 		}
 	}
@@ -108,7 +108,7 @@
 			if (index >= 0) {
 				ownGames[index].is_public = !game.is_public;
 			}
-		} catch (err) {
+		} catch (_err) {
 			alert('Failed to update game visibility');
 		}
 	}

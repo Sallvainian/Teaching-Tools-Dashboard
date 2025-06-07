@@ -115,12 +115,12 @@
 			}
 
 			// Prepare success message
-			let message = `Successfully created class "${categoryName}"`;
+			let _message = `Successfully created class "${categoryName}"`;
 			if (addedCount > 0) {
-				message += ` with ${addedCount} student${addedCount !== 1 ? 's' : ''}`;
+				_message += ` with ${addedCount} student${addedCount !== 1 ? 's' : ''}`;
 			}
 			if (skippedStudents.length > 0) {
-				message += `. Skipped ${skippedStudents.length} duplicate student${
+				_message += `. Skipped ${skippedStudents.length} duplicate student${
 					skippedStudents.length !== 1 ? 's' : ''
 				}`;
 			}

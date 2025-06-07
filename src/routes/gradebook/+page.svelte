@@ -3,6 +3,7 @@
 	import { authStore } from '$lib/stores/auth';
 	import LoadingBounce from '$lib/components/LoadingBounce.svelte';
 	import ImportWizard from '$lib/components/ImportWizard.svelte';
+	import { goto } from '$app/navigation';
 
 	// State variables
 	let assignmentName = $state('');
@@ -36,11 +37,7 @@
 	let classAssignments = $derived($gradebookStore.assignments.filter(a => a.classId === $gradebookStore.selectedClassId));
 	
 	// Handle null selectedClassId for binding
-	let selectedClassIdForBinding = $state($gradebookStore.selectedClassId || '');
-	
-	$effect(() => {
-		selectedClassIdForBinding = $gradebookStore.selectedClassId || '';
-	});
+	let selectedClassIdForBinding = $derived($gradebookStore.selectedClassId || '');
 
 	async function handleClassChange(event: Event) {
 		const target = event.target as HTMLSelectElement;
@@ -350,13 +347,42 @@
 		return selectedCells.has(getCellId(studentId, assignmentId));
 	}
 
+	// Check if user has permission to access this page
+	let hasPermission = $derived($authStore.role === 'teacher');
+
+	// Redirect students to their dashboard
+	$effect(() => {
+		if ($authStore.isInitialized && $authStore.user && $authStore.role === 'student') {
+			goto('/student/dashboard');
+		}
+	});
+
 	// Initialize data
 	$effect(() => {
-		gradebookStore.ensureDataLoaded();
+		if (hasPermission) {
+			gradebookStore.ensureDataLoaded();
+		}
 	});
 </script>
 
-{#if $gradebookStore.isLoading}
+{#if !$authStore.isInitialized || ($authStore.user && !hasPermission)}
+	<div class="min-h-screen flex items-center justify-center">
+		<div class="text-center">
+			<div class="bg-card border border-border rounded-lg p-8 max-w-md">
+				<h2 class="text-xl font-bold text-highlight mb-4">Access Restricted</h2>
+				<p class="text-text-base mb-6">
+					The gradebook is only available to teachers. Students can view their grades through their dashboard.
+				</p>
+				<button
+					onclick={() => goto('/student/dashboard')}
+					class="btn btn-primary"
+				>
+					Go to Student Dashboard
+				</button>
+			</div>
+		</div>
+	</div>
+{:else if $gradebookStore.isLoading}
 	<div class="min-h-screen flex items-center justify-center">
 		<div class="text-center">
 			<LoadingBounce />

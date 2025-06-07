@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { Toast } from '$lib/types/notifications';
+	import type { Toast, ToastType } from '$lib/types/notifications';
 	import { dismissToast } from '$lib/stores/notifications';
-	import { fade, fly } from 'svelte/transition';
+	import { fly } from 'svelte/transition';
 
 	let { toast, onclick } = $props<{
 		toast: Toast;
@@ -19,7 +19,7 @@
 	}
 
 	// Define colors and icons for different toast types
-	const typeConfig = {
+	const typeConfig: Record<ToastType, { bgColor: string; textColor: string; icon: string }> = {
 		success: {
 			bgColor: 'bg-green-500',
 			textColor: 'text-white',
@@ -42,14 +42,14 @@
 		}
 	};
 
-	const config = typeConfig[toast.type];
+	const config = typeConfig[toast.type as ToastType];
 </script>
 
-<div
-	class={`${config.bgColor} ${config.textColor} rounded-lg shadow-lg p-4 mb-3 cursor-pointer transform transition-all duration-300 hover:scale-105`}
+<button
+	type="button"
+	class={`${config.bgColor} ${config.textColor} rounded-lg shadow-lg p-4 mb-3 cursor-pointer transform transition-all duration-300 hover:scale-105 w-full text-left`}
 	transition:fly={{ x: 300, duration: 300 }}
 	onclick={handleClick}
-	role="alert"
 	aria-live="polite"
 >
 	<div class="flex items-start justify-between">
@@ -64,11 +64,20 @@
 				<p class="text-sm {toast.title ? 'mt-1' : ''}">{toast.message}</p>
 			</div>
 		</div>
-		<button
-			class="flex-shrink-0 ml-4 p-1 rounded-full hover:bg-black/10 transition-colors"
+		<div
+			class="flex-shrink-0 ml-4 p-1 rounded-full hover:bg-black/10 transition-colors cursor-pointer"
 			onclick={(e) => {
 				e.stopPropagation();
 				handleDismiss();
+			}}
+			role="button"
+			tabindex="0"
+			onkeydown={(e) => {
+				if (e.key === 'Enter' || e.key === ' ') {
+					e.preventDefault();
+					e.stopPropagation();
+					handleDismiss();
+				}
 			}}
 			aria-label="Dismiss notification"
 		>
@@ -79,6 +88,6 @@
 					clip-rule="evenodd"
 				/>
 			</svg>
-		</button>
+		</div>
 	</div>
-</div>
+</button>

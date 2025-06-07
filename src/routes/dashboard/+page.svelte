@@ -5,10 +5,9 @@
 	import SkeletonLoader from '$lib/components/SkeletonLoader.svelte';
 	import { useKeyboardShortcuts } from '$lib/utils/keyboard';
 	import * as Sentry from '@sentry/sveltekit';
-	import { showSuccessToast, showErrorToast, showWarningToast, showInfoToast } from '$lib/stores/notifications';
 
 	// Get data from the server
-const data = $props();
+let { data }: { data?: any } = $props();
 
 	// Current date
 	const today = new Date();
@@ -38,14 +37,14 @@ const data = $props();
 		{ from: 'Sarah Williams', message: 'Can we review the test questions?', time: 'Yesterday' }
 	]);
 
-	let upcomingLessons = $state(data?.dashboardData?.upcomingLessons || [
+	let _upcomingLessons = $state(data?.dashboardData?.upcomingLessons || [
 		{ title: 'Algebra Fundamentals', class: 'Math 101', time: 'Today, 2:00 PM' },
 		{ title: 'Cell Structure & Function', class: 'Biology', time: 'Tomorrow, 10:30 AM' },
 		{ title: 'Essay Writing Workshop', class: 'English', time: 'Wed, 1:15 PM' }
 	]);
 
 	// Chart data
-	let chartLoaded = $state(false);
+	let _chartLoaded = $state(false);
 	let isLoading = $state(true);
 
 	// Keyboard shortcuts
@@ -63,20 +62,12 @@ const data = $props();
 		showHelp = true;
 	}
 
-	function testSentry() {
-		try {
-			// Trigger a test error
-			throw new Error('Sentry test error from Teacher Dashboard');
-		} catch (error) {
-			Sentry.captureException(error);
-		}
-	}
 
 	onMount(async () => {
 		// Simulate data loading
 		try {
 			await new Promise((resolve) => setTimeout(resolve, 500));
-			chartLoaded = true;
+			_chartLoaded = true;
 			isLoading = false;
 		} catch (error) {
 			console.error('Error loading dashboard data:', error);
@@ -108,9 +99,6 @@ const data = $props();
 							<p class="text-text-base">{formattedDate}</p>
 						</div>
 					</div>
-					<button onclick={testSentry} class="btn btn-sm btn-outline">
-						Test Sentry
-					</button>
 				</div>
 			</div>
 
@@ -431,36 +419,6 @@ const data = $props();
 					</div>
 				</div>
 
-				<!-- Toast Testing Section (for demonstration) -->
-				<div class="mt-6 card-dark">
-					<h2 class="text-xl font-bold text-highlight mb-4">Toast Notifications Demo</h2>
-					<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-						<button
-							class="btn bg-green-500 hover:bg-green-600 text-white"
-							onclick={() => showSuccessToast('Operation completed successfully!', 'Success')}
-						>
-							Success Toast
-						</button>
-						<button
-							class="btn bg-red-500 hover:bg-red-600 text-white"
-							onclick={() => showErrorToast('Something went wrong. Please try again.', 'Error')}
-						>
-							Error Toast
-						</button>
-						<button
-							class="btn bg-yellow-500 hover:bg-yellow-600 text-white"
-							onclick={() => showWarningToast('This action cannot be undone.', 'Warning')}
-						>
-							Warning Toast
-						</button>
-						<button
-							class="btn bg-blue-500 hover:bg-blue-600 text-white"
-							onclick={() => showInfoToast('New feature available! Check it out.', 'Info')}
-						>
-							Info Toast
-						</button>
-					</div>
-				</div>
 			{/if}
 		</div>
 

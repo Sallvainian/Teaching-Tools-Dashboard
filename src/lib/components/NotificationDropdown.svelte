@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount } from 'svelte';
+	import { onMount } from 'svelte';
 	import { fly, fade } from 'svelte/transition';
 	import { 
 		notifications, 
@@ -11,8 +11,6 @@
 		initializeNotifications
 	} from '$lib/stores/notifications';
 	import type { Notification } from '$lib/types/notifications';
-
-	const dispatch = createEventDispatcher();
 
 	let showDropdown = $state(false);
 	let dropdownElement: HTMLDivElement;

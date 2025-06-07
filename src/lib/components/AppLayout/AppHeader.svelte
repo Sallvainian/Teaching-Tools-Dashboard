@@ -278,11 +278,20 @@
 							aria-expanded={userMenuOpen}
 							aria-haspopup="true"
 						>
-							<div
-								class="w-8 h-8 bg-gradient-to-br from-purple to-purple-light rounded-full flex items-center justify-center text-highlight font-medium shadow-sm"
-							>
-								{(($profile as UserProfile | null)?.full_name?.[0] || ($authStore.user as User).email?.[0] || 'U').toUpperCase()}
-							</div>
+							<!-- Avatar with fallback to initials -->
+							{#if ($profile as UserProfile | null)?.avatar_url}
+								<img
+									src={($profile as UserProfile | null)?.avatar_url}
+									alt="Profile"
+									class="w-8 h-8 rounded-full object-cover shadow-sm border border-border"
+								/>
+							{:else}
+								<div
+									class="w-8 h-8 bg-gradient-to-br from-purple to-purple-light rounded-full flex items-center justify-center text-highlight font-medium shadow-sm"
+								>
+									{(($profile as UserProfile | null)?.full_name?.[0] || ($authStore.user as User).email?.[0] || 'U').toUpperCase()}
+								</div>
+							{/if}
 							<span class="font-medium">
 								{($profile as UserProfile | null)?.full_name || ($authStore.user as User).email?.split('@')[0] || 'User'}
 							</span>

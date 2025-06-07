@@ -10,12 +10,6 @@
 	import ImagePreviewModal from '$lib/components/ImagePreviewModal.svelte';
 	import type { ChatUIConversation, ChatUIMessage, ConversationWithDetails, ConversationParticipant } from '$lib/types/chat';
 	import { getUser } from '$lib/utils/storeHelpers';
-	import { goto } from '$app/navigation';
-	import { fade, slide } from 'svelte/transition';
-	import { flip } from 'svelte/animate';
-	import { clickOutside } from '$lib/utils/clickOutside';
-	import { formatDistanceToNow } from 'date-fns';
-	import { Plus, Search, MoreVertical, Send, Paperclip, Smile, Phone, Video, Info } from 'lucide-svelte';
 
 	// Chat state from stores
 	let conversations = $state<ChatUIConversation[]>([]);
@@ -70,7 +64,7 @@
 				name: conv.name ?? getConversationDisplayName(conv as ConversationWithDetails),
 				displayName: getConversationDisplayName(conv as ConversationWithDetails),
 				avatar: conv.avatar,
-				displayAvatar: getConversationDisplayAvatar(conv as ConversationWithDetails, user.id),
+				displayAvatar: getConversationAvatarUrl(conv as ConversationWithDetails, user.id),
 				is_group: conv.is_group ?? false,
 				last_message_text: getLastMessageText(conv as ConversationWithDetails),
 				last_message_time: formatTimeAgo(conv.last_message?.created_at ?? null),
@@ -88,8 +82,14 @@
 			// Set active conversation to first one if none selected
 			if (!activeConversation && conversations.length > 0) {
 				activeConversation = conversations[0];
+				chatStore.setActiveConversation(activeConversation.id);
 			}
 		}
+	});
+
+	// Force reload conversations on mount to ensure all data is fresh
+	onMount(async () => {
+		await chatStore.loadConversations();
 	});
 
 	const unsubscribeMessages = chatStore.activeMessages.subscribe((msgs) => {
@@ -109,7 +109,23 @@
 
 	const unsubscribeLoading = chatStore.loading.subscribe((l) => (loading = l));
 	const unsubscribeError = chatStore.error.subscribe((e) => (error = e));
-	const unsubscribeTyping = chatStore.activeTypingUsers.subscribe((users) => (typingUsers = users));
+	const unsubscribeTyping = chatStore.activeTypingUsers.subscribe((users) => {
+		typingUsers = users;
+	});
+
+	// Cleanup subscriptions on destroy
+	onDestroy(() => {
+		unsubscribeConversations();
+		unsubscribeMessages();
+		unsubscribeLoading();
+		unsubscribeError();
+		unsubscribeTyping();
+		
+		// Clean up typing timeout
+		if (typingTimeout) {
+			clearTimeout(typingTimeout);
+		}
+	});
 
 	// Helper functions
 	function getConversationDisplayName(conversation: ConversationWithDetails): string {
@@ -127,7 +143,15 @@
 			(p: ConversationParticipant) => p.user_id !== user?.id
 		);
 
-		return otherParticipant?.user?.full_name ?? 'Unknown User';
+		// Check multiple places for user data
+		if (otherParticipant) {
+			// First check if user data is directly on the participant
+			if (otherParticipant.user) {
+				return otherParticipant.user.full_name || otherParticipant.user.email || 'Unknown User';
+			}
+		}
+
+		return 'Unknown User';
 	}
 
 	function getConversationDisplayAvatar(conversation: ConversationWithDetails, userId: string): string | null {
@@ -159,7 +183,7 @@
 		return otherParticipant?.is_online ?? false;
 	}
 
- async function getConversationName(conv: ConversationWithDetails, currentUserId: string): Promise<string> {
+ async function _getConversationName(conv: ConversationWithDetails, currentUserId: string): Promise<string> {
 		if (conv.is_group) {
 			return conv.name ?? `Group Chat (${conv.participants?.length ?? 0})`;
 		}
@@ -208,7 +232,7 @@
 		return conv.name ?? 'Unknown User';
 	}
 
- function getConversationAvatar(conv: ConversationWithDetails, currentUserId: string): string {
+ function _getConversationAvatar(conv: ConversationWithDetails, currentUserId: string): string {
 		if (conv.is_group) {
 			const name = conv.name ?? 'Group';
 			return chatStore.getInitials(name);
@@ -236,6 +260,21 @@
 
 		// Last resort
 		return chatStore.getInitials('Direct Chat');
+	}
+
+	function getConversationAvatarUrl(conv: ConversationWithDetails, currentUserId: string): string | null {
+		if (conv.is_group) {
+			return conv.avatar; // Group conversations can have their own avatar
+		}
+
+		const otherParticipant = conv.participants?.find((p: ConversationParticipant) => p.user_id !== currentUserId);
+
+		// Return the other participant's avatar URL if available
+		if (otherParticipant && otherParticipant.user?.avatar_url) {
+			return otherParticipant.user.avatar_url;
+		}
+
+		return null; // No avatar URL available
 	}
 
  function getLastMessageText(conv: ConversationWithDetails): string {
@@ -461,7 +500,7 @@
 		event.stopPropagation(); // Prevent selecting the conversation
 
 		// Use custom confirmation modal instead of browser's default
-		const confirmed = await confirmationStore.confirm({
+		const _confirmed = await confirmationStore.confirm({
 			title: 'Delete Conversation',
 			message: 'Are you sure you want to delete this conversation? This action cannot be undone.',
 			confirmText: 'Delete',
@@ -627,11 +666,19 @@
 										aria-label={`Chat with ${conversation.name}`}
 									>
 										<div class="relative">
-											<div
-												class="w-10 h-10 rounded-full bg-purple-bg text-purple flex items-center justify-center font-medium"
-											>
-												{conversation.avatar}
-											</div>
+											{#if conversation.displayAvatar}
+												<img
+													src={conversation.displayAvatar}
+													alt={conversation.name}
+													class="w-10 h-10 rounded-full object-cover border border-border"
+												/>
+											{:else}
+												<div
+													class="w-10 h-10 rounded-full bg-purple-bg text-purple flex items-center justify-center font-medium"
+												>
+													{conversation.avatar}
+												</div>
+											{/if}
 											{#if conversation.is_online}
 												<div
 													class="absolute bottom-0 right-0 w-3 h-3 bg-purple rounded-full border-2 border-card"
@@ -809,14 +856,31 @@
 					<!-- Messages -->
 					<div class="flex-1 overflow-y-auto p-4 space-y-4" bind:this={messagesContainer}>
 						{#each messages as message, index (message.id)}
-							<div class={`flex ${message.is_own_message ? 'justify-end' : 'justify-start'}`}>
-								<div class={`flex flex-col gap-1 max-w-[70%]`}>
+							<div class={`flex gap-3 ${message.is_own_message ? 'justify-end' : 'justify-start'}`}>
+								{#if !message.is_own_message}
+									<!-- Avatar for other users -->
+									<div class="flex-shrink-0">
+										{#if message.sender_avatar}
+											<img
+												src={message.sender_avatar}
+												alt={message.sender_name}
+												class="w-8 h-8 rounded-full object-cover border border-border"
+											/>
+										{:else}
+											<div class="w-8 h-8 rounded-full bg-purple text-highlight flex items-center justify-center text-sm font-medium">
+												{message.sender_name?.[0]?.toUpperCase() || 'U'}
+											</div>
+										{/if}
+									</div>
+								{/if}
+								
+								<div class={`flex flex-col gap-1 max-w-[70%] ${message.is_own_message ? 'items-end' : 'items-start'}`}>
 									<div
 										class={`${message.is_own_message ? 'bg-purple text-highlight' : 'bg-surface text-text-hover'} rounded-lg px-4 py-2 shadow-sm`}
 									>
 										{#if !message.is_own_message}
-							<div class="text-xs font-medium text-purple mb-1">{message.sender_name}</div>
-						{/if}
+											<div class="text-xs font-medium text-purple mb-1">{message.sender_name}</div>
+										{/if}
 						{#if message.content.startsWith('[GIF]')}
 							<button
 								type="button"
@@ -904,8 +968,9 @@
 							<input
 								type="text"
 								bind:value={newMessage}
-								placeholder="Type a message..."
+								placeholder={activeConversation ? "Type a message..." : "Select a conversation to start messaging"}
 								class="input w-full pr-24"
+								disabled={!activeConversation}
 								onkeydown={handleKeydown}
 								oninput={handleTyping}
 							/>

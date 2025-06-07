@@ -3,7 +3,6 @@ import type { Student, Class, Assignment, Grade } from '$lib/types/gradebook';
 
 // Type aliases for better readability and to fix type inference
 type DBStudent = Tables<'students'>;
-type DBCategory = Tables<'categories'>;
 type DBClass = Tables<'classes'>;
 type DBClassStudent = Tables<'class_students'>;
 type DBAssignment = Tables<'assignments'>;
@@ -17,21 +16,6 @@ export function dbStudentToAppStudent(dbStudent: DBStudent): Student {
 	};
 }
 
-export function dbCategoryToAppClass(
-	dbCategory: DBCategory,
-	classStudents: DBClassStudent[]
-): Class {
-	// Handle categories from both schema versions
-	return {
-		id: dbCategory.id,
-		name: dbCategory.name,
-		// Filter class_students relationships for this category
-		studentIds: classStudents
-			.filter((cs) => cs.class_id === dbCategory.id)
-			.map((cs) => cs.student_id)
-	};
-}
-
 export function dbClassToAppClass(dbClass: DBClass, classStudents: DBClassStudent[]): Class {
 	// Convert classes table data to Class format
 	return {
@@ -42,12 +26,12 @@ export function dbClassToAppClass(dbClass: DBClass, classStudents: DBClassStuden
 	};
 }
 
-export function dbAssignmentToAppAssignment(dbAssignment: DBAssignment, classId?: string): Assignment {
+export function dbAssignmentToAppAssignment(dbAssignment: DBAssignment, classId: string): Assignment {
 	return {
 		id: dbAssignment.id,
 		name: dbAssignment.name,
 		maxPoints: dbAssignment.max_points,
-		classId: classId || dbAssignment.category_id // Use provided classId or fallback to category_id
+		classId: classId
 	};
 }
 

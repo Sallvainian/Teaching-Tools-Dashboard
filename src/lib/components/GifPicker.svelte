@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { PUBLIC_GIPHY_API_KEY } from '$env/static/public';
 	
+	
 	interface Props {
 		isOpen: boolean;
 		onSelectGif: (gifUrl: string) => void;

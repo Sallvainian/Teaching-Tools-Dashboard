@@ -19,7 +19,7 @@
 	{/each}
 </div>
 
-<style>
+<style lang="postcss">
 	/* Additional responsive adjustments if needed */
 	@media (max-width: 640px) {
 		div {

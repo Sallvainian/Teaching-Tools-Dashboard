@@ -11,7 +11,17 @@
 	let isLoading = $state(true);
 
 	onMount(async () => {
-		await loadStudentData();
+		// Wait for authentication to be initialized
+		if (!$authStore.isInitialized) {
+			const unsubscribe = authStore.subscribe((auth) => {
+				if (auth.isInitialized) {
+					unsubscribe();
+					loadStudentData();
+				}
+			});
+		} else {
+			await loadStudentData();
+		}
 	});
 
 	async function loadStudentData() {
@@ -20,7 +30,10 @@
 			const { supabase } = await import('$lib/supabaseClient');
 			const user = getUser($authStore);
 
-			if (!user) return;
+			if (!user) {
+				console.log('No authenticated user found');
+				return;
+			}
 
 			// Load student's own games
 			const { data: ownGames } = await supabase
@@ -40,11 +53,16 @@
 			if (shared) sharedGames = shared.map((s: any) => s.games);
 
 			// Load enrolled classes
-			const { data: studentRecord } = await supabase
+			const { data: studentRecord, error: studentError } = await supabase
 				.from('students')
 				.select('id')
 				.eq('user_id', user.id)
 				.single();
+
+			if (studentError) {
+				console.error('Error fetching student record:', studentError);
+				return;
+			}
 
 			if (studentRecord) {
 				const { data: classes } = await supabase

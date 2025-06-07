@@ -4,7 +4,7 @@
 	import StudentRoster from '$lib/components/StudentRoster.svelte';
 	import ImportWizard from '$lib/components/ImportWizard.svelte';
 	import { goto } from '$app/navigation';
-	import { isAuthenticated } from '$lib/stores/auth';
+	import { isAuthenticated, authStore } from '$lib/stores/auth';
 
 	// State variables with $state
 	let showImportWizard = $state(false);
@@ -42,10 +42,35 @@
 	async function handleLogin() {
 		await goto('/auth/login?redirect=/classes');
 	}
+
+	// Check if user has permission to access this page
+	let hasPermission = $derived($authStore.role === 'teacher');
+
+	// Redirect students to their dashboard
+	$effect(() => {
+		if ($authStore.isInitialized && $isAuthenticated && $authStore.role === 'student') {
+			goto('/student/dashboard');
+		}
+	});
 </script>
 
 <div class="container mx-auto px-4 py-8">
-	{#if isLoading}
+	{#if $authStore.user && !hasPermission}
+		<div class="flex justify-center items-center h-64">
+			<div class="bg-card border border-border rounded-lg p-8 max-w-md text-center">
+				<h2 class="text-xl font-bold text-text-base mb-4">Access Restricted</h2>
+				<p class="text-muted mb-6">
+					The classes page is only available to teachers. Students can view their enrolled classes through their dashboard.
+				</p>
+				<button
+					onclick={() => goto('/student/dashboard')}
+					class="btn btn-primary"
+				>
+					Go to Student Dashboard
+				</button>
+			</div>
+		</div>
+	{:else if isLoading}
 		<div class="flex justify-center items-center h-64">
 			<div class="text-muted">Loading classes...</div>
 		</div>

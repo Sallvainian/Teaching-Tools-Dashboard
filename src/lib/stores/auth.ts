@@ -511,16 +511,30 @@ function createAuthStore() {
 
 		try {
 			const { supabase } = await import('$lib/supabaseClient');
-			const { data, error: updateError } = await supabase.auth.updateUser({ data: userData });
+			
+			// Skip auth update and just update the database and local state
+			const currentUser = (await supabase.auth.getUser()).data.user;
+			if (!currentUser) throw new Error('No authenticated user');
+			
+			const { error: dbUpdateError } = await supabase
+				.from('app_users')
+				.update({
+					full_name: userData.full_name as string,
+					avatar_url: userData.avatar_url as string | null
+				})
+				.eq('id', currentUser.id);
 
-			if (updateError) throw updateError;
+			if (dbUpdateError) throw dbUpdateError;
 
-			if (data?.user) {
-				authStore.update(state => ({
-					...state,
-					user: data.user
-				}));
-			}
+			// Update local state
+			authStore.update(state => ({
+				...state,
+				profile: state.profile ? {
+					...state.profile,
+					full_name: userData.full_name as string,
+					avatar_url: userData.avatar_url as string | null
+				} : state.profile
+			}));
 
 			return true;
 		} catch (err) {

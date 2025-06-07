@@ -96,12 +96,8 @@ function createGradebookStore() {
 			// Load class_students relations
 			const classStudentsData = await gradebookService.getItems('class_students');
 
-			// Load assignments with class relationships
+			// Load assignments with direct class relationships
 			const assignmentsData = await gradebookService.getItems('assignments');
-			
-			// Load gradebook_categories and categories to map assignments to classes
-			const gradebookCategoriesData = await gradebookService.getItems('gradebook_categories');
-			const categoriesData = await gradebookService.getItems('categories');
 
 			// Load grades
 			const gradesData = await gradebookService.getItems('grades');
@@ -113,20 +109,9 @@ function createGradebookStore() {
 				dbClassToAppClass(cls, classStudentsData)
 			);
 
-			// Map assignments to their classes through the foreign key chain
+			// Map assignments to their classes directly using assignment.class_id
 			const transformedAssignments = assignmentsData.map((assignment) => {
-				// Find gradebook_category for this assignment
-				const gradebookCategory = gradebookCategoriesData.find(gc => gc.id === assignment.category_id);
-				if (gradebookCategory) {
-					// Find category for this gradebook_category
-					const category = categoriesData.find(c => c.id === gradebookCategory.category_id);
-					if (category) {
-						// Use the class_id from the category
-						return dbAssignmentToAppAssignment(assignment, category.class_id);
-					}
-				}
-				// Fallback to original behavior
-				return dbAssignmentToAppAssignment(assignment);
+				return dbAssignmentToAppAssignment(assignment, assignment.class_id);
 			});
 
 			const transformedGrades = gradesData.map(dbGradeToAppGrade);
@@ -376,63 +361,17 @@ function createGradebookStore() {
 			if (!classData || classData.length === 0) {
 				throw new Error(`Class with ID ${classId} not found`);
 			}
-			
 
-
-			// First, ensure a category exists for this class (assignments by default)
-			const existingCategoryEntries = await gradebookService.getItems('categories', {
-				filters: { class_id: classId, name: 'Assignments' }
-			});
-
-			let categoryId;
-			if (!existingCategoryEntries || existingCategoryEntries.length === 0) {
-				// Create category entry (class_id points to classes table)
-				const newCategoryEntry = await gradebookService.insertItem('categories', {
-					class_id: classId,
-					name: 'Assignments',
-					weight: 1.0,
-					description: 'General assignments for this class',
-					user_id: classData[0].user_id // Required for RLS policy
-				});
-				
-				if (newCategoryEntry) {
-					categoryId = newCategoryEntry.id;
-				}
-			} else {
-				categoryId = existingCategoryEntries[0].id;
-			}
-
-			// Now check if gradebook_category exists for this category
-			const existingGradebookCategories = await gradebookService.getItems('gradebook_categories', {
-				filters: { category_id: categoryId }
-			});
-
-			let gradebookCategoryId: string;
-			if (!existingGradebookCategories || existingGradebookCategories.length === 0) {
-				// Create gradebook_category entry (category_id points to categories table)
-				const newGradebookCategory = await gradebookService.insertItem('gradebook_categories', {
-					name: 'Assignments',
-					category_id: categoryId
-				});
-				
-				if (!newGradebookCategory) {
-					throw new Error('Failed to create gradebook category');
-				}
-				gradebookCategoryId = newGradebookCategory.id;
-			} else {
-				gradebookCategoryId = existingGradebookCategories[0].id;
-			}
-
-			// Insert assignment referencing the gradebook category
+			// Insert assignment with direct class_id reference - SIMPLIFIED!
 			const result = await gradebookService.insertItem('assignments', {
 				name: trimmed,
 				max_points: maxPoints,
-				category_id: gradebookCategoryId
+				class_id: classId
 			});
 
 			if (!result) throw new Error('Failed to add assignment');
 
-			// Update local store with correct class ID
+			// Update local store
 			const newAssignment = dbAssignmentToAppAssignment(result, classId);
 			assignments.update((arr: Assignment[]) => [...arr, newAssignment]);
 		} catch (err: unknown) {
