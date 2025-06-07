@@ -10,6 +10,8 @@ export async function ensureAuthInitialized(): Promise<void> {
 				await authStore.initialize();
 			} catch (error) {
 				console.error('Auth initialization error:', error);
+				// Don't let auth errors block the app from loading
+				throw error;
 			}
 		})();
 	}

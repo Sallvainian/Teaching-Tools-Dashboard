@@ -7,6 +7,7 @@ import { clearSupabaseAuthStorage } from '$lib/utils/authStorage';
 import { createStore, createDerivedStore } from './storeFactory';
 import { storeRegistry } from './registry';
 import { derived } from 'svelte/store';
+import { supabase } from '$lib/supabaseClient';
 
 interface UserProfile {
 	id: string;
@@ -96,7 +97,6 @@ function createAuthStore() {
 
 	async function fetchUserProfile(userId: string) {
 		try {
-			const { supabase } = await import('$lib/supabaseClient');
 			const { data, error } = await supabase
 				.from('app_users')
 				.select('id, email, full_name, avatar_url, role')
@@ -158,8 +158,6 @@ function createAuthStore() {
 
 	async function createAppUserRecord(userId: string) {
 		try {
-			const { supabase } = await import('$lib/supabaseClient');
-
 			// Get user details from auth
 			const {
 				data: { user },
@@ -232,7 +230,6 @@ function createAuthStore() {
 		}));
 
 		try {
-			const { supabase } = await import('$lib/supabaseClient');
 
 			// First try to get session from local storage quickly
 			const storedSession =
@@ -331,7 +328,6 @@ function createAuthStore() {
 		}));
 
 		try {
-			const { supabase } = await import('$lib/supabaseClient');
 			const { data, error: signInError } = await supabase.auth.signInWithPassword({
 				email,
 				password
@@ -389,7 +385,6 @@ function createAuthStore() {
 		}));
 
 		try {
-			const { supabase } = await import('$lib/supabaseClient');
 			const { data, error: signUpError } = await supabase.auth.signUp({
 				email,
 				password,
@@ -437,7 +432,6 @@ function createAuthStore() {
 			clearSupabaseAuthStorage();
 
 			// Now call Supabase signOut
-		const { supabase } = await import('$lib/supabaseClient');
 			const { error: signOutError } = await supabase.auth.signOut();
 
 			if (signOutError) {
@@ -483,7 +477,6 @@ function createAuthStore() {
 		}));
 
 		try {
-			const { supabase } = await import('$lib/supabaseClient');
 			const { error: resetError } = await supabase.auth.resetPasswordForEmail(email);
 
 			if (resetError) throw resetError;
@@ -510,8 +503,6 @@ function createAuthStore() {
 		}));
 
 		try {
-			const { supabase } = await import('$lib/supabaseClient');
-			
 			// Skip auth update and just update the database and local state
 			const currentUser = (await supabase.auth.getUser()).data.user;
 			if (!currentUser) throw new Error('No authenticated user');
@@ -564,8 +555,7 @@ function createAuthStore() {
 		}));
 
 		try {
-			const { supabase } = await import('$lib/supabaseClient');
-
+	
 			// First sign up the user
 			const { data: authData, error: signUpError } = await supabase.auth.signUp({
 				email: data.email,
@@ -625,8 +615,7 @@ function createAuthStore() {
 		}));
 
 		try {
-			const { supabase } = await import('$lib/supabaseClient');
-
+	
 			// First sign up the user
 			const { data: authData, error: signUpError } = await supabase.auth.signUp({
 				email: data.email,

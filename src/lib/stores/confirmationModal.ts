@@ -54,7 +54,7 @@ const createConfirmationStore = () => {
           ...state,
           options: {
             ...state.options,
-            w: function handleConfirm() {
+            onConfirm: function handleConfirm() {
               originalOnConfirm();
               resolve(true);
             },

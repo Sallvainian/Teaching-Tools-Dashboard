@@ -358,8 +358,9 @@
 	});
 
 	$effect(() => {
-		// Scroll to bottom when messages change
-		scrollToBottom();
+		// Track messages changes and scroll if needed
+		messages; // Explicitly track the messages array
+		scrollToBottomIfNeeded();
 	});
 
 	function scrollToBottom() {
@@ -367,6 +368,21 @@
 			setTimeout(() => {
 				messagesContainer.scrollTop = messagesContainer.scrollHeight;
 			}, 0);
+		}
+	}
+
+	function scrollToBottomIfNeeded() {
+		if (messagesContainer && messages.length > 0) {
+			// Use a longer timeout to ensure DOM has updated
+			setTimeout(() => {
+				const { scrollTop, scrollHeight, clientHeight } = messagesContainer;
+				// Check if user is within 100px of the bottom
+				const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100;
+				
+				if (isNearBottom) {
+					messagesContainer.scrollTop = scrollHeight;
+				}
+			}, 50); // Increased timeout to allow DOM updates
 		}
 	}
 

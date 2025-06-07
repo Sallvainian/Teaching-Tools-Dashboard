@@ -81,13 +81,13 @@ const activeTypingUsers = derived(
 			const currentUserId = $authStore.user.id;
 			
 			const filtered = conversationTyping
-				.filter(typing => typing.userId !== currentUserId)
-				.map(typing => typing.userName);
+				.filter((typing: { userId: string; userName: string }) => typing.userId !== currentUserId)
+				.map((typing: { userId: string; userName: string }) => typing.userName);
 				
 			return filtered;
 		}
 		
-		return conversationTyping.map(typing => typing.userName);
+		return conversationTyping.map((typing: { userId: string; userName: string }) => typing.userName);
 	}
 );
 
@@ -348,6 +348,9 @@ async function sendMessage(conversationId: string, content: string): Promise<voi
 	try {
 		const user = getUser(get(authStore));
 		if (!user) throw new Error('User not authenticated');
+		
+		const currentActiveId = get(activeConversationId);
+		console.log('📤 Sending message:', { conversationId, activeConversationId: currentActiveId, content: content.substring(0, 50) });
 
 		const { data: message, error: messageError } = await supabase
 			.from('messages')
@@ -368,10 +371,15 @@ async function sendMessage(conversationId: string, content: string): Promise<voi
 		if (messageError) throw messageError;
 
 		// Add message to local state
-		messages.update((current) => ({
-			...current,
-			[conversationId]: [...(current[conversationId] ?? []), message]
-		}));
+		console.log('📝 Adding message to local state:', { conversationId, messageId: message.id, content: message.content });
+		messages.update((current) => {
+			const updated = {
+				...current,
+				[conversationId]: [...(current[conversationId] ?? []), message]
+			};
+			console.log('💾 Updated messages state:', Object.keys(updated).map(id => ({ id, count: updated[id].length })));
+			return updated;
+		});
 
 		// Update conversation's last message
 		conversations.update((current) =>
@@ -705,7 +713,7 @@ function initializeAuthSubscription() {
 		authUnsubscribe();
 	}
 	
-	authUnsubscribe = authStore.subscribe(async (auth) => {
+	authUnsubscribe = authStore.subscribe(async (auth: unknown) => {
 		const typedAuth = typedAuthStore(auth);
 		
 		// Clear any pending reconnect
@@ -725,16 +733,9 @@ function initializeAuthSubscription() {
 					await loadConversations();
 					setupRealtimeSubscriptions();
 				}, 100); // Wait 100ms before reconnecting
-			} else {
+			} else if (!subscriptionsActive) {
 				// Just ensure subscriptions are active without reloading
-				if (!subscriptionsActive) {
-					setupRealtimeSubscriptions();
-				} else {
-					// Subscriptions already active, no action needed
-					return;
-				}
-					setupRealtimeSubscriptions();
-				}
+				setupRealtimeSubscriptions();
 			}
 		} else {
 			// Clear state when user logs out
@@ -742,15 +743,13 @@ function initializeAuthSubscription() {
 			messages.set({});
 			activeConversationId.set(null);
 			typingUsers.set({});
+			loading.set(false);
 			cleanupRealtimeSubscriptions();
 		}
 	});
 }
 
-// Initialize once
-initializeAuthSubscription();
-
-// Cleanup on page unload and handle visibility changes
+// Initialize on page load
 if (typeof window !== 'undefined') {
 	window.addEventListener('beforeunload', () => {
 		if (reconnectTimeout) {
@@ -764,6 +763,13 @@ if (typeof window !== 'undefined') {
 
 	// Minimal visibility handling - only cleanup on unload
 	// Removed aggressive focus/blur handling that caused loading issues
+}
+
+// Initialize the auth subscription when the module is first imported
+if (typeof window !== 'undefined') {
+	setTimeout(() => {
+		initializeAuthSubscription();
+	}, 0);
 }
 
 async function deleteConversation(conversationId: string): Promise<boolean> {
