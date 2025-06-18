@@ -394,11 +394,11 @@
 			}
 		}
 
-		.chat-sidebar {
+		.discussion-sidebar {
 			width: 100%;
 		}
 
-		.message-input {
+		.text-input {
 			font-size: 0.875rem;
 		}
 	}
