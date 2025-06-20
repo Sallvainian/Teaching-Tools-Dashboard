@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { settingsStore } from '$lib/stores/settings';
 	import { themeStore, themeActions, ACCENT_COLORS, type AccentColorKey } from '$lib/stores/theme';
+	import { deleteAccount } from '$lib/stores/auth/authActions';
 	import ThemeSettings from '$lib/components/ThemeSettings.svelte';
 	
 	// Get reactive settings from store
@@ -8,6 +9,34 @@
 	const theme = $derived($themeStore);
 	
 	let showThemeSettings = $state(false);
+	let showDeleteConfirmation = $state(false);
+	let deleteConfirmationText = $state('');
+	let isDeleting = $state(false);
+
+	async function handleDeleteAccount() {
+		if (deleteConfirmationText !== 'DELETE') {
+			return;
+		}
+
+		isDeleting = true;
+		try {
+			const success = await deleteAccount();
+			if (!success) {
+				// Error handling is done in the deleteAccount function
+				isDeleting = false;
+			}
+			// If successful, user will be redirected to login page
+		} catch (error) {
+			console.error('Error deleting account:', error);
+			isDeleting = false;
+		}
+	}
+
+	function resetDeleteModal() {
+		showDeleteConfirmation = false;
+		deleteConfirmationText = '';
+		isDeleting = false;
+	}
 </script>
 
 <div class="max-w-4xl mx-auto">
@@ -115,6 +144,27 @@
 	</div>
 
 
+	<!-- Account & Privacy Settings -->
+	<div class="bg-dark-card border border-dark-border p-6 rounded-xl shadow-dark-card mt-8">
+		<h2 class="text-xl font-semibold text-highlight mb-4">Account & Privacy</h2>
+
+		<div class="space-y-6">
+			<!-- Delete Account Section -->
+			<div class="border border-red-500/20 bg-red-500/5 rounded-lg p-4">
+				<h3 class="text-lg font-medium text-red-400 mb-2">Danger Zone</h3>
+				<p class="text-sm text-dark-muted mb-4">
+					Permanently delete your account and all associated data. This action cannot be undone.
+				</p>
+				<button
+					onclick={() => showDeleteConfirmation = true}
+					class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium"
+				>
+					Delete Account
+				</button>
+			</div>
+		</div>
+	</div>
+
 	<div class="bg-dark-card border border-dark-border p-6 rounded-xl shadow-dark-card mt-8">
 		<h2 class="text-xl font-semibold text-highlight mb-4">About</h2>
 
@@ -139,6 +189,67 @@
 		</div>
 	</div>
 </div>
+
+<!-- Delete Account Confirmation Modal -->
+{#if showDeleteConfirmation}
+	<div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+		<div class="bg-card border border-border rounded-lg p-6 max-w-md w-full">
+			<h3 class="text-xl font-bold text-highlight mb-4">Delete Account</h3>
+			
+			<div class="mb-6">
+				<p class="text-text-base mb-4">
+					Are you sure you want to delete your account? This will permanently remove:
+				</p>
+				<ul class="text-sm text-muted space-y-1 mb-4">
+					<li>• Your profile and account data</li>
+					<li>• All classes and student records</li>
+					<li>• Gradebook entries and assignments</li>
+					<li>• All uploaded files</li>
+					<li>• Jeopardy games and questions</li>
+					<li>• Chat messages and conversations</li>
+				</ul>
+				<p class="text-red-400 font-medium">
+					This action cannot be undone.
+				</p>
+			</div>
+
+			<div class="mb-6">
+				<label for="delete-confirmation" class="block text-sm font-medium text-text-base mb-2">
+					Type <span class="font-bold text-red-400">DELETE</span> to confirm:
+				</label>
+				<input
+					id="delete-confirmation"
+					type="text"
+					bind:value={deleteConfirmationText}
+					placeholder="Type DELETE to confirm"
+					class="w-full px-3 py-2 border border-border rounded-lg bg-surface text-text-base focus:outline-none focus:ring-2 focus:ring-purple"
+					autocomplete="off"
+				/>
+			</div>
+
+			<div class="flex gap-3">
+				<button
+					onclick={resetDeleteModal}
+					disabled={isDeleting}
+					class="flex-1 px-4 py-2 border border-border rounded-lg hover:bg-surface transition-colors disabled:opacity-50"
+				>
+					Cancel
+				</button>
+				<button
+					onclick={handleDeleteAccount}
+					disabled={deleteConfirmationText !== 'DELETE' || isDeleting}
+					class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-800 disabled:opacity-50 text-white rounded-lg transition-colors font-medium"
+				>
+					{#if isDeleting}
+						Deleting...
+					{:else}
+						Delete Account
+					{/if}
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}
 
 <!-- Theme Settings Modal -->
 <ThemeSettings bind:open={showThemeSettings} />

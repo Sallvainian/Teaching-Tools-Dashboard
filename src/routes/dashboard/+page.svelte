@@ -92,8 +92,9 @@
 
 	onMount(async () => {
 		try {
-			// Store data is already loaded by AppLayout.svelte
-			// Only load file statistics here
+			// Store data is already loaded by AppLayout.svelte (gradebook only)
+			// Load jeopardy data for dashboard stats
+			await jeopardyStore.ensureDataLoaded();
 
 			// Load file statistics
 			const [files, stats] = await Promise.all([

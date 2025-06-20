@@ -30,6 +30,16 @@ export async function loadAllData(): Promise<void> {
 	error.set(null);
 
 	try {
+		// Get current user ID for filtering
+		const currentUser = await gradebookService.getCurrentUser();
+		const currentUserId = currentUser?.id;
+
+		if (!currentUserId) {
+			console.warn('No authenticated user found, using localStorage fallback');
+			// If no user is authenticated, fall back to localStorage only
+			gradebookService.setUseSupabase(false);
+		}
+
 		// ====== PERFORMANCE OPTIMIZATION: PARALLEL LOADING ======
 		// Instead of 5 sequential database calls, execute all in parallel
 		console.log('🚀 Loading gradebook data in parallel...');
@@ -42,8 +52,14 @@ export async function loadAllData(): Promise<void> {
 			assignmentsData,
 			gradesData
 		] = await Promise.all([
-			gradebookService.getItems('students'),
-			gradebookService.getItems('classes'),
+			// Filter students by current user
+			gradebookService.getItems('students', { 
+				filters: currentUserId ? { user_id: currentUserId } : {} 
+			}),
+			// Filter classes by current user  
+			gradebookService.getItems('classes', { 
+				filters: currentUserId ? { user_id: currentUserId } : {} 
+			}),
 			gradebookService.getItems('class_students'),
 			gradebookService.getItems('assignments'),
 			gradebookService.getItems('grades')
@@ -51,20 +67,57 @@ export async function loadAllData(): Promise<void> {
 
 		const loadTime = performance.now() - startTime;
 		console.log(`✅ Parallel loading completed in ${loadTime.toFixed(2)}ms`);
+		console.log(`🔍 Raw data counts:`, {
+			students: studentsData.length,
+			classes: classesData.length,
+			classStudents: classStudentsData.length,
+			assignments: assignmentsData.length,
+			grades: gradesData.length,
+			currentUserId
+		});
+
+		// Get the list of class IDs owned by the current user for filtering relationships
+		const userClassIds = new Set(classesData.map(cls => cls.id));
+
+		// Filter class_students to only include relationships for the user's classes
+		const filteredClassStudents = classStudentsData.filter(relationship => 
+			userClassIds.has(relationship.class_id)
+		);
 
 		// Transform data to match our store format
 		const transformedStudents = studentsData.map(dbStudentToAppStudent);
 
 		const transformedClasses = classesData.map((cls) =>
-			dbClassToAppClass(cls, classStudentsData)
+			dbClassToAppClass(cls, filteredClassStudents)
 		);
 
+		// Filter assignments to only include those belonging to the user's classes
+		const filteredAssignments = assignmentsData.filter(assignment => 
+			userClassIds.has(assignment.class_id)
+		);
+
+		// Filter grades to only include those for assignments in the user's classes
+		const filteredGrades = gradesData.filter(grade => {
+			// Find the assignment this grade belongs to
+			const assignment = assignmentsData.find(a => a.id === grade.assignment_id);
+			return assignment && userClassIds.has(assignment.class_id);
+		});
+
 		// Map assignments to their classes directly using assignment.class_id
-		const transformedAssignments = assignmentsData.map((assignment) => {
+		const transformedAssignments = filteredAssignments.map((assignment) => {
 			return dbAssignmentToAppAssignment(assignment, assignment.class_id);
 		});
 
-		const transformedGrades = gradesData.map(dbGradeToAppGrade);
+		const transformedGrades = filteredGrades.map(dbGradeToAppGrade);
+
+		console.log(`🎯 Filtered data counts:`, {
+			students: transformedStudents.length,
+			classes: transformedClasses.length,
+			classStudents: filteredClassStudents.length,
+			assignments: transformedAssignments.length,
+			grades: transformedGrades.length,
+			userClassIds: Array.from(userClassIds)
+		});
 
 		// Update stores
 		students.set(transformedStudents);

@@ -95,7 +95,15 @@ export default defineConfig(({ command, mode }) => {
 		target: 'esnext',
 		// Build optimizations
 		rollupOptions: {
-			// Netlify adapter handles chunk splitting automatically
+			output: {
+				// Split vendor chunks for better caching
+				manualChunks: {
+					// Supabase chunk - can be cached separately
+					'supabase': ['@supabase/supabase-js', '@supabase/auth-js', '@supabase/storage-js'],
+					// Date utilities
+					'utils': ['date-fns', 'uuid', 'zod']
+				}
+			}
 		},
 		// Build optimizations for production
 		chunkSizeWarningLimit: 1000,

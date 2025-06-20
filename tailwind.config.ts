@@ -4,6 +4,11 @@ import formsPlugin from '@tailwindcss/forms';
 
 const config: Config = {
 	content: ['./src/**/*.{html,js,svelte,ts}'],
+	// Ensure CSS purging is aggressive in production
+	safelist: [
+		// Keep essential classes that might be added dynamically
+		'opacity-0', 'opacity-100', 'translate-x-0', 'translate-x-full'
+	],
 	darkMode: 'class',
 	theme: {
 		extend: {

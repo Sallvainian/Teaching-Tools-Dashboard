@@ -634,6 +634,11 @@ function setupRealtimeSubscriptions(): void {
 	const user = getUser(get(authStore));
 	if (!user || subscriptionsActive || setupInProgress) return;
 
+	// Check if channels already exist to prevent duplicates
+	if (conversationsChannel || messagesChannel) {
+		console.warn('Realtime channels already exist, cleaning up first');
+		cleanupRealtimeSubscriptions();
+	}
 
 	// Prevent multiple simultaneous setup calls
 	setupInProgress = true;
@@ -641,9 +646,9 @@ function setupRealtimeSubscriptions(): void {
 	// Clean up any existing subscriptions first
 	cleanupRealtimeSubscriptions();
 
-	// Subscribe to conversations changes with unique channel name
+	// Subscribe to conversations changes with consistent channel name
 	conversationsChannel = supabase
-		.channel(`conversations-${user.id}-${Date.now()}`) // Add timestamp to ensure uniqueness
+		.channel(`conversations-${user.id}`) // Use consistent channel name
 		.on(
 			'postgres_changes',
 			{
@@ -661,9 +666,9 @@ function setupRealtimeSubscriptions(): void {
 		)
 		.subscribe();
 
-	// Subscribe to messages with unique channel name
+	// Subscribe to messages with consistent channel name
 	messagesChannel = supabase
-		.channel(`messages-${user.id}-${Date.now()}`) // Add timestamp to ensure uniqueness
+		.channel(`messages-${user.id}`) // Use consistent channel name
 		.on(
 			'postgres_changes',
 			{
@@ -827,17 +832,50 @@ function cleanupRealtimeSubscriptions(): void {
 	subscriptionsActive = false;
 	setupInProgress = false;
 
+	const user = getUser(get(authStore));
+	
+	// Clean up specific channel references
 	if (conversationsChannel) {
+		conversationsChannel.unsubscribe();
 		supabase.removeChannel(conversationsChannel);
 		conversationsChannel = null;
 	}
 	if (messagesChannel) {
+		messagesChannel.unsubscribe();
 		supabase.removeChannel(messagesChannel);
 		messagesChannel = null;
 	}
 	if (typingChannel) {
+		typingChannel.unsubscribe();
 		supabase.removeChannel(typingChannel);
 		typingChannel = null;
+	}
+	
+	// Safety cleanup: get channels by name and remove them properly
+	if (user) {
+		try {
+			const conversationsChannelName = `conversations-${user.id}`;
+			const messagesChannelName = `messages-${user.id}`;
+			
+			// Get all channels and find matches by topic
+			const allChannels = supabase.getChannels();
+			const orphanedChannels = allChannels.filter(channel => 
+				channel.topic === conversationsChannelName || 
+				channel.topic === messagesChannelName
+			);
+			
+			// Remove orphaned channels properly
+			orphanedChannels.forEach(channel => {
+				try {
+					channel.unsubscribe();
+					supabase.removeChannel(channel);
+				} catch (channelErr) {
+					// Ignore individual channel cleanup errors
+				}
+			});
+		} catch (err) {
+			// Ignore errors in cleanup - channels might not exist
+		}
 	}
 }
 

@@ -1,14 +1,16 @@
 import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
 import { browser } from '$app/environment';
 import { env } from '$env/dynamic/public';
+import { PUBLIC_SUPABASE_URL, PUBLIC_SUPABASE_ANON_KEY } from '$env/static/public';
+import type { Database } from './types/database';
 
-// Get environment variables from .env file
-const PUBLIC_SUPABASE_URL = env.PUBLIC_SUPABASE_URL || 'https://demo.supabase.co';
-const PUBLIC_SUPABASE_ANON_KEY = env.PUBLIC_SUPABASE_ANON_KEY || 'demo-key';
+// Use static env vars for SSR compatibility, fallback to dynamic for demo mode
+const supabaseUrl = PUBLIC_SUPABASE_URL || env.PUBLIC_SUPABASE_URL || 'https://demo.supabase.co';
+const supabaseAnonKey = PUBLIC_SUPABASE_ANON_KEY || env.PUBLIC_SUPABASE_ANON_KEY || 'demo-key';
 
-// Create the Supabase client with SvelteKit environment variables
-export const supabaseUrl = PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = PUBLIC_SUPABASE_ANON_KEY;
+// Export for other modules that need the URL
+export { supabaseUrl };
 
 // Check if credentials are provided
 if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('demo')) {
@@ -21,13 +23,14 @@ if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('demo')) {
 	console.log('✅ Connected to Supabase project:', supabaseUrl);
 }
 
-// Create and export the Supabase client with proper SvelteKit configuration
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+// Create the appropriate client based on environment
+// For SSR compatibility, use the browser client from @supabase/ssr
+export const supabase = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey, {
 	auth: {
-		autoRefreshToken: browser,
-		persistSession: browser,
-		detectSessionInUrl: browser
+		// Disable PKCE to avoid WebCrypto API issues
+		flowType: 'implicit'
 	}
 });
 
+// Legacy export for backward compatibility
 export default supabase;

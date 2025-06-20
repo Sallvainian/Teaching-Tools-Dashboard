@@ -112,6 +112,39 @@ export async function createAppUserRecord(userId: string, updateStore: boolean =
 			.single();
 
 		if (error) {
+			// Check if it's a duplicate key error (record already exists)
+			if (error.code === '23505') {
+				console.log('app_users record already exists, fetching existing record...');
+				// Record already exists, fetch it instead
+				const { data: existingData, error: fetchError } = await supabase
+					.from('app_users')
+					.select('*')
+					.eq('id', userId)
+					.single();
+				
+				if (fetchError) {
+					console.error('Error fetching existing app_users record:', fetchError);
+					return updateStore ? undefined : { profile: null, role: null };
+				}
+				
+				const existingProfile: UserProfile = {
+					id: existingData.id,
+					email: existingData.email,
+					fullName: existingData.full_name,
+					role: existingData.role
+				};
+				
+				if (updateStore) {
+					authStore.update(state => ({
+						...state,
+						role: existingData.role,
+						profile: existingProfile
+					}));
+				}
+				
+				return { profile: existingProfile, role: existingData.role };
+			}
+			
 			console.error('Error creating app_users record:', error);
 			// Check if it's an RLS policy violation
 			if (error.code === '42501') {

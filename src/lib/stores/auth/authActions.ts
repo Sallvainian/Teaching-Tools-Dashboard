@@ -5,6 +5,7 @@ import { supabase } from '$lib/supabaseClient';
 import { clearSupabaseAuthStorage } from '$lib/utils/authStorage';
 import { authStore } from './core';
 import { fetchUserProfile } from './profileActions';
+import { setSignupInProgress } from './initialization';
 
 // Sign in with email and password
 export async function signIn(email: string, password: string): Promise<boolean> {
@@ -118,6 +119,9 @@ export async function signUpStudent(data: {
 		error: null
 	}));
 
+	// Prevent auth listener from interfering during signup
+	setSignupInProgress(true);
+
 	try {
 		// First sign up the user
 		const { data: authData, error: signUpError } = await supabase.auth.signUp({
@@ -129,7 +133,13 @@ export async function signUpStudent(data: {
 		if (signUpError) throw signUpError;
 
 		if (authData?.user) {
-			// Create app_users record with student role
+			// Check if email confirmation is required
+			if (!authData.session) {
+				// Email confirmation required - don't create profile records yet
+				return { needsEmailConfirmation: true };
+			}
+
+			// User is confirmed, create app_users record with student role
 			const { error: profileError } = await supabase.from('app_users').insert({
 				id: authData.user.id,
 				email: data.email,
@@ -137,15 +147,62 @@ export async function signUpStudent(data: {
 				role: 'student'
 			});
 
-			if (profileError) throw profileError;
+			if (profileError) {
+				// If it's a duplicate key error, the record already exists (race condition with initialization)
+				if (profileError.code === '23505') {
+					console.log('app_users record already exists (created by initialization), continuing...');
+				} else {
+					console.error('Profile creation error:', profileError);
+					
+					// Cleanup: Delete the auth user since profile creation failed
+					try {
+						if (authData.session?.access_token) {
+							await fetch('/api/auth/delete-account', {
+								method: 'DELETE',
+								headers: {
+									'Authorization': `Bearer ${authData.session.access_token}`,
+									'Content-Type': 'application/json'
+								}
+							});
+							console.log('Cleaned up auth user after student profile creation failure');
+						}
+					} catch (cleanupError) {
+						console.error('Failed to cleanup auth user:', cleanupError);
+					}
+					
+					throw new Error(`Profile creation failed: ${profileError.message}`);
+				}
+			}
 
 			// Create student record
 			const { error: studentError } = await supabase.from('students').insert({
 				user_id: authData.user.id,
+				name: data.fullName,
 				join_code: data.joinCode
 			});
 
-			if (studentError) throw studentError;
+			if (studentError) {
+				console.error('Student record creation error:', studentError);
+				
+				// Cleanup: Delete the auth user since student record creation failed
+				// We need to use the server endpoint since client can't delete auth users
+				try {
+					if (authData.session?.access_token) {
+						await fetch('/api/auth/delete-account', {
+							method: 'DELETE',
+							headers: {
+								'Authorization': `Bearer ${authData.session.access_token}`,
+								'Content-Type': 'application/json'
+							}
+						});
+						console.log('Cleaned up auth user after student record creation failure');
+					}
+				} catch (cleanupError) {
+					console.error('Failed to cleanup auth user:', cleanupError);
+				}
+				
+				throw new Error(`Student record creation failed: ${studentError.message}`);
+			}
 
 			return true;
 		}
@@ -158,6 +215,8 @@ export async function signUpStudent(data: {
 		}));
 		return false;
 	} finally {
+		// Re-enable auth listener
+		setSignupInProgress(false);
 		authStore.update(state => ({
 			...state,
 			loading: false
@@ -178,6 +237,9 @@ export async function signUpTeacher(data: {
 		error: null
 	}));
 
+	// Prevent auth listener from interfering during signup
+	setSignupInProgress(true);
+
 	try {
 		// First sign up the user
 		const { data: authData, error: signUpError } = await supabase.auth.signUp({
@@ -189,15 +251,47 @@ export async function signUpTeacher(data: {
 		if (signUpError) throw signUpError;
 
 		if (authData?.user) {
-			// Create app_users record with teacher role
+			// Check if email confirmation is required
+			if (!authData.session) {
+				// Email confirmation required - don't create profile records yet
+				return { needsEmailConfirmation: true };
+			}
+
+			// User is confirmed, create app_users record with teacher role
 			const { error: profileError } = await supabase.from('app_users').insert({
 				id: authData.user.id,
 				email: data.email,
 				full_name: data.fullName,
-				role: 'teacher'
+				role: 'teacher',
+				school_name: data.schoolName
 			});
 
-			if (profileError) throw profileError;
+			if (profileError) {
+				// If it's a duplicate key error, the record already exists (race condition with initialization)
+				if (profileError.code === '23505') {
+					console.log('app_users record already exists (created by initialization), continuing...');
+				} else {
+					console.error('Teacher profile creation error:', profileError);
+					
+					// Cleanup: Delete the auth user since profile creation failed
+					try {
+						if (authData.session?.access_token) {
+							await fetch('/api/auth/delete-account', {
+								method: 'DELETE',
+								headers: {
+									'Authorization': `Bearer ${authData.session.access_token}`,
+									'Content-Type': 'application/json'
+								}
+							});
+							console.log('Cleaned up auth user after teacher profile creation failure');
+						}
+					} catch (cleanupError) {
+						console.error('Failed to cleanup auth user:', cleanupError);
+					}
+					
+					throw new Error(`Profile creation failed: ${profileError.message}`);
+				}
+			}
 
 			return true;
 		}
@@ -210,6 +304,8 @@ export async function signUpTeacher(data: {
 		}));
 		return false;
 	} finally {
+		// Re-enable auth listener
+		setSignupInProgress(false);
 		authStore.update(state => ({
 			...state,
 			loading: false
@@ -266,6 +362,62 @@ export async function signOut(): Promise<boolean> {
 			const { goto } = await import('$app/navigation');
 			await goto('/auth/login', { replaceState: true });
 		}
+		return false;
+	}
+}
+
+// Delete account
+export async function deleteAccount(): Promise<boolean> {
+	try {
+		authStore.update(state => ({
+			...state,
+			loading: true,
+			error: null
+		}));
+
+		const { data: { session } } = await supabase.auth.getSession();
+		if (!session?.access_token) throw new Error('No authenticated user');
+
+		// Use the server endpoint to delete user account (including auth.users record)
+		const response = await fetch('/api/auth/delete-account', {
+			method: 'DELETE',
+			headers: {
+				'Authorization': `Bearer ${session.access_token}`,
+				'Content-Type': 'application/json'
+			}
+		});
+
+		if (!response.ok) {
+			const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+			throw new Error(errorData.message || `Server error: ${response.status}`);
+		}
+
+		// Clear local state immediately
+		authStore.update(state => ({
+			...state,
+			session: null,
+			user: null,
+			role: null,
+			profile: null,
+			loading: false
+		}));
+
+		// Clear any stored authentication keys
+		clearSupabaseAuthStorage();
+
+		// Redirect to login
+		if (typeof window !== 'undefined') {
+			const { goto } = await import('$app/navigation');
+			await goto('/auth/login', { replaceState: true });
+		}
+
+		return true;
+	} catch (err: unknown) {
+		authStore.update(state => ({
+			...state,
+			error: err instanceof Error ? err.message : 'Account deletion failed',
+			loading: false
+		}));
 		return false;
 	}
 }

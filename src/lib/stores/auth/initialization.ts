@@ -10,6 +10,8 @@ import type { AuthStoreState } from './core';
 let authListenerSetup = false;
 // Track if initial auth is complete to prevent duplicate updates
 let initialAuthComplete = false;
+// Track if signup is in progress to prevent auth listener interference
+let signupInProgress = false;
 
 // Initialize authentication
 export async function initialize(): Promise<void> {
@@ -71,6 +73,9 @@ export async function initialize(): Promise<void> {
 				async (event, newSession) => {
 					// Skip all auth events until initial auth is complete
 					if (!initialAuthComplete) return;
+					
+					// Skip auth events during signup to prevent race conditions
+					if (signupInProgress) return;
 
 					// For events after initialization, handle normally
 					if (newSession?.user) {
@@ -148,4 +153,9 @@ export async function initialize(): Promise<void> {
 			isInitialized: true
 		}));
 	}
+}
+
+// Functions to control signup state
+export function setSignupInProgress(inProgress: boolean): void {
+	signupInProgress = inProgress;
 }
