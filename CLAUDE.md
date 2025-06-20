@@ -58,7 +58,7 @@ async function addStudent(name: string): Promise<ActionResult<StudentId>>
  */
 ```
 =======
-- **CI/CD**: GitHub Actions, Vercel
+- **CI/CD**: GitHub Actions, Netlify
 >>>>>>> Stashed changes
 
 ## Code Style Guidelines
@@ -391,7 +391,6 @@ Remember: This is a production application for educators. Code quality, type saf
 - **mcp-shrimp-task-manager** - Advanced task management
 - **exa** - Web search
 - **DeepResearchMCP** - Deep research capabilities
-- **vercel-api-mcp-fork** - Vercel API operations
 - **pdf-extraction** - PDF content extraction
 - **doc-tools-mcp** - Document creation tools
 
