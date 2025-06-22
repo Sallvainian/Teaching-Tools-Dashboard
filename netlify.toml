@@ -3,7 +3,8 @@
   publish = "build"
 
 [build.environment]
-  NODE_VERSION = "20.18.0"
+  NODE_VERSION = "22"
+  NPM_VERSION = "11"
   NPM_FLAGS = "--include=optional"
 
 # Cache headers to prevent cache mismatches
