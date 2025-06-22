@@ -58,7 +58,6 @@ This document provides essential information for AI code pilots working on the T
 - **State Management**: Native Svelte stores
 - **Data Validation**: Zod
 - **Date Handling**: date-fns
-- **Data Tables**: Handsontable
 - **Unique IDs**: UUID
 
 ### Project Structure

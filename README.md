@@ -22,7 +22,6 @@ A comprehensive web application for educators to manage classroom activities, st
 
 - **Frontend**: SvelteKit 5, TypeScript (strict mode), Tailwind CSS
 - **Backend**: Supabase (PostgreSQL + Auth + Realtime)
-- **Data Tables**: AG-Grid Community, Handsontable
 - **Testing**: Vitest, Testing Library
 - **CI/CD**: GitHub Actions, Netlify
 

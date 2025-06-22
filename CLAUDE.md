@@ -9,7 +9,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Tech Stack
 - **Frontend**: SvelteKit 5, TypeScript (strict mode), Tailwind CSS
 - **Backend**: Supabase (PostgreSQL + Auth)
-- **Data Tables**: AG-Grid Community, Handsontable
 - **Testing**: Vitest, Testing Library
 <<<<<<< Updated upstream
 - **CI/CD**: GitHub Actions, Netlify
