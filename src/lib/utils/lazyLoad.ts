@@ -2,7 +2,7 @@
  * @ai-context LAZY_LOAD - Utility for lazy loading heavy features
  * @ai-dependencies None
  * @ai-sideEffects None
- * @ai-exports lazyLoadPDF, lazyLoadHandsontable, lazyLoadStorage, lazyLoadRealtime
+ * @ai-exports lazyLoadPDF, lazyLoadStorage, lazyLoadRealtime
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -22,14 +22,6 @@ export async function lazyLoadPDF() {
   return pdfjs;
 }
 
-/**
- * Lazy load Handsontable for gradebook
- * @ai-flow INPUT: none -> DYNAMIC_IMPORT -> OUTPUT: Handsontable constructor
- */
-export async function lazyLoadHandsontable() {
-  const { default: Handsontable } = await import('handsontable');
-  return Handsontable;
-}
 
 /**
  * Lazy load Supabase storage features
