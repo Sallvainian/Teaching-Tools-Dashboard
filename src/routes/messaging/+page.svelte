@@ -2,12 +2,15 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { authStore } from '$lib/stores/auth';
 	import { chatStore } from '$lib/stores/chat';
+	import { callStore, hasIncomingCall } from '$lib/stores/call';
 	import { confirmationStore } from '$lib/stores/confirmationModal';
 	import { supabase } from '$lib/supabaseClient';
 	import UserSelectModal from '$lib/components/UserSelectModal.svelte';
 	import TypingIndicator from '$lib/components/TypingIndicator.svelte';
 	import GifPicker from '$lib/components/GifPicker.svelte';
 	import ImagePreviewModal from '$lib/components/ImagePreviewModal.svelte';
+	import IncomingCallModal from '$lib/components/IncomingCallModal.svelte';
+	import ActiveCallWidget from '$lib/components/ActiveCallWidget.svelte';
 	import type { ChatUIConversation, ChatUIMessage, ConversationWithDetails, ConversationParticipant } from '$lib/types/chat';
 	import { getUser } from '$lib/utils/storeHelpers';
 	import { isHTMLElement, isHTMLInputElement, getEventTargetValue } from '$lib/utils/domHelpers';
@@ -103,6 +106,8 @@
 		if (conversations.length === 0) {
 			await chatStore.loadConversations();
 		}
+		// Initialize call system
+		await callStore.initialize();
 	});
 
 	const unsubscribeMessages = chatStore.activeMessages.subscribe((msgs) => {
@@ -401,6 +406,9 @@
 		// Clean up chat store realtime subscriptions
 		chatStore.cleanup();
 
+		// Clean up call store
+		callStore.cleanup();
+
 		// Clean up typing timeout
 		if (typingTimeout) {
 			clearTimeout(typingTimeout);
@@ -672,6 +680,46 @@
 			console.error('Error sending file:', err);
 		}
 	}
+
+	// Voice call function
+	async function startVoiceCall() {
+		if (!activeConversation) {
+			console.error('No active conversation for voice call');
+			return;
+		}
+
+		const user = getUser($authStore);
+		if (!user) {
+			console.error('User not authenticated');
+			return;
+		}
+
+		// Get the other participant in the conversation
+		const currentConv = rawConversations.find(c => c.id === activeConversation.id);
+		if (!currentConv) {
+			console.error('Conversation not found');
+			return;
+		}
+
+		// Find other participant (not current user)
+		const otherParticipant = currentConv.participants?.find(
+			(p: ConversationParticipant) => p.user_id !== user.id
+		);
+
+		if (!otherParticipant?.user) {
+			console.error('Other participant not found');
+			return;
+		}
+
+		const calleeId = otherParticipant.user_id;
+		const calleeName = otherParticipant.user.full_name || otherParticipant.user.email || 'Unknown User';
+
+		try {
+			await callStore.makeCall(calleeId, calleeName);
+		} catch (error: unknown) {
+			console.error('Failed to start voice call:', error);
+		}
+	}
 </script>
 
 <svelte:head>
@@ -916,6 +964,8 @@
 						<div class="flex gap-2">
 							<button
 								class="p-2 text-text-base hover:text-text-hover rounded-full hover:bg-surface transition-colors"
+								onclick={startVoiceCall}
+								disabled={!activeConversation || activeConversation.is_group}
 								aria-label="Start voice call"
 							>
 								<svg
@@ -1270,4 +1320,8 @@
 		imageUrl={previewImageUrl}
 		onClose={closeImagePreview}
 	/>
+
+	<!-- Voice Call Components -->
+	<IncomingCallModal bind:isOpen={$hasIncomingCall} />
+	<ActiveCallWidget />
 </div>

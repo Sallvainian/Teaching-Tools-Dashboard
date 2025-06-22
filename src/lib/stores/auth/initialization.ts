@@ -36,11 +36,6 @@ export async function initialize(): Promise<void> {
 			return;
 		}
 
-		// Set a timeout for Supabase operations to prevent hanging
-		const timeoutPromise = new Promise((_, reject) => {
-			setTimeout(() => reject(new Error('Supabase connection timeout')), 20000);
-		});
-
 		let hasStoredSession = false;
 		let storedUserId: string | null = null;
 
@@ -92,8 +87,7 @@ export async function initialize(): Promise<void> {
 
 		// Try to verify/refresh the session with Supabase
 		try {
-			const sessionCall = supabase.auth.getSession();
-			const { data, error: sessionError } = await Promise.race([sessionCall, timeoutPromise]) as any;
+			const { data, error: sessionError } = await supabase.auth.getSession();
 			
 			if (sessionError) throw sessionError;
 
@@ -110,8 +104,9 @@ export async function initialize(): Promise<void> {
 				stateUpdates.user = null;
 				stateUpdates.role = null;
 			}
-		} catch (timeoutError) {
-			console.warn('Supabase session verification timed out, using cached session if available');
+		} catch (error) {
+			console.warn('Supabase session verification failed:', error);
+			// Keep cached session if available
 		}
 
 		// Fetch profile if we have a user
