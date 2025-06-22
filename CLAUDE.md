@@ -330,7 +330,7 @@ The project includes hardcoded development credentials in `src/lib/supabaseClien
 ## Performance Guidelines
 
 1. **Lazy Loading**: Use dynamic imports for heavy components
-2. **Virtual Scrolling**: AG-Grid handles this automatically
+2. **Virtual Scrolling**: Implement virtual scrolling for large lists
 3. **Image Optimization**: Use appropriate formats and sizes
 4. **Bundle Size**: Monitor with `npm run build --analyze`
 5. **State Updates**: Batch updates when possible
@@ -429,7 +429,7 @@ Remember: This is a production application for educators. Code quality, type saf
 - Catch clause type annotations (changed from `Error` to `any`)
 - Added missing auth store methods: `signUpStudent`, `signUpTeacher`, `role`
 - Fixed implicit any type errors throughout codebase
-- Fixed Handsontable prop types
+- Fixed component prop types
 <<<<<<< Updated upstream
 =======
 - Updated Sentry to v8 API (changed from `span.setTag` to `span.setAttribute`)
