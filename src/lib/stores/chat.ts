@@ -133,6 +133,7 @@ let conversationsChannel: RealtimeChannel | null = null;
 let messagesChannel: RealtimeChannel | null = null;
 let typingChannel: RealtimeChannel | null = null;
 let subscriptionsActive = false;
+let realtimeModule: any = null;
 
 // Polling fallback
 const _pollingInterval: number | null = null;
@@ -630,7 +631,7 @@ function setActiveConversation(conversationId: string | null): void {
 // Real-time subscriptions
 let setupInProgress = false;
 
-function setupRealtimeSubscriptions(): void {
+async function setupRealtimeSubscriptions(): Promise<void> {
 	const user = getUser(get(authStore));
 	if (!user || subscriptionsActive || setupInProgress) {
 		console.log('🚫 Skipping realtime setup:', { 
@@ -648,6 +649,18 @@ function setupRealtimeSubscriptions(): void {
 
 	// Clean up any existing subscriptions first
 	cleanupRealtimeSubscriptions();
+
+	// Lazy load realtime module if not loaded
+	if (!realtimeModule) {
+		try {
+			const { lazyLoadRealtime } = await import('$lib/utils/lazyLoad');
+			realtimeModule = await lazyLoadRealtime(supabase);
+		} catch (err) {
+			console.error('Failed to load realtime module:', err);
+			setupInProgress = false;
+			return;
+		}
+	}
 
 	// Subscribe to conversations changes with unique channel name
 	conversationsChannel = supabase

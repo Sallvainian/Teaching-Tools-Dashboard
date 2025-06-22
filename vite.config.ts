@@ -86,7 +86,15 @@ export default defineConfig(({ command, mode }) => {
 		include: [
 			'date-fns',
 			'uuid',
-			'zod'
+			'zod',
+			'cookie',
+			'@fontsource/inter',
+			'@jridgewell/sourcemap-codec'
+		],
+		// Exclude heavy dependencies from pre-bundling
+		exclude: [
+			'pdfjs-dist',
+			'@giphy/js-fetch-api'
 		]
 	},
 
@@ -95,11 +103,34 @@ export default defineConfig(({ command, mode }) => {
 		target: 'esnext',
 		// Build optimizations
 		rollupOptions: {
-			// Netlify adapter handles chunk splitting automatically
+			output: {
+				// Manual chunk splitting for better code splitting
+				manualChunks: {
+					// Split Supabase modules into separate chunks
+					'supabase-core': ['@supabase/supabase-js'],
+					'supabase-auth': ['@supabase/auth-js'],
+					'supabase-realtime': ['@supabase/realtime-js'],
+					'supabase-storage': ['@supabase/storage-js'],
+					// Split heavy libraries
+					'vendor-pdf': ['pdfjs-dist'],
+					// Core utilities in separate chunk
+					'vendor-utils': ['date-fns', 'uuid', 'zod']
+				},
+				// Use consistent chunk names for better caching
+				chunkFileNames: (chunkInfo) => {
+					const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop() : 'chunk';
+					return `chunks/[name]-${facadeModuleId}-[hash].js`;
+				}
+			}
 		},
 		// Build optimizations for production
 		chunkSizeWarningLimit: 1000,
-		reportCompressedSize: false
+		reportCompressedSize: false,
+		// Optimize tree shaking
+		treeshake: {
+			moduleSideEffects: false,
+			propertyReadSideEffects: false
+		}
 	},
 
 	// CSS Processing optimizations

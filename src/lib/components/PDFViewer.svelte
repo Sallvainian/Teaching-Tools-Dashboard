@@ -102,8 +102,10 @@
 				return;
 			}
 
-			// Load PDF.js from local node_modules
-			import('pdfjs-dist').then(async (pdfjs) => {
+			// Load PDF.js using lazy loading utility
+			import('../utils/lazyLoad').then(async ({ cachedLazyLoad, lazyLoadPDF }) => {
+				const pdfjs = await cachedLazyLoad('pdfjs', lazyLoadPDF);
+				
 				// Import the worker separately and use it
 				const pdfjsWorker = await import('pdfjs-dist/build/pdf.worker.min.mjs?url');
 				pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker.default;
