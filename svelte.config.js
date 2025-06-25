@@ -1,12 +1,12 @@
 import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
-import netlify from '@sveltejs/adapter-netlify';
+import adapter from '@sveltejs/adapter-node';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	preprocess: vitePreprocess(),
 	// Remove runes setting - let Svelte auto-detect
 	kit: {
-		adapter: netlify(),
+		adapter: adapter(),
 		alias: {
 			$components: 'src/lib/components',
 			$stores: 'src/lib/stores',
