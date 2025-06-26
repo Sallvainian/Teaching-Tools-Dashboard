@@ -96,10 +96,16 @@ export default defineConfig(({ command, mode }) => {
 		// Build optimizations
 		rollupOptions: {
 			// Netlify adapter handles chunk splitting automatically
+			output: {
+				// Disable CSS preloading to prevent console warnings
+				experimentalMinChunkSize: 1000
+			}
 		},
 		// Build optimizations for production
 		chunkSizeWarningLimit: 1000,
-		reportCompressedSize: false
+		reportCompressedSize: false,
+		// Disable CSS code splitting to prevent unused preload warnings
+		cssCodeSplit: false
 	},
 
 	// CSS Processing optimizations
