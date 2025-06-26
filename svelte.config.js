@@ -6,7 +6,13 @@ const config = {
 	preprocess: vitePreprocess(),
 	// Remove runes setting - let Svelte auto-detect
 	kit: {
-		adapter: adapter(),
+		adapter: adapter({
+			// Disable precompression since Railway handles it
+			precompress: false
+		}),
+		csp: {
+			mode: 'auto'
+		},
 		alias: {
 			$components: 'src/lib/components',
 			$stores: 'src/lib/stores',
