@@ -8,7 +8,11 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 
 // Serve static files from the build/client directory
-app.use(express.static(join(__dirname, 'build/client')));
+// This handles requests like /_app/immutable/entry/start.js
+app.use(express.static(join(__dirname, 'build/client'), {
+  maxAge: '1y',
+  immutable: true
+}));
 
 // Serve static files from the static directory
 app.use(express.static(join(__dirname, 'static')));
