@@ -9,7 +9,6 @@ const config = {
 		paths: {
 			relative: false
 		},
-		csp: false,
 		alias: {
 			$components: 'src/lib/components',
 			$stores: 'src/lib/stores',
