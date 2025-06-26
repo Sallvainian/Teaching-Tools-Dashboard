@@ -1,18 +1,12 @@
-import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 import adapter from '@sveltejs/adapter-node';
+import { vitePreprocess } from '@sveltejs/vite-plugin-svelte';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	preprocess: vitePreprocess(),
 	// Remove runes setting - let Svelte auto-detect
 	kit: {
-		adapter: adapter({
-			// Disable precompression since Railway handles it
-			precompress: false,
-			// Explicitly configure static file serving
-			out: 'build',
-			polyfill: false
-		}),
+		adapter: adapter(),
 		alias: {
 			$components: 'src/lib/components',
 			$stores: 'src/lib/stores',
