@@ -9,12 +9,7 @@ const config = {
 		paths: {
 			relative: false
 		},
-		csp: {
-			mode: 'auto',
-			directives: {
-				'script-src': ['self', 'unsafe-eval', 'unsafe-inline', 'https://*.supabase.co', 'https://*.supabase.io', 'https://cdn.jsdelivr.net', 'https://unpkg.com']
-			}
-		},
+		csp: false,
 		alias: {
 			$components: 'src/lib/components',
 			$stores: 'src/lib/stores',

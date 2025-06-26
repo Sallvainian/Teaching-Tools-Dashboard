@@ -58,7 +58,7 @@ const handleSupabase: Handle = async ({ event, resolve }) => {
   });
 };
 
-// Handle Chrome DevTools requests and CSP headers
+// Handle Chrome DevTools requests and remove CSP headers
 const handleChromeDevTools: Handle = async ({ event, resolve }) => {
   // Check if this is a Chrome DevTools request
   if (event.url.pathname.includes('/.well-known/appspecific/com.chrome.devtools.json')) {
@@ -71,40 +71,17 @@ const handleChromeDevTools: Handle = async ({ event, resolve }) => {
     });
   }
 
-  // Generate nonce for inline scripts
-  const nonce = Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString('base64');
+  const response = await resolve(event);
 
-  // Continue to the next handler with nonce in locals
-  event.locals.nonce = nonce;
-  const response = await resolve(event, {
-    transformPageChunk: ({ html }) => html.replace('%sveltekit.nonce%', nonce)
-  });
+  // REMOVE ALL CSP HEADERS - this fixes Railway deployment issues
+  response.headers.delete('Content-Security-Policy');
+  response.headers.delete('content-security-policy');
+  response.headers.delete('Content-Security-Policy-Report-Only');
+  response.headers.delete('content-security-policy-report-only');
 
-  // Add GoGuardian-compatible CSP headers with nonce
-  const cspDirectives = [
-    "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'unsafe-eval' 'unsafe-inline' https://*.supabase.co https://*.supabase.io https://cdn.jsdelivr.net https://unpkg.com`,
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
-    "font-src 'self' https://fonts.gstatic.com data:",
-    "img-src 'self' data: blob: https://*.supabase.co https://*.supabase.io https://images.unsplash.com https://via.placeholder.com",
-    "connect-src 'self' https://*.supabase.co https://*.supabase.io wss://*.supabase.co wss://*.supabase.io https://api.github.com",
-    "media-src 'self' data: blob:",
-    "object-src 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-    "frame-ancestors 'none'"
-  ].join('; ');
-
-  // Only set CSP in production to avoid SvelteKit dev conflicts
-  if (process.env.NODE_ENV === 'production') {
-    response.headers.set('Content-Security-Policy', cspDirectives);
-  }
-
-  // Add other security headers for GoGuardian compatibility
-  response.headers.set('X-Frame-Options', 'DENY');
+  // Add minimal security headers (but no CSP)
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-  response.headers.set('Permissions-Policy', 'camera=*, microphone=*, geolocation=()');
 
   return response;
 };
