@@ -12,7 +12,7 @@
 		"build": "npx vite build",
 		"build:analyze": "npx vite build --mode analyze",
 		"preview": "npx vite preview",
-		"start": "node build",
+		"start": "node build/index.js",
 		"prepare": "npx svelte-kit sync",
 		"check": "npx svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "npx svelte-kit sync --tsconfig ./tsconfig.json --watch",
