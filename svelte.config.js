@@ -8,11 +8,11 @@ const config = {
 	kit: {
 		adapter: adapter({
 			// Disable precompression since Railway handles it
-			precompress: false
+			precompress: false,
+			// Explicitly configure static file serving
+			out: 'build',
+			polyfill: false
 		}),
-		csp: {
-			mode: 'auto'
-		},
 		alias: {
 			$components: 'src/lib/components',
 			$stores: 'src/lib/stores',
